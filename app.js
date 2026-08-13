@@ -1324,17 +1324,20 @@ create policy "Public Access" on savings_entries for all using (true) with check
     checkTodayInAppReminder();
   }, 30000);
 
+  window.openNotifyModal = function() {
+    if (!notifyModal) return;
+    if (notifyEnableCheckbox) notifyEnableCheckbox.checked = notifyConfig.enabled;
+    if (notifyTimeInput) notifyTimeInput.value = notifyConfig.time || '21:00';
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      if (notifyPermissionNotice) notifyPermissionNotice.style.display = 'block';
+    } else {
+      if (notifyPermissionNotice) notifyPermissionNotice.style.display = 'none';
+    }
+    notifyModal.style.display = 'flex';
+  };
+
   if (notifyStatusBtn) {
-    notifyStatusBtn.addEventListener('click', () => {
-      notifyEnableCheckbox.checked = notifyConfig.enabled;
-      notifyTimeInput.value = notifyConfig.time || '21:00';
-      if ('Notification' in window && Notification.permission !== 'granted') {
-        notifyPermissionNotice.style.display = 'block';
-      } else {
-        notifyPermissionNotice.style.display = 'none';
-      }
-      notifyModal.style.display = 'flex';
-    });
+    notifyStatusBtn.addEventListener('click', window.openNotifyModal);
   }
 
   if (closeNotifyModalBtn) {

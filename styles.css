@@ -950,6 +950,12 @@ body {
   vertical-align: middle;
 }
 
+.header-tools-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* Mobile Responsive Optimizations */
 @media (max-width: 640px) {
   body {
@@ -969,6 +975,14 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .header-tools-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .header-brand {

@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.0.4">
+  <link rel="stylesheet" href="styles.css?v=1.0.5">
 </head>
 <body>
   <div class="app-container">
@@ -26,8 +26,8 @@
             <p class="brand-sub">Mục tiêu: <span id="headerGoalDisplay">150.000đ</span>/ngày <button id="configGoalBtn" class="link-btn">Sửa</button></p>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <button id="notifyStatusBtn" class="icon-tool-btn" title="Cài đặt Nhắc Nhở Tiết Kiệm Hàng Ngày">🔔 Nhắc Nhở</button>
+        <div class="header-tools-row">
+          <button id="notifyStatusBtn" class="icon-tool-btn" onclick="openNotifyModal()" title="Cài đặt Nhắc Nhở Tiết Kiệm Hàng Ngày">🔔 Nhắc Nhở</button>
           <button id="cloudStatusBtn" class="icon-tool-btn cloud-off" title="Trạng thái CSDL Đám mây">☁️ Chưa kết nối Cloud</button>
         </div>
       </div>
@@ -340,7 +340,7 @@ create policy "Users access own entries"
       </div>
     </div>
   <!-- Notification Config Modal -->
-  <div class="modal-overlay" id="notifyModal" style="display: none;">
+  <div class="modal-overlay" id="notifyModal" style="display: none; z-index: 10000;">
     <div class="modal-card" style="max-width: 380px;">
       <div style="font-size: 2.5rem; margin-bottom: 6px; text-align: center;">🔔</div>
       <h3 style="text-align: center; margin-bottom: 4px;">Cài Đặt Nhắc Nhở Hàng Ngày</h3>
@@ -370,6 +370,6 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.0.4"></script>
+  <script src="app.js?v=1.0.5"></script>
 </body>
 </html>
