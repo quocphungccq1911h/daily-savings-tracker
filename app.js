@@ -1532,19 +1532,19 @@ create policy "Public Access" on savings_entries for all using (true) with check
     });
   });
 
-  clearAllBtn.addEventListener('click', () => {
-    if (confirm('⚠️ CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn xóa TOÀN BỘ nhật ký tiết kiệm không? Hành động này không thể hoàn tác!')) {
-      const confirmInput = prompt('Để xác nhận xóa toàn bộ dữ liệu, vui lòng gõ chữ "XÓA" vào ô dưới đây:');
-      if (confirmInput && confirmInput.trim().toUpperCase() === 'XÓA') {
-        entries = [];
-        saveToStorage();
-        refreshAll();
-        alert('Đã xóa toàn bộ nhật ký tiết kiệm!');
-      } else if (confirmInput !== null) {
-        alert('Mã xác nhận không đúng. Đã hủy thao tác xóa.');
-      }
-    }
-  });
+  // clearAllBtn.addEventListener('click', () => {
+  //   if (confirm('⚠️ CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn xóa TOÀN BỘ nhật ký tiết kiệm không? Hành động này không thể hoàn tác!')) {
+  //     const confirmInput = prompt('Để xác nhận xóa toàn bộ dữ liệu, vui lòng gõ chữ "XÓA" vào ô dưới đây:');
+  //     if (confirmInput && confirmInput.trim().toUpperCase() === 'XÓA') {
+  //       entries = [];
+  //       saveToStorage();
+  //       refreshAll();
+  //       alert('Đã xóa toàn bộ nhật ký tiết kiệm!');
+  //     } else if (confirmInput !== null) {
+  //       alert('Mã xác nhận không đúng. Đã hủy thao tác xóa.');
+  //     }
+  //   }
+  // });
 
   filterMonthSelect.addEventListener('change', () => {
     renderDashboard();
