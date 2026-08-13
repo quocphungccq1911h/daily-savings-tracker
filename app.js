@@ -420,9 +420,55 @@
 
   const bannerTitleText = document.getElementById('bannerTitleText');
   const bannerMetaText = document.getElementById('bannerMetaText');
+  const streakBadgeBox = document.getElementById('streakBadgeBox');
+
+  function calculateStreak() {
+    if (!entries || entries.length === 0) return 0;
+
+    const dayTotals = {};
+    entries.forEach(e => {
+      if (e.date) {
+        dayTotals[e.date] = (dayTotals[e.date] || 0) + e.amount;
+      }
+    });
+
+    let streak = 0;
+    const now = new Date();
+    let checkDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const formatDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    
+    let keyToday = formatDateKey(checkDate);
+    
+    if (!dayTotals[keyToday] || dayTotals[keyToday] < dailyGoal) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    while (true) {
+      const key = formatDateKey(checkDate);
+      const dayTotal = dayTotals[key] || 0;
+      if (dayTotal >= dailyGoal) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  }
 
   function renderDashboard() {
     headerGoalDisplay.textContent = formatShortNumber(dailyGoal);
+
+    const streak = calculateStreak();
+    if (streakBadgeBox) {
+      streakBadgeBox.textContent = `🔥 Chuỗi ${streak} ngày`;
+      if (streak >= 3) {
+        streakBadgeBox.className = 'streak-badge active-streak';
+      } else {
+        streakBadgeBox.className = 'streak-badge';
+      }
+    }
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -519,7 +565,6 @@
 
     const realAvgRate = yearTotalSaved / Math.max(1, yearEntries.length || elapsedDays);
     const yearForecast = Math.round(realAvgRate * totalDaysInYear);
-
     yearSavedTotal.textContent = formatShortNumber(yearTotalSaved);
     yearForecastTotal.textContent = formatShortNumber(yearForecast);
 
@@ -527,6 +572,46 @@
     yearProgressBar.style.width = `${yearPct}%`;
     yearPercentText.textContent = `${yearPct}% (${formatShortNumber(yearTarget)})`;
     avgDailyRateText.textContent = `${formatShortNumber(realAvgRate)}/ngày`;
+
+    renderMilestoneBadges();
+  }
+
+  const MILESTONE_BADGES = [
+    { id: 'b1', name: 'Khởi Đầu', amount: 1000000, icon: '🥉' },
+    { id: 'b2', name: 'Tích Lũy', amount: 5000000, icon: '🥈' },
+    { id: 'b3', name: 'Bậc Thầy', amount: 10000000, icon: '🥇' },
+    { id: 'b4', name: 'Triệu Phú', amount: 50000000, icon: '💎' },
+    { id: 'b5', name: 'Đại Phú Hộ', amount: 100000000, icon: '👑' }
+  ];
+
+  function renderMilestoneBadges() {
+    const badgesGridContainer = document.getElementById('badgesGridContainer');
+    const badgesUnlockedCount = document.getElementById('badgesUnlockedCount');
+    if (!badgesGridContainer) return;
+
+    const totalLifetimeSaved = entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+    let unlockedCount = 0;
+
+    const html = MILESTONE_BADGES.map(badge => {
+      const isUnlocked = totalLifetimeSaved >= badge.amount;
+      if (isUnlocked) unlockedCount++;
+
+      return `
+        <div class="badge-item ${isUnlocked ? 'badge-unlocked' : 'badge-locked'}" title="${isUnlocked ? 'Đã đạt mốc ' + formatShortNumber(badge.amount) : 'Cần tích lũy thêm ' + formatShortNumber(badge.amount - totalLifetimeSaved)}">
+          <div class="badge-icon">${badge.icon}</div>
+          <div class="badge-info">
+            <span class="badge-name">${badge.name}</span>
+            <span class="badge-target">${formatShortNumber(badge.amount)}</span>
+            <span class="badge-status-tag">${isUnlocked ? '✓ Đã mở' : '🔒 Khóa'}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    badgesGridContainer.innerHTML = html;
+    if (badgesUnlockedCount) {
+      badgesUnlockedCount.textContent = `${unlockedCount}/${MILESTONE_BADGES.length} Đã Mở`;
+    }
   }
 
   function renderTable() {

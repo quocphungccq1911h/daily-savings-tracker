@@ -91,8 +91,11 @@
         <div class="status-banner" id="statusBanner">
           <div class="banner-header">
             <span class="banner-title" id="bannerTitleText">LŨY KẾ ĐẾN HÔM NAY (<span id="currentDateBadge">--/--</span>)</span>
-            <div class="month-select-wrapper">
-              <select id="filterMonthSelect" class="select-field select-header-month"></select>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="streakBadgeBox" class="streak-badge" title="Số ngày liên tiếp đạt mốc 150k">🔥 Chuỗi 0 ngày</span>
+              <div class="month-select-wrapper">
+                <select id="filterMonthSelect" class="select-field select-header-month"></select>
+              </div>
             </div>
           </div>
           <div class="banner-main">
@@ -140,6 +143,16 @@
             <div class="advice-note">
               Tốc độ thực tế: <strong id="avgDailyRateText">0đ/ngày</strong>
             </div>
+        </div>
+
+        <!-- Milestone Badges Grid -->
+        <div class="mini-card" style="margin-top: 14px;">
+          <div class="mini-card-head" style="margin-bottom: 10px;">
+            <span style="font-size: 0.775rem; font-weight: 700; color: #38bdf8;">🏆 HUY HIỆU THÀNH TÍCH TIẾT KIỆM</span>
+            <span id="badgesUnlockedCount" class="badge-pill pill-info" style="font-size: 0.7rem; padding: 2px 7px;">0/5 Đã Mở</span>
+          </div>
+          <div class="badges-grid" id="badgesGridContainer">
+            <!-- Rendered by JS -->
           </div>
         </div>
 
