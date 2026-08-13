@@ -223,9 +223,16 @@
         <input type="password" id="supabaseKeyInput" class="input-field" placeholder="eyJhbGciOiJIUzI1NiI...">
       </div>
 
-      <div class="sql-box">
-        <div class="sql-box-header">
-          <span>📜 Mã SQL khởi tạo bảng (Copy dán vào SQL Editor trên Supabase):</span>
+      <div class="modal-footer">
+        <button id="saveCloudConfigBtn" class="btn btn-primary">⚡ Lưu & Kết Nối Cloud</button>
+        <button id="disconnectCloudBtn" class="btn btn-ghost text-danger" style="display:none;">Hủy Kết Nối</button>
+        <button id="closeCloudModalBtn" class="btn btn-ghost">Đóng</button>
+      </div>
+
+      <details class="sql-box" style="margin-top: 14px;">
+        <summary style="font-size: 0.775rem; color: var(--text-muted); cursor: pointer; font-weight: 600; padding: 4px 0;">📜 Mã SQL khởi tạo bảng (nếu cần xem)</summary>
+        <div class="sql-box-header" style="margin-top: 8px;">
+          <span>Copy dán vào SQL Editor trên Supabase:</span>
           <button id="copySqlBtn" class="btn-copy">📋 Copy SQL</button>
         </div>
         <pre class="sql-code"><code>create table if not exists savings_entries (
@@ -238,12 +245,22 @@
 
 alter table savings_entries enable row level security;
 create policy "Public Access" on savings_entries for all using (true) with check (true);</code></pre>
-      </div>
+      </details>
+    </div>
+  </div>
 
-      <div class="modal-footer">
-        <button id="saveCloudConfigBtn" class="btn btn-primary">⚡ Lưu & Kết Nối Cloud</button>
-        <button id="disconnectCloudBtn" class="btn btn-ghost text-danger" style="display:none;">Hủy Kết Nối</button>
-        <button id="closeCloudModalBtn" class="btn btn-ghost">Đóng</button>
+  <!-- PIN Unlock Modal -->
+  <div class="modal-overlay" id="pinModal" style="display: none;">
+    <div class="modal-card" style="max-width: 360px; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 8px;">🔐</div>
+      <h3>Mở Khóa Dữ Liệu Cloud</h3>
+      <p class="modal-sub">Nhập mã PIN cá nhân để tự động mở khóa kết nối Cloud:</p>
+      <div class="form-group">
+        <input type="password" id="pinInput" class="input-field text-center" maxlength="10" placeholder="••••" style="letter-spacing: 0.3em; font-size: 1.4rem; font-weight: 800;">
+      </div>
+      <div id="pinErrorMsg" class="text-danger" style="display: none; font-size: 0.8rem; margin-bottom: 10px;">Mã PIN không đúng! Vui lòng thử lại.</div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button id="submitPinBtn" class="btn btn-primary" style="width: 100%;">🔓 Mở Khóa Kết Nối</button>
       </div>
     </div>
   </div>

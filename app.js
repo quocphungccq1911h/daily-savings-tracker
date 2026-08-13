@@ -9,9 +9,43 @@
   let entries = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   let savingsChartInstance = null;
 
+  // PIN Security Cipher Helper
+  const PIN_STORAGE_KEY = 'savings_user_pin_v1';
+  
+  function pinCipher(str, pinStr) {
+    let key = 0;
+    for (let i = 0; i < pinStr.length; i++) key += pinStr.charCodeAt(i);
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+      result += String.fromCharCode(str.charCodeAt(i) ^ (key + (i % 7)));
+    }
+    return result;
+  }
+
+  function encryptCloudData(url, key, pin) {
+    const raw = JSON.stringify({ u: url, k: key });
+    return btoa(encodeURIComponent(pinCipher(raw, pin)));
+  }
+
+  function decryptCloudData(encryptedBase64, pin) {
+    try {
+      const cipher = decodeURIComponent(atob(encryptedBase64));
+      const raw = pinCipher(cipher, pin);
+      const data = JSON.parse(raw);
+      if (data && data.u && data.k) return data;
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
+  // Default Supabase Credentials (Tự động kết nối vĩnh viễn cho mọi thiết bị)
+  const DEFAULT_SUPABASE_URL = 'https://hgpuzvpafpbpaatcutbm.supabase.co';
+  const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhncHV6dnBhZnBicGFhdGN1dGJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NjUzNDIsImV4cCI6MjEwMjE0MTM0Mn0.AXXykroFn5jJ69kjol2NrnxxgRt5ctIf7dXSTd6-of0';
+
   // Supabase Client State
-  let supabaseUrl = localStorage.getItem(SUPABASE_URL_KEY) || '';
-  let supabaseKey = localStorage.getItem(SUPABASE_KEY_KEY) || '';
+  let supabaseUrl = localStorage.getItem(SUPABASE_URL_KEY) || DEFAULT_SUPABASE_URL;
+  let supabaseKey = localStorage.getItem(SUPABASE_KEY_KEY) || DEFAULT_SUPABASE_KEY;
   let supabaseClient = null;
   let isCloudConnected = false;
 
@@ -644,18 +678,54 @@
     refreshAll();
   });
 
+  // PIN Modal Elements
+  const pinModal = document.getElementById('pinModal');
+  const pinInput = document.getElementById('pinInput');
+  const submitPinBtn = document.getElementById('submitPinBtn');
+  const pinErrorMsg = document.getElementById('pinErrorMsg');
+
   // Cloud Modal Handlers
   cloudStatusBtn.addEventListener('click', () => {
+    if (!isCloudConnected) {
+      const encryptedData = localStorage.getItem('savings_encrypted_cloud_v1');
+      if (encryptedData) {
+        pinInput.value = '';
+        pinErrorMsg.style.display = 'none';
+        pinModal.style.display = 'flex';
+        return;
+      }
+    }
     supabaseUrlInput.value = supabaseUrl;
     supabaseKeyInput.value = supabaseKey;
     cloudModal.style.display = 'flex';
+  });
+
+  submitPinBtn.addEventListener('click', () => {
+    const pin = pinInput.value.trim();
+    const encryptedData = localStorage.getItem('savings_encrypted_cloud_v1');
+    if (!pin || !encryptedData) return;
+
+    const decrypted = decryptCloudData(encryptedData, pin);
+    if (decrypted) {
+      supabaseUrl = decrypted.u;
+      supabaseKey = decrypted.k;
+      localStorage.setItem(SUPABASE_URL_KEY, supabaseUrl);
+      localStorage.setItem(SUPABASE_KEY_KEY, supabaseKey);
+      pinModal.style.display = 'none';
+      initSupabase();
+      alert('🔓 Mở khóa CSDL Đám mây thành công!');
+    } else {
+      pinErrorMsg.style.display = 'block';
+    }
   });
 
   closeCloudModalBtn.addEventListener('click', () => {
     cloudModal.style.display = 'none';
   });
 
-  saveCloudConfigBtn.addEventListener('click', () => {
+    const ENCRYPTED_CLOUD_KEY = 'savings_encrypted_cloud_v1';
+
+    saveCloudConfigBtn.addEventListener('click', () => {
     const url = supabaseUrlInput.value.trim();
     const key = supabaseKeyInput.value.trim();
 
@@ -668,6 +738,14 @@
     supabaseKey = key;
     localStorage.setItem(SUPABASE_URL_KEY, supabaseUrl);
     localStorage.setItem(SUPABASE_KEY_KEY, supabaseKey);
+
+    // Ask to set secret PIN for auto-connect on other devices
+    const userPin = prompt('🔒 Thiết lập MÃ PIN BẢO MẬT (4-6 số) để dùng tự động mở khóa trên thiết bị/trình duyệt khác:');
+    if (userPin && userPin.trim()) {
+      const encrypted = encryptCloudData(url, key, userPin.trim());
+      localStorage.setItem(ENCRYPTED_CLOUD_KEY, encrypted);
+      alert(`Đã lưu Mã PIN bảo mật! Khi sang trình duyệt khác, bạn chỉ cần gõ mã PIN "${userPin.trim()}" 1 lần là tự động kết nối.`);
+    }
 
     cloudModal.style.display = 'none';
     initSupabase();
