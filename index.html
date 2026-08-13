@@ -26,6 +26,10 @@
         </div>
       </div>
       <div class="header-tools">
+        <div id="userProfileBadge" class="user-badge-wrap" style="display: none;">
+          <span class="user-email-pill">👤 <strong id="userEmailText">user@gmail.com</strong></span>
+          <button id="signOutBtn" class="btn-signout-compact" title="Đăng xuất khỏi ứng dụng">🚪 Đăng xuất</button>
+        </div>
         <button id="cloudStatusBtn" class="icon-tool-btn cloud-off" title="Trạng thái CSDL Đám mây">☁️ Chưa kết nối Cloud</button>
       </div>
     </header>
@@ -233,18 +237,68 @@
           <span>Copy dán vào SQL Editor trên Supabase:</span>
           <button id="copySqlBtn" class="btn-copy">📋 Copy SQL</button>
         </div>
-        <pre class="sql-code"><code>create table if not exists savings_entries (
+        <pre class="sql-code"><code>-- 1. Tạo bảng và mở rộng cột user_id
+create table if not exists savings_entries (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid default auth.uid(),
   entry_date date not null,
   amount bigint not null,
   note text default 'Thu nhập chạy app',
   created_at timestamptz default now()
 );
 
+-- 2. Thêm cột user_id nếu bảng đã có sẵn
+alter table savings_entries add column if not exists user_id uuid default auth.uid();
 alter table savings_entries drop constraint if exists savings_entries_entry_date_key;
+
+-- 3. Bật phân quyền bảo mật RLS cá nhân (Chỉ chính chủ mới thấy/sửa)
 alter table savings_entries enable row level security;
-create policy "Public Access" on savings_entries for all using (true) with check (true);</code></pre>
+drop policy if exists "Public Access" on savings_entries;
+drop policy if exists "Users access own entries" on savings_entries;
+
+create policy "Users access own entries"
+  on savings_entries for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);</code></pre>
       </details>
+    </div>
+  </div>
+
+  <!-- Supabase User Auth Screen Modal -->
+  <div class="modal-overlay" id="authScreenModal" style="display: flex; z-index: 10000; background: rgba(11, 15, 25, 0.96); backdrop-filter: blur(10px);">
+    <div class="modal-card" style="max-width: 400px; padding: 28px 24px; text-align: center; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);">
+      <div style="font-size: 2.8rem; margin-bottom: 8px;">🔐</div>
+      <h2 id="authTitle" style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Đăng Nhập Sổ Tiết Kiệm</h2>
+      <p id="authSubTitle" class="modal-sub" style="margin-bottom: 18px;">Vui lòng đăng nhập tài khoản cá nhân để xem và lưu dữ liệu bảo mật.</p>
+      
+      <div id="authAlertBox" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 14px; text-align: left;"></div>
+
+      <form id="authForm">
+        <div class="form-group" style="text-align: left;">
+          <label for="authEmailInput">Email cá nhân</label>
+          <input type="email" id="authEmailInput" class="input-field" placeholder="example@gmail.com" required>
+        </div>
+
+        <div class="form-group" style="text-align: left; margin-top: 12px;">
+          <label for="authPasswordInput">Mật khẩu</label>
+          <input type="password" id="authPasswordInput" class="input-field" placeholder="••••••••" required minlength="6">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); text-align: left;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="rememberMeCheckbox" checked style="accent-color: var(--primary); cursor: pointer;"> Ghi nhớ Email & Mật khẩu
+          </label>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button type="submit" id="authSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700; font-size: 0.95rem;">🔑 Đăng Nhập</button>
+        </div>
+      </form>
+
+      <div style="margin-top: 18px; font-size: 0.825rem; color: var(--text-muted);">
+        <span id="authToggleQuestion">Chưa có tài khoản?</span>
+        <button id="toggleAuthModeBtn" class="link-btn" style="color: #38bdf8; font-weight: 700; margin-left: 4px;">Tạo tài khoản mới</button>
+      </div>
     </div>
   </div>
 

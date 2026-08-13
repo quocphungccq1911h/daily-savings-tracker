@@ -90,6 +90,45 @@ body {
   margin-left: 4px;
 }
 
+/* User Profile Badge & Signout Button */
+.user-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-email-pill {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  color: #38bdf8;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-signout-compact {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-signout-compact:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
 .header-tools {
   display: flex;
   gap: 8px;

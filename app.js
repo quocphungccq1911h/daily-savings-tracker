@@ -112,6 +112,109 @@
     return new Intl.NumberFormat('vi-VN').format(Math.round(num)) + ' đ';
   }
 
+  // Auth State & DOM
+  let currentUser = null;
+  let isSignUpMode = false;
+
+  const userProfileBadge = document.getElementById('userProfileBadge');
+  const userEmailText = document.getElementById('userEmailText');
+  const signOutBtn = document.getElementById('signOutBtn');
+
+  const authScreenModal = document.getElementById('authScreenModal');
+  const authTitle = document.getElementById('authTitle');
+  const authSubTitle = document.getElementById('authSubTitle');
+  const authAlertBox = document.getElementById('authAlertBox');
+  const authForm = document.getElementById('authForm');
+  const authEmailInput = document.getElementById('authEmailInput');
+  const authPasswordInput = document.getElementById('authPasswordInput');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authToggleQuestion = document.getElementById('authToggleQuestion');
+  const toggleAuthModeBtn = document.getElementById('toggleAuthModeBtn');
+
+  function showAuthAlert(msg, isError = true) {
+    authAlertBox.style.display = 'block';
+    authAlertBox.style.background = isError ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+    authAlertBox.style.border = isError ? '1px solid #f87171' : '1px solid #34d399';
+    authAlertBox.style.color = isError ? '#fca5a5' : '#a7f3d0';
+    authAlertBox.textContent = msg;
+  }
+
+  function hideAuthAlert() {
+    authAlertBox.style.display = 'none';
+  }
+
+  function toggleAuthMode() {
+    isSignUpMode = !isSignUpMode;
+    hideAuthAlert();
+    if (isSignUpMode) {
+      authTitle.textContent = '📝 Tạo Tài Khoản Mới';
+      authSubTitle.textContent = 'Nhập email và mật khẩu của bạn để đăng ký tài khoản tiết kiệm cá nhân.';
+      authSubmitBtn.textContent = '✨ Đăng Ký Ngay';
+      authToggleQuestion.textContent = 'Đã có tài khoản?';
+      toggleAuthModeBtn.textContent = 'Đăng nhập tại đây';
+    } else {
+      authTitle.textContent = '🔑 Đăng Nhập Sổ Tiết Kiệm';
+      authSubTitle.textContent = 'Vui lòng đăng nhập tài khoản cá nhân để xem và lưu dữ liệu bảo mật.';
+      authSubmitBtn.textContent = '🔑 Đăng Nhập';
+      authToggleQuestion.textContent = 'Chưa có tài khoản?';
+      toggleAuthModeBtn.textContent = 'Tạo tài khoản mới';
+    }
+  }
+
+  async function checkAuthSession() {
+    if (!supabaseClient) return;
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session && session.user) {
+        onUserLoggedIn(session.user);
+      } else {
+        onUserLoggedOut();
+      }
+    } catch (e) {
+      onUserLoggedOut();
+    }
+  }
+
+  function setupAuthListener() {
+    if (!supabaseClient) return;
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session && session.user) {
+        onUserLoggedIn(session.user);
+      } else {
+        onUserLoggedOut();
+      }
+    });
+  }
+
+  const rememberMeCheckbox = document.getElementById('rememberMeCheckbox');
+  const REMEMBER_EMAIL_KEY = 'savings_remembered_email_v1';
+  const REMEMBER_PASS_KEY = 'savings_remembered_pass_v1';
+
+  function fillRememberedCredentials() {
+    const savedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    const savedPass = localStorage.getItem(REMEMBER_PASS_KEY);
+    if (savedEmail && authEmailInput) authEmailInput.value = savedEmail;
+    if (savedPass && authPasswordInput) authPasswordInput.value = savedPass;
+  }
+
+  function onUserLoggedIn(user) {
+    currentUser = user;
+    userEmailText.textContent = user.email;
+    userProfileBadge.style.display = 'flex';
+    authScreenModal.style.display = 'none';
+    fetchFromCloud();
+    subscribeRealtime();
+  }
+
+  function onUserLoggedOut() {
+    currentUser = null;
+    userProfileBadge.style.display = 'none';
+    authScreenModal.style.display = 'flex';
+    fillRememberedCredentials();
+    entries = [];
+    refreshAll();
+  }
+
   // --- SUPABASE ENGINE ---
   function initSupabase(retryCount = 0) {
     supabaseUrl = DEFAULT_SUPABASE_URL;
@@ -123,8 +226,8 @@
         supabaseClient = lib.createClient(supabaseUrl, supabaseKey);
         isCloudConnected = true;
         updateCloudStatusUI(true);
-        fetchFromCloud();
-        subscribeRealtime();
+        checkAuthSession();
+        setupAuthListener();
         return;
       } catch (err) {
         console.error("Supabase init error:", err);
@@ -153,11 +256,12 @@
   }
 
   async function fetchFromCloud() {
-    if (!supabaseClient) return;
+    if (!supabaseClient || !currentUser) return;
     try {
       const { data, error } = await supabaseClient
         .from('savings_entries')
         .select('*')
+        .eq('user_id', currentUser.id)
         .order('entry_date', { ascending: false });
 
       if (error) throw error;
@@ -178,11 +282,11 @@
   }
 
   function subscribeRealtime() {
-    if (!supabaseClient) return;
+    if (!supabaseClient || !currentUser) return;
     try {
       supabaseClient
         .channel('public:savings_entries')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'savings_entries' }, () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'savings_entries', filter: `user_id=eq.${currentUser.id}` }, () => {
           fetchFromCloud();
         })
         .subscribe();
@@ -202,9 +306,10 @@
   }
 
   async function syncSaveToCloud(entryItem) {
-    if (!supabaseClient) return;
+    if (!supabaseClient || !currentUser) return;
     try {
       const payload = {
+        user_id: currentUser.id,
         entry_date: entryItem.date,
         amount: entryItem.amount,
         note: entryItem.note
@@ -903,6 +1008,76 @@ create policy "Public Access" on savings_entries for all using (true) with check
     if (tabChartContent.style.display !== 'none') {
       renderChart();
     }
+  }
+
+  // Auth Form Listener
+  if (authForm) {
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = authEmailInput.value.trim();
+      const password = authPasswordInput.value.trim();
+
+      if (!email || !password) return;
+      if (!supabaseClient) {
+        showAuthAlert('Chưa khởi tạo kết nối Cloud! Vui lòng làm mới trang.');
+        return;
+      }
+
+      authSubmitBtn.disabled = true;
+      authSubmitBtn.textContent = '⏳ Đang xử lý...';
+
+      if (isSignUpMode) {
+        // Sign Up
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = '✨ Đăng Ký Ngay';
+
+        if (error) {
+          showAuthAlert(error.message);
+        } else if (data && data.user) {
+          if (rememberMeCheckbox && rememberMeCheckbox.checked) {
+            localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+            localStorage.setItem(REMEMBER_PASS_KEY, password);
+          }
+          if (data.session) {
+            showAuthAlert('🎉 Tạo tài khoản và đăng nhập thành công!', false);
+          } else {
+            showAuthAlert('🎉 Đã tạo tài khoản! Vui lòng chuyển sang tab Đăng Nhập để vào ứng dụng.', false);
+          }
+        }
+      } else {
+        // Sign In
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = '🔑 Đăng Nhập';
+
+        if (error) {
+          showAuthAlert('Đăng nhập thất bại: ' + (error.message === 'Invalid login credentials' ? 'Email hoặc mật khẩu không đúng!' : error.message));
+        } else if (data && data.user) {
+          if (rememberMeCheckbox && rememberMeCheckbox.checked) {
+            localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+            localStorage.setItem(REMEMBER_PASS_KEY, password);
+          } else {
+            localStorage.removeItem(REMEMBER_EMAIL_KEY);
+            localStorage.removeItem(REMEMBER_PASS_KEY);
+          }
+          onUserLoggedIn(data.user);
+        }
+      }
+    });
+  }
+
+  if (toggleAuthModeBtn) {
+    toggleAuthModeBtn.addEventListener('click', toggleAuthMode);
+  }
+
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', async () => {
+      if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?')) {
+        if (supabaseClient) await supabaseClient.auth.signOut();
+        onUserLoggedOut();
+      }
+    });
   }
 
   // App Initialize
