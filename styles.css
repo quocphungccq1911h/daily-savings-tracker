@@ -843,6 +843,13 @@ body {
   align-items: center;
 }
 
+@media (max-width: 900px) {
+  .charts-grid-wrapper {
+    grid-template-columns: 1fr !important;
+    gap: 24px;
+  }
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;
