@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sổ Tiết Kiệm Daily - Quản Lý & Báo Cáo Tiết Kiệm Hàng Ngày</title>
+  <title>Sổ Tiết Kiệm Daily</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,221 +12,190 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Header -->
+    
+    <!-- Minimalist Header -->
     <header class="app-header">
-      <div class="logo-group">
-        <div class="logo-icon">💰</div>
+      <div class="header-brand">
+        <span class="brand-icon">💰</span>
         <div>
           <h1>Sổ Tiết Kiệm Daily</h1>
-          <p class="subtitle">Quản lý & Báo cáo Tiến độ Tiết kiệm Thông minh</p>
+          <p class="brand-sub">Mục tiêu: <span id="headerGoalDisplay">150.000đ</span>/ngày <button id="configGoalBtn" class="link-btn">Sửa</button></p>
         </div>
       </div>
-      <div class="header-actions">
-        <button id="configGoalBtn" class="btn btn-secondary">
-          <span>⚙️ Mục tiêu: <strong id="headerGoalDisplay">150.000đ</strong>/ngày</span>
-        </button>
-        <button id="exportDataBtn" class="btn btn-outline" title="Xuất dữ liệu dự phòng">📥 Xuất File</button>
-        <button id="importDataBtn" class="btn btn-outline" title="Nhập dữ liệu từ file">📤 Nhập File</button>
+      <div class="header-tools">
+        <button id="exportDataBtn" class="icon-tool-btn" title="Xuất file sao lưu">📥 Tải file</button>
+        <button id="importDataBtn" class="icon-tool-btn" title="Nhập file sao lưu">📤 Nạp file</button>
         <input type="file" id="importFileInput" accept=".json" style="display: none;">
       </div>
     </header>
 
-    <!-- Top Notice / Database Explanation banner -->
-    <div class="db-notice-banner">
-      <span class="notice-icon">🔒</span>
-      <div class="notice-content">
-        <strong>Lưu trữ an toàn 100% trên thiết bị của bạn (LocalStorage):</strong> Dữ liệu tự động lưu trực tiếp trong trình duyệt máy tính/điện thoại này mà không cần đăng ký tài khoản hay thuê CSDL. Bạn có thể bấm <b>"Xuất File"</b> để sao lưu về máy bất cứ lúc nào!
-      </div>
-    </div>
+    <!-- Main Grid Layout -->
+    <main class="dashboard-grid">
 
-    <!-- Main Dashboard Metrics -->
-    <section class="metrics-grid">
-      <!-- Card 1: Tiến độ tính đến hôm nay trong tháng -->
-      <div class="metric-card card-primary">
-        <div class="card-head">
-          <span class="card-label">HÔM NAY TÍNH ĐẾN HIỆN TẠI</span>
-          <span class="card-badge" id="currentDateBadge">13/08/2026</span>
-        </div>
-        <div class="card-body">
-          <div class="main-stat" id="statusPaceAmount">0 đ</div>
-          <div class="stat-status-pill" id="statusPacePill">Đang tính toán...</div>
-        </div>
-        <div class="card-foot">
-          <span>Mục tiêu lũy kế đến hôm nay: <strong id="cumulativeTargetDisplay">0 đ</strong></span>
-        </div>
-      </div>
-
-      <!-- Card 2: Tổng hợp Tháng hiện tại -->
-      <div class="metric-card">
-        <div class="card-head">
-          <span class="card-label">TIẾN ĐỘ THÁNG NÀY</span>
-          <span class="month-name-tag" id="currentMonthName">Tháng 8/2026</span>
-        </div>
-        <div class="card-body">
-          <div class="stat-row">
-            <div>
-              <span class="sub-label">Đã tiết kiệm</span>
-              <div class="stat-value text-success" id="monthSavedTotal">0 đ</div>
-            </div>
-            <div class="text-right">
-              <span class="sub-label">Mục tiêu tháng</span>
-              <div class="stat-value" id="monthTargetTotal">4.650.000 đ</div>
-            </div>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar" id="monthProgressBar" style="width: 0%;"></div>
-          </div>
-          <div class="progress-info">
-            <span id="monthPercentText">0% mục tiêu</span>
-            <span id="monthRemainingNeed">Còn cần: 0 đ</span>
-          </div>
-        </div>
-        <div class="card-foot accent-foot" id="monthDailyAdvice">
-          Gợi ý: Cần trung bình <strong>150.000đ/ngày</strong> cho các ngày còn lại.
-        </div>
-      </div>
-
-      <!-- Card 3: Tiến độ & Dự báo Năm -->
-      <div class="metric-card">
-        <div class="card-head">
-          <span class="card-label">DỰ BÁO & TIẾN ĐỘ CẢ NĂM</span>
-          <span class="year-name-tag" id="currentYearName">Năm 2026</span>
-        </div>
-        <div class="card-body">
-          <div class="stat-row">
-            <div>
-              <span class="sub-label">Tổng đã tích lũy</span>
-              <div class="stat-value text-gold" id="yearSavedTotal">0 đ</div>
-            </div>
-            <div class="text-right">
-              <span class="sub-label">Dự báo cả năm</span>
-              <div class="stat-value text-info" id="yearForecastTotal">0 đ</div>
-            </div>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar bar-gold" id="yearProgressBar" style="width: 0%;"></div>
-          </div>
-          <div class="progress-info">
-            <span id="yearPercentText">0% kế hoạch năm (54.750.000đ)</span>
-          </div>
-        </div>
-        <div class="card-foot">
-          Tốc độ thực tế trung bình: <strong id="avgDailyRateText">0 đ/ngày</strong>
-        </div>
-      </div>
-    </section>
-
-    <!-- Main Content Area: Form & Table -->
-    <div class="main-layout">
-      <!-- Form Ghi Nhận Tiết Kiệm -->
-      <section class="form-section card-box">
-        <h2 class="section-title">
-          <span>✍️ Ghi Nhận Tiết Kiệm</span>
-        </h2>
+      <!-- LEFT COLUMN: Quick Entry Form -->
+      <section class="card-hero">
+        <h2 class="card-title">✍️ Nhập Tiết Kiệm</h2>
         <form id="savingsForm">
           <input type="hidden" id="entryId">
           
-          <div class="form-group">
-            <label for="entryDate">Ngày tiết kiệm</label>
-            <input type="date" id="entryDate" class="form-control" required>
-          </div>
-
-          <div class="form-group">
-            <label for="entryAmount">Số tiền đã tiết kiệm (VNĐ)</label>
-            <div class="amount-input-wrapper">
-              <input type="number" id="entryAmount" class="form-control amount-input" placeholder="Ví dụ: 150000" min="0" step="1000" required>
-              <span class="currency-unit">đ</span>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="entryDate">Ngày chọn</label>
+              <input type="date" id="entryDate" class="input-field" required>
             </div>
           </div>
 
-          <!-- Nút chọn nhanh số tiền -->
-          <div class="quick-presets">
-            <span class="preset-label">Chọn nhanh:</span>
-            <button type="button" class="preset-btn" data-val="50000">+50k</button>
-            <button type="button" class="preset-btn" data-val="100000">+100k</button>
-            <button type="button" class="preset-btn active" data-val="150000">+150k</button>
-            <button type="button" class="preset-btn" data-val="200000">+200k</button>
+          <div class="form-group">
+            <label for="entryAmount">Số tiền tiết kiệm (VNĐ)</label>
+            <div class="input-money-group">
+              <input type="number" id="entryAmount" class="input-field money-input" placeholder="150000" min="0" step="1000" required>
+              <span class="money-unit">đ</span>
+            </div>
           </div>
 
-          <!-- Realtime Preview of Entry vs Goal -->
-          <div class="entry-preview" id="entryPreviewBox">
-            <div class="preview-row">
-              <span>Mục tiêu ngày: <strong id="prevTarget">150.000đ</strong></span>
-              <span id="prevStatusTag" class="status-tag tag-equal">Đạt mục tiêu</span>
-            </div>
-            <div class="preview-detail" id="prevDetailText">Đúng kế hoạch! (0%)</div>
+          <!-- Quick Amount Chips -->
+          <div class="chip-group">
+            <button type="button" class="chip-btn" data-val="50000">+50k</button>
+            <button type="button" class="chip-btn" data-val="100000">+100k</button>
+            <button type="button" class="chip-btn active" data-val="150000">+150k</button>
+            <button type="button" class="chip-btn" data-val="200000">+200k</button>
+          </div>
+
+          <!-- Live Comparison Badge -->
+          <div class="live-badge" id="entryPreviewBox">
+            <span id="prevStatusTag" class="badge-pill pill-info">Đúng kế hoạch</span>
+            <span id="prevDetailText" class="badge-desc">Đạt 150.000đ (0%)</span>
           </div>
 
           <div class="form-group">
-            <label for="entryNote">Ghi chú (Không bắt buộc)</label>
-            <input type="text" id="entryNote" class="form-control" placeholder="Ví dụ: Nhịn cà phê, thanh toán dư tiền mua sắm...">
+            <input type="text" id="entryNote" class="input-field input-sm" placeholder="Ghi chú thêm..." value="Thu nhập chạy app">
           </div>
 
-          <div class="form-actions">
-            <button type="submit" id="saveBtn" class="btn btn-primary btn-block">💾 Lưu Tiết Kiệm Ngày Này</button>
-            <button type="button" id="cancelEditBtn" class="btn btn-secondary btn-block" style="display: none;">Hủy sửa</button>
+          <div class="btn-group">
+            <button type="submit" id="saveBtn" class="btn btn-primary">Lưu Tiết Kiệm</button>
+            <button type="button" id="cancelEditBtn" class="btn btn-ghost" style="display: none;">Hủy</button>
           </div>
         </form>
       </section>
 
-      <!-- Biểu Đồ & Bảng Nhật Ký -->
-      <section class="details-section">
-        <!-- Visual Chart Card -->
-        <div class="card-box chart-card">
-          <div class="card-box-header">
-            <h3>📈 Biểu Đồ Tiết Kiệm So Với Mục Tiêu (150k/Ngày)</h3>
-            <select id="chartMonthSelect" class="form-control select-sm"></select>
+      <!-- RIGHT COLUMN: Clean Overview Stats & Target Progress -->
+      <section class="overview-section">
+
+        <!-- Today / Current Month Status Banner -->
+        <div class="status-banner" id="statusBanner">
+          <div class="banner-header">
+            <span class="banner-title">LŨY KẾ ĐẾN HÔM NAY (<span id="currentDateBadge">--/--</span>)</span>
+            <span class="banner-month" id="currentMonthName">Tháng --</span>
           </div>
-          <div class="chart-wrapper">
-            <canvas id="savingsChart"></canvas>
+          <div class="banner-main">
+            <div class="banner-val" id="statusPaceAmount">0 đ</div>
+            <div class="banner-sub" id="statusPacePill">Đang tính toán...</div>
+          </div>
+          <div class="banner-meta">
+            <span>Mục tiêu lũy kế đến nay: <strong id="cumulativeTargetDisplay">0 đ</strong></span>
           </div>
         </div>
 
-        <!-- Bảng Chi Tiết Theo Ngày -->
-        <div class="card-box table-card">
-          <div class="card-box-header">
-            <h3>📋 Nhật Ký Tiết Kiệm Chi Tiết</h3>
-            <div class="table-filters">
-              <select id="filterMonthSelect" class="form-control select-sm"></select>
-              <button id="clearAllBtn" class="btn btn-danger-outline btn-sm">Xóa tất cả</button>
+        <!-- Month & Year Progress Cards Row -->
+        <div class="cards-row">
+          <!-- Month Card -->
+          <div class="mini-card">
+            <div class="mini-card-head">
+              <span>TIẾN ĐỘ THÁNG</span>
+              <strong id="monthSavedTotal" class="text-success">0 đ</strong>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="monthProgressBar" style="width: 0%;"></div>
+            </div>
+            <div class="mini-card-foot">
+              <span id="monthPercentText">0% mục tiêu</span>
+              <span id="monthRemainingNeed">Cần: 0đ</span>
+            </div>
+            <div class="advice-note" id="monthDailyAdvice">
+              Cần ~150k/ngày cho các ngày còn lại.
             </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th>Số tiền đã lưu</th>
-                  <th>Chênh lệch vs 150k</th>
-                  <th>% So với kỳ vọng</th>
-                  <th>Trạng thái</th>
-                  <th>Ghi chú</th>
-                  <th class="text-center">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="savingsTableBody">
-                <!-- Dynamic rows populated via JS -->
-              </tbody>
-            </table>
+          <!-- Year Card -->
+          <div class="mini-card">
+            <div class="mini-card-head">
+              <span>TIẾN ĐỘ CẢ NĂM</span>
+              <strong id="yearSavedTotal" class="text-gold">0 đ</strong>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill fill-gold" id="yearProgressBar" style="width: 0%;"></div>
+            </div>
+            <div class="mini-card-foot">
+              <span id="yearPercentText">0% kế hoạch</span>
+              <span>Dự báo: <strong id="yearForecastTotal">0đ</strong></span>
+            </div>
+            <div class="advice-note">
+              Tốc độ thực tế: <strong id="avgDailyRateText">0đ/ngày</strong>
+            </div>
           </div>
         </div>
+
       </section>
-    </div>
+
+    </main>
+
+    <!-- Bottom Section: Minimal Tab View for History & Chart -->
+    <section class="bottom-card">
+      <div class="bottom-card-header">
+        <div class="tab-buttons">
+          <button class="tab-btn active" id="tabHistoryBtn">📋 Nhật ký tiết kiệm</button>
+          <button class="tab-btn" id="tabChartBtn">📈 Biểu đồ xu hướng</button>
+        </div>
+        <div class="tab-controls">
+          <select id="filterMonthSelect" class="select-field"></select>
+          <button id="clearAllBtn" class="btn-text-danger">Xóa tất cả</button>
+        </div>
+      </div>
+
+      <!-- Tab Content 1: History Table -->
+      <div id="tabHistoryContent" class="tab-content active">
+        <div class="table-wrap">
+          <table class="minimal-table">
+            <thead>
+              <tr>
+                <th>Ngày</th>
+                <th>Số tiền</th>
+                <th>So với 150k</th>
+                <th>% Kỳ vọng</th>
+                <th>Trạng thái</th>
+                <th>Ghi chú</th>
+                <th class="text-right">Sửa / Xóa</th>
+              </tr>
+            </thead>
+            <tbody id="savingsTableBody">
+              <!-- Dynamically rendered rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Chart View -->
+      <div id="tabChartContent" class="tab-content" style="display: none;">
+        <div class="chart-container">
+          <canvas id="savingsChart"></canvas>
+        </div>
+      </div>
+
+    </section>
+
   </div>
 
-  <!-- Modal Đổi Mục Tiêu Ngày -->
-  <div class="modal-backdrop" id="goalModal" style="display: none;">
-    <div class="modal-box">
-      <h3>⚙️ Thao tác Cấu Hình Mục Tiêu</h3>
-      <p class="modal-desc">Bạn muốn thiết lập mục tiêu tiết kiệm trung bình mỗi ngày là bao nhiêu?</p>
+  <!-- Goal Configuration Modal -->
+  <div class="modal-overlay" id="goalModal" style="display: none;">
+    <div class="modal-card">
+      <h3>⚙️ Đổi Mục Tiêu Hàng Ngày</h3>
+      <p class="modal-sub">Nhập số tiền bạn muốn tiết kiệm trung bình mỗi ngày:</p>
       <div class="form-group">
-        <label for="modalGoalInput">Mục tiêu tiết kiệm hàng ngày (VNĐ)</label>
-        <input type="number" id="modalGoalInput" class="form-control" value="150000" min="10000" step="10000">
+        <input type="number" id="modalGoalInput" class="input-field" value="150000" min="10000" step="10000">
       </div>
-      <div class="modal-actions">
+      <div class="modal-footer">
         <button id="saveGoalModalBtn" class="btn btn-primary">Lưu Thay Đổi</button>
-        <button id="closeGoalModalBtn" class="btn btn-secondary">Đóng</button>
+        <button id="closeGoalModalBtn" class="btn btn-ghost">Hủy</button>
       </div>
     </div>
   </div>
