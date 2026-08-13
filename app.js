@@ -584,33 +584,49 @@
     { id: 'b5', name: 'Đại Phú Hộ', amount: 100000000, icon: '👑' }
   ];
 
+  const tabBadgesBtn = document.getElementById('tabBadgesBtn');
+  const tabBadgesContent = document.getElementById('tabBadgesContent');
+  const badgesUnlockedBadge = document.getElementById('badgesUnlockedBadge');
+  const lifetimeTotalDisplay = document.getElementById('lifetimeTotalDisplay');
+
   function renderMilestoneBadges() {
     const badgesGridContainer = document.getElementById('badgesGridContainer');
-    const badgesUnlockedCount = document.getElementById('badgesUnlockedCount');
     if (!badgesGridContainer) return;
 
     const totalLifetimeSaved = entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+    if (lifetimeTotalDisplay) lifetimeTotalDisplay.textContent = formatShortNumber(totalLifetimeSaved);
+
     let unlockedCount = 0;
 
     const html = MILESTONE_BADGES.map(badge => {
       const isUnlocked = totalLifetimeSaved >= badge.amount;
       if (isUnlocked) unlockedCount++;
 
+      const pct = Math.min(100, Math.round((totalLifetimeSaved / badge.amount) * 100));
+
       return `
-        <div class="badge-item ${isUnlocked ? 'badge-unlocked' : 'badge-locked'}" title="${isUnlocked ? 'Đã đạt mốc ' + formatShortNumber(badge.amount) : 'Cần tích lũy thêm ' + formatShortNumber(badge.amount - totalLifetimeSaved)}">
-          <div class="badge-icon">${badge.icon}</div>
-          <div class="badge-info">
-            <span class="badge-name">${badge.name}</span>
-            <span class="badge-target">${formatShortNumber(badge.amount)}</span>
-            <span class="badge-status-tag">${isUnlocked ? '✓ Đã mở' : '🔒 Khóa'}</span>
+        <div class="badge-tab-card ${isUnlocked ? 'badge-unlocked' : 'badge-locked'}">
+          <div class="badge-card-top">
+            <div class="badge-card-icon">${badge.icon}</div>
+            <div class="badge-card-title">
+              <span class="badge-card-name">${badge.name}</span>
+              <span class="badge-card-target">Mục tiêu: ${formatShortNumber(badge.amount)}</span>
+            </div>
+          </div>
+          <div class="badge-progress-track">
+            <div class="badge-progress-fill" style="width: ${pct}%;"></div>
+          </div>
+          <div class="badge-card-foot">
+            <span class="badge-card-status">${isUnlocked ? '🎉 ✓ Đã Hoàn Thành' : '🔒 Khóa (' + pct + '%)'}</span>
+            <span style="color: var(--text-muted); font-size: 0.68rem;">${isUnlocked ? formatShortNumber(badge.amount) : 'Thiếu ' + formatShortNumber(badge.amount - totalLifetimeSaved)}</span>
           </div>
         </div>
       `;
     }).join('');
 
     badgesGridContainer.innerHTML = html;
-    if (badgesUnlockedCount) {
-      badgesUnlockedCount.textContent = `${unlockedCount}/${MILESTONE_BADGES.length} Đã Mở`;
+    if (badgesUnlockedBadge) {
+      badgesUnlockedBadge.textContent = `${unlockedCount}/${MILESTONE_BADGES.length}`;
     }
   }
 
@@ -936,17 +952,33 @@
   tabHistoryBtn.addEventListener('click', () => {
     tabHistoryBtn.classList.add('active');
     tabChartBtn.classList.remove('active');
+    if (tabBadgesBtn) tabBadgesBtn.classList.remove('active');
     tabHistoryContent.style.display = 'block';
     tabChartContent.style.display = 'none';
+    if (tabBadgesContent) tabBadgesContent.style.display = 'none';
   });
 
   tabChartBtn.addEventListener('click', () => {
     tabChartBtn.classList.add('active');
     tabHistoryBtn.classList.remove('active');
+    if (tabBadgesBtn) tabBadgesBtn.classList.remove('active');
     tabHistoryContent.style.display = 'none';
     tabChartContent.style.display = 'block';
+    if (tabBadgesContent) tabBadgesContent.style.display = 'none';
     renderChart();
   });
+
+  if (tabBadgesBtn) {
+    tabBadgesBtn.addEventListener('click', () => {
+      tabBadgesBtn.classList.add('active');
+      tabHistoryBtn.classList.remove('active');
+      tabChartBtn.classList.remove('active');
+      tabHistoryContent.style.display = 'none';
+      tabChartContent.style.display = 'none';
+      tabBadgesContent.style.display = 'block';
+      renderMilestoneBadges();
+    });
+  }
 
   // Goal Modal
   configGoalBtn.addEventListener('click', () => {

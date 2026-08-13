@@ -145,27 +145,17 @@
             </div>
         </div>
 
-        <!-- Milestone Badges Grid -->
-        <div class="mini-card" style="margin-top: 14px;">
-          <div class="mini-card-head" style="margin-bottom: 10px;">
-            <span style="font-size: 0.775rem; font-weight: 700; color: #38bdf8;">🏆 HUY HIỆU THÀNH TÍCH TIẾT KIỆM</span>
-            <span id="badgesUnlockedCount" class="badge-pill pill-info" style="font-size: 0.7rem; padding: 2px 7px;">0/5 Đã Mở</span>
-          </div>
-          <div class="badges-grid" id="badgesGridContainer">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
       </section>
 
     </main>
 
-    <!-- Bottom Section: Minimal Tab View for History & Chart -->
+    <!-- Bottom Section: Tab View for History, Chart & Badges -->
     <section class="bottom-card">
       <div class="bottom-card-header">
         <div class="tab-buttons">
           <button class="tab-btn active" id="tabHistoryBtn">📋 Nhật ký tiết kiệm</button>
           <button class="tab-btn" id="tabChartBtn">📈 Biểu đồ xu hướng</button>
+          <button class="tab-btn" id="tabBadgesBtn">🏆 Huy hiệu thành tích <span id="badgesUnlockedBadge" class="badge-pill pill-info" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 3px;">0/5</span></button>
         </div>
       </div>
 
@@ -195,6 +185,19 @@
       <div id="tabChartContent" class="tab-content" style="display: none;">
         <div class="chart-container">
           <canvas id="savingsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Milestone Badges -->
+      <div id="tabBadgesContent" class="tab-content" style="display: none;">
+        <div class="badges-tab-wrap" style="padding: 12px 4px;">
+          <div style="font-size: 0.825rem; font-weight: 700; color: #38bdf8; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span>🏆 DANH SÁCH HUY HIỆU & THÀNH TÍCH ĐẠT ĐƯỢC:</span>
+            <span style="font-size: 0.775rem; color: var(--text-muted);">Tổng tiết kiệm toàn thời gian: <strong id="lifetimeTotalDisplay" style="color: #34d399;">0 đ</strong></span>
+          </div>
+          <div class="badges-grid-tab" id="badgesGridContainer">
+            <!-- Rendered by JS -->
+          </div>
         </div>
       </div>
 
