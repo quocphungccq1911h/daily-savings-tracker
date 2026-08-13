@@ -1,11 +1,19 @@
-// Sổ Tiết Kiệm Daily - Minimalist Version
+// Sổ Tiết Kiệm Daily - Cloud (Supabase) + LocalStorage Hybrid Engine
 (function () {
   const STORAGE_KEY = 'savings_tracker_entries_v1';
   const GOAL_STORAGE_KEY = 'savings_tracker_daily_goal_v1';
+  const SUPABASE_URL_KEY = 'savings_supabase_url_v1';
+  const SUPABASE_KEY_KEY = 'savings_supabase_key_v1';
 
   let dailyGoal = parseInt(localStorage.getItem(GOAL_STORAGE_KEY)) || 150000;
   let entries = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   let savingsChartInstance = null;
+
+  // Supabase Client State
+  let supabaseUrl = localStorage.getItem(SUPABASE_URL_KEY) || '';
+  let supabaseKey = localStorage.getItem(SUPABASE_KEY_KEY) || '';
+  let supabaseClient = null;
+  let isCloudConnected = false;
 
   // DOM Elements
   const headerGoalDisplay = document.getElementById('headerGoalDisplay');
@@ -56,6 +64,16 @@
   const saveGoalModalBtn = document.getElementById('saveGoalModalBtn');
   const closeGoalModalBtn = document.getElementById('closeGoalModalBtn');
 
+  // Cloud Modal DOM
+  const cloudStatusBtn = document.getElementById('cloudStatusBtn');
+  const cloudModal = document.getElementById('cloudModal');
+  const supabaseUrlInput = document.getElementById('supabaseUrlInput');
+  const supabaseKeyInput = document.getElementById('supabaseKeyInput');
+  const saveCloudConfigBtn = document.getElementById('saveCloudConfigBtn');
+  const disconnectCloudBtn = document.getElementById('disconnectCloudBtn');
+  const closeCloudModalBtn = document.getElementById('closeCloudModalBtn');
+  const copySqlBtn = document.getElementById('copySqlBtn');
+
   // Backup DOM
   const exportDataBtn = document.getElementById('exportDataBtn');
   const importDataBtn = document.getElementById('importDataBtn');
@@ -65,18 +83,117 @@
     return new Intl.NumberFormat('vi-VN').format(Math.round(num)) + ' đ';
   }
 
+  // --- SUPABASE ENGINE ---
+  function initSupabase() {
+    if (supabaseUrl && supabaseKey && window.supabase) {
+      try {
+        supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+        isCloudConnected = true;
+        updateCloudStatusUI(true);
+        fetchFromCloud();
+        subscribeRealtime();
+      } catch (err) {
+        console.error("Supabase init error:", err);
+        isCloudConnected = false;
+        updateCloudStatusUI(false);
+      }
+    } else {
+      isCloudConnected = false;
+      updateCloudStatusUI(false);
+    }
+  }
+
+  function updateCloudStatusUI(connected) {
+    if (connected) {
+      cloudStatusBtn.className = 'icon-tool-btn cloud-on';
+      cloudStatusBtn.innerHTML = '☁️ Cloud: Đã kết nối';
+      disconnectCloudBtn.style.display = 'inline-block';
+    } else {
+      cloudStatusBtn.className = 'icon-tool-btn cloud-off';
+      cloudStatusBtn.innerHTML = '☁️ Chưa kết nối Cloud';
+      disconnectCloudBtn.style.display = 'none';
+    }
+  }
+
+  async function fetchFromCloud() {
+    if (!supabaseClient) return;
+    try {
+      const { data, error } = await supabaseClient
+        .from('savings_entries')
+        .select('*')
+        .order('entry_date', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && Array.isArray(data)) {
+        entries = data.map(item => ({
+          id: item.id,
+          date: item.entry_date,
+          amount: parseInt(item.amount),
+          note: item.note || ''
+        }));
+        saveToStorage();
+        refreshAll();
+      }
+    } catch (err) {
+      console.warn("Cloud fetch warning (using LocalStorage):", err.message);
+    }
+  }
+
+  function subscribeRealtime() {
+    if (!supabaseClient) return;
+    try {
+      supabaseClient
+        .channel('public:savings_entries')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'savings_entries' }, () => {
+          fetchFromCloud();
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn("Realtime sub error:", err);
+    }
+  }
+
+  async function syncSaveToCloud(entryItem) {
+    if (!supabaseClient) return;
+    try {
+      await supabaseClient
+        .from('savings_entries')
+        .upsert({
+          entry_date: entryItem.date,
+          amount: entryItem.amount,
+          note: entryItem.note
+        }, { onConflict: 'entry_date' });
+    } catch (err) {
+      console.error("Cloud save error:", err);
+    }
+  }
+
+  async function syncDeleteFromCloud(entryDateVal) {
+    if (!supabaseClient) return;
+    try {
+      await supabaseClient
+        .from('savings_entries')
+        .delete()
+        .eq('entry_date', entryDateVal);
+    } catch (err) {
+      console.error("Cloud delete error:", err);
+    }
+  }
+
+  // --- LOCAL DATA ENGINE ---
   function seedInitialSampleData() {
-    if (entries.length === 0) {
+    if (entries.length === 0 && !isCloudConnected) {
       const today = new Date();
       const currentYear = today.getFullYear();
       const currentMonthStr = String(today.getMonth() + 1).padStart(2, '0');
 
       entries = [
-        { id: 'sample-1', date: `${currentYear}-${currentMonthStr}-01`, amount: 140000, note: 'Khởi đầu tháng (nhẹ hơn target 10k)' },
-        { id: 'sample-2', date: `${currentYear}-${currentMonthStr}-02`, amount: 160000, note: 'Dư 10k bù ngày 1' },
-        { id: 'sample-3', date: `${currentYear}-${currentMonthStr}-03`, amount: 150000, note: 'Đúng 150k' },
-        { id: 'sample-4', date: `${currentYear}-${currentMonthStr}-04`, amount: 150000, note: 'Đúng 150k' },
-        { id: 'sample-5', date: `${currentYear}-${currentMonthStr}-05`, amount: 200000, note: 'Thưởng nhẹ +50k' },
+        { id: 'sample-1', date: `${currentYear}-${currentMonthStr}-01`, amount: 140000, note: 'Khởi đầu tháng' },
+        { id: 'sample-2', date: `${currentYear}-${currentMonthStr}-02`, amount: 160000, note: 'Thu nhập chạy app' },
+        { id: 'sample-3', date: `${currentYear}-${currentMonthStr}-03`, amount: 150000, note: 'Thu nhập chạy app' },
+        { id: 'sample-4', date: `${currentYear}-${currentMonthStr}-04`, amount: 150000, note: 'Thu nhập chạy app' },
+        { id: 'sample-5', date: `${currentYear}-${currentMonthStr}-05`, amount: 200000, note: 'Thu nhập chạy app (+50k)' },
       ];
       saveToStorage();
     }
@@ -141,6 +258,9 @@
     }
   }
 
+  const bannerTitleText = document.getElementById('bannerTitleText');
+  const bannerMetaText = document.getElementById('bannerMetaText');
+
   function renderDashboard() {
     headerGoalDisplay.textContent = formatShortNumber(dailyGoal);
 
@@ -148,16 +268,14 @@
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
     const currentDay = now.getDate();
+    const currentMonthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
-    currentDateBadge.textContent = `${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')}`;
-    currentMonthName.textContent = `Tháng ${currentMonth}/${currentYear}`;
+    const selectedMonthKey = filterMonthSelect.value || currentMonthKey;
+    const [selectedYear, selectedMonth] = selectedMonthKey.split('-').map(Number);
+    const isCurrentMonth = (selectedMonthKey === currentMonthKey);
 
-    const currentMonthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-    const monthEntries = entries.filter(e => e.date && e.date.startsWith(currentMonthPrefix));
-
-    const totalDaysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-    const cumulativeTargetToToday = currentDay * dailyGoal;
-    cumulativeTargetDisplay.textContent = formatShortNumber(cumulativeTargetToToday);
+    const monthEntries = entries.filter(e => e.date && e.date.startsWith(selectedMonthKey));
+    const totalDaysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
 
     let monthTotalSaved = 0;
     let savedUpToToday = 0;
@@ -170,21 +288,41 @@
       }
     });
 
-    // Banner Status
-    const paceDiff = savedUpToToday - cumulativeTargetToToday;
-    if (paceDiff >= 0) {
-      statusPaceAmount.textContent = paceDiff === 0 ? 'Đúng Kế Hoạch' : `+${formatShortNumber(paceDiff)}`;
-      statusPaceAmount.className = 'banner-val text-success';
-      statusPacePill.textContent = paceDiff === 0 ? 'Vừa đủ mục tiêu đến nay' : `Dư +${formatShortNumber(paceDiff)} so với lũy kế`;
+    const monthTarget = totalDaysInMonth * dailyGoal;
+
+    if (isCurrentMonth) {
+      const cumulativeTargetToToday = currentDay * dailyGoal;
+      if (bannerTitleText) bannerTitleText.innerHTML = `LŨY KẾ ĐẾN HÔM NAY (${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')})`;
+      if (bannerMetaText) bannerMetaText.innerHTML = `Mục tiêu lũy kế đến nay: <strong>${formatShortNumber(cumulativeTargetToToday)}</strong>`;
+
+      const paceDiff = savedUpToToday - cumulativeTargetToToday;
+      if (paceDiff >= 0) {
+        statusPaceAmount.textContent = paceDiff === 0 ? 'Đúng Kế Hoạch' : `+${formatShortNumber(paceDiff)}`;
+        statusPaceAmount.className = 'banner-val text-success';
+        statusPacePill.textContent = paceDiff === 0 ? 'Vừa đủ mục tiêu đến nay' : `Dư +${formatShortNumber(paceDiff)} so với lũy kế`;
+      } else {
+        const diffAbs = Math.abs(paceDiff);
+        statusPaceAmount.textContent = `-${formatShortNumber(diffAbs)}`;
+        statusPaceAmount.className = 'banner-val text-danger';
+        statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với lũy kế`;
+      }
     } else {
-      const diffAbs = Math.abs(paceDiff);
-      statusPaceAmount.textContent = `-${formatShortNumber(diffAbs)}`;
-      statusPaceAmount.className = 'banner-val text-danger';
-      statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với lũy kế`;
+      if (bannerTitleText) bannerTitleText.innerHTML = `TỔNG KẾT THÁNG ${selectedMonth}/${selectedYear}`;
+      if (bannerMetaText) bannerMetaText.innerHTML = `Tổng mục tiêu tháng: <strong>${formatShortNumber(monthTarget)}</strong>`;
+
+      const monthDiff = monthTotalSaved - monthTarget;
+      if (monthDiff >= 0) {
+        statusPaceAmount.textContent = monthDiff === 0 ? 'Đạt 100% Target' : `+${formatShortNumber(monthDiff)}`;
+        statusPaceAmount.className = 'banner-val text-success';
+        statusPacePill.textContent = monthDiff === 0 ? 'Vừa đủ mục tiêu tháng' : `🎉 Hoàn thành tháng! Dư +${formatShortNumber(monthDiff)}`;
+      } else {
+        const diffAbs = Math.abs(monthDiff);
+        statusPaceAmount.textContent = `-${formatShortNumber(diffAbs)}`;
+        statusPaceAmount.className = 'banner-val text-danger';
+        statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với mục tiêu tháng`;
+      }
     }
 
-    // Month Progress Card
-    const monthTarget = totalDaysInMonth * dailyGoal;
     monthSavedTotal.textContent = formatShortNumber(monthTotalSaved);
     const monthPct = Math.min(100, Math.round((monthTotalSaved / monthTarget) * 100));
     monthProgressBar.style.width = `${monthPct}%`;
@@ -196,16 +334,19 @@
       monthDailyAdvice.innerHTML = 'Chúc mừng! Đã đạt mục tiêu tháng!';
     } else {
       monthRemainingNeed.textContent = `Thiếu: ${formatShortNumber(remainingNeed)}`;
-      const remainingDays = totalDaysInMonth - currentDay;
-      if (remainingDays > 0) {
-        const requiredDailyAvg = Math.ceil(remainingNeed / remainingDays);
-        monthDailyAdvice.innerHTML = `Cần ~<strong>${formatShortNumber(requiredDailyAvg)}/ngày</strong> cho ${remainingDays} ngày còn lại.`;
+      if (isCurrentMonth) {
+        const remainingDays = totalDaysInMonth - currentDay;
+        if (remainingDays > 0) {
+          const requiredDailyAvg = Math.ceil(remainingNeed / remainingDays);
+          monthDailyAdvice.innerHTML = `Cần ~<strong>${formatShortNumber(requiredDailyAvg)}/ngày</strong> cho ${remainingDays} ngày còn lại.`;
+        } else {
+          monthDailyAdvice.innerHTML = `Đã hết tháng. Còn thiếu ${formatShortNumber(remainingNeed)}.`;
+        }
       } else {
-        monthDailyAdvice.innerHTML = `Đã hết tháng. Còn thiếu ${formatShortNumber(remainingNeed)}.`;
+        monthDailyAdvice.innerHTML = `Kết thúc tháng còn thiếu <strong>${formatShortNumber(remainingNeed)}</strong>.`;
       }
     }
 
-    // Annual Progress Card
     const yearEntries = entries.filter(e => e.date && e.date.startsWith(`${currentYear}`));
     let yearTotalSaved = 0;
     yearEntries.forEach(e => yearTotalSaved += e.amount);
@@ -385,11 +526,16 @@
       return;
     }
 
+    const newEntry = {
+      id: existingId || ('entry-' + Date.now()),
+      date: dateVal,
+      amount: amountVal,
+      note: noteVal
+    };
+
     if (existingId) {
       const idx = entries.findIndex(item => item.id === existingId);
-      if (idx !== -1) {
-        entries[idx] = { id: existingId, date: dateVal, amount: amountVal, note: noteVal };
-      }
+      if (idx !== -1) entries[idx] = newEntry;
     } else {
       const existingDateIdx = entries.findIndex(item => item.date === dateVal);
       if (existingDateIdx !== -1) {
@@ -400,16 +546,12 @@
           return;
         }
       } else {
-        entries.push({
-          id: 'entry-' + Date.now(),
-          date: dateVal,
-          amount: amountVal,
-          note: noteVal
-        });
+        entries.push(newEntry);
       }
     }
 
     saveToStorage();
+    syncSaveToCloud(newEntry);
     resetForm();
     refreshAll();
   });
@@ -447,6 +589,7 @@
     if (confirm(`Xóa ghi nhận ngày ${item.date} (${formatShortNumber(item.amount)})?`)) {
       entries = entries.filter(e => e.id !== id);
       saveToStorage();
+      syncDeleteFromCloud(item.date);
       refreshAll();
     }
   }
@@ -501,6 +644,65 @@
     refreshAll();
   });
 
+  // Cloud Modal Handlers
+  cloudStatusBtn.addEventListener('click', () => {
+    supabaseUrlInput.value = supabaseUrl;
+    supabaseKeyInput.value = supabaseKey;
+    cloudModal.style.display = 'flex';
+  });
+
+  closeCloudModalBtn.addEventListener('click', () => {
+    cloudModal.style.display = 'none';
+  });
+
+  saveCloudConfigBtn.addEventListener('click', () => {
+    const url = supabaseUrlInput.value.trim();
+    const key = supabaseKeyInput.value.trim();
+
+    if (!url || !key) {
+      alert('Vui lòng nhập đầy đủ Supabase URL và Anon Key!');
+      return;
+    }
+
+    supabaseUrl = url;
+    supabaseKey = key;
+    localStorage.setItem(SUPABASE_URL_KEY, supabaseUrl);
+    localStorage.setItem(SUPABASE_KEY_KEY, supabaseKey);
+
+    cloudModal.style.display = 'none';
+    initSupabase();
+  });
+
+  disconnectCloudBtn.addEventListener('click', () => {
+    if (confirm('Bạn có chắc chắn muốn ngắt kết nối Cloud không? (Dữ liệu vẫn được giữ trong máy)')) {
+      supabaseUrl = '';
+      supabaseKey = '';
+      localStorage.removeItem(SUPABASE_URL_KEY);
+      localStorage.removeItem(SUPABASE_KEY_KEY);
+      supabaseClient = null;
+      isCloudConnected = false;
+      updateCloudStatusUI(false);
+      cloudModal.style.display = 'none';
+    }
+  });
+
+  copySqlBtn.addEventListener('click', () => {
+    const sqlText = `create table if not exists savings_entries (
+  id uuid primary key default gen_random_uuid(),
+  entry_date date unique not null,
+  amount bigint not null,
+  note text default 'Thu nhập chạy app',
+  created_at timestamptz default now()
+);
+
+alter table savings_entries enable row level security;
+create policy "Public Access" on savings_entries for all using (true) with check (true);`;
+
+    navigator.clipboard.writeText(sqlText).then(() => {
+      alert('Đã copy mã SQL! Hãy dán vào SQL Editor trên Supabase.');
+    });
+  });
+
   // Export / Import
   exportDataBtn.addEventListener('click', () => {
     const backupData = { version: 1, dailyGoal, exportedAt: new Date().toISOString(), entries };
@@ -527,6 +729,12 @@
           if (imported.dailyGoal) dailyGoal = imported.dailyGoal;
           saveToStorage();
           refreshAll();
+
+          // Sync imported to Cloud if connected
+          if (isCloudConnected) {
+            entries.forEach(item => syncSaveToCloud(item));
+          }
+
           alert('Nhập dữ liệu thành công!');
         }
       } catch (err) {
@@ -537,14 +745,21 @@
   });
 
   clearAllBtn.addEventListener('click', () => {
-    if (confirm('Xóa TOÀN BỘ nhật ký tiết kiệm?')) {
-      entries = [];
-      saveToStorage();
-      refreshAll();
+    if (confirm('⚠️ CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn xóa TOÀN BỘ nhật ký tiết kiệm không? Hành động này không thể hoàn tác!')) {
+      const confirmInput = prompt('Để xác nhận xóa toàn bộ dữ liệu, vui lòng gõ chữ "XÓA" vào ô dưới đây:');
+      if (confirmInput && confirmInput.trim().toUpperCase() === 'XÓA') {
+        entries = [];
+        saveToStorage();
+        refreshAll();
+        alert('Đã xóa toàn bộ nhật ký tiết kiệm!');
+      } else if (confirmInput !== null) {
+        alert('Mã xác nhận không đúng. Đã hủy thao tác xóa.');
+      }
     }
   });
 
   filterMonthSelect.addEventListener('change', () => {
+    renderDashboard();
     renderTable();
     if (tabChartContent.style.display !== 'none') {
       renderChart();
@@ -560,6 +775,8 @@
     }
   }
 
+  // App Initialize
+  initSupabase();
   seedInitialSampleData();
   setDefaultDate();
   entryAmount.value = dailyGoal;

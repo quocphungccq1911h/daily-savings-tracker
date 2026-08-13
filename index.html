@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -23,6 +25,7 @@
         </div>
       </div>
       <div class="header-tools">
+        <button id="cloudStatusBtn" class="icon-tool-btn cloud-off" title="Trạng thái CSDL Đám mây">☁️ Chưa kết nối Cloud</button>
         <button id="exportDataBtn" class="icon-tool-btn" title="Xuất file sao lưu">📥 Tải file</button>
         <button id="importDataBtn" class="icon-tool-btn" title="Nhập file sao lưu">📤 Nạp file</button>
         <input type="file" id="importFileInput" accept=".json" style="display: none;">
@@ -55,10 +58,10 @@
 
           <!-- Quick Amount Chips -->
           <div class="chip-group">
-            <button type="button" class="chip-btn" data-val="50000">+50k</button>
             <button type="button" class="chip-btn" data-val="100000">+100k</button>
+            <button type="button" class="chip-btn" data-val="120000">+120k</button>
             <button type="button" class="chip-btn active" data-val="150000">+150k</button>
-            <button type="button" class="chip-btn" data-val="200000">+200k</button>
+            <button type="button" class="chip-btn" data-val="170000">+170k</button>
           </div>
 
           <!-- Live Comparison Badge -->
@@ -81,18 +84,20 @@
       <!-- RIGHT COLUMN: Clean Overview Stats & Target Progress -->
       <section class="overview-section">
 
-        <!-- Today / Current Month Status Banner -->
+        <!-- Today / Selected Month Status Banner -->
         <div class="status-banner" id="statusBanner">
           <div class="banner-header">
-            <span class="banner-title">LŨY KẾ ĐẾN HÔM NAY (<span id="currentDateBadge">--/--</span>)</span>
-            <span class="banner-month" id="currentMonthName">Tháng --</span>
+            <span class="banner-title" id="bannerTitleText">LŨY KẾ ĐẾN HÔM NAY (<span id="currentDateBadge">--/--</span>)</span>
+            <div class="month-select-wrapper">
+              <select id="filterMonthSelect" class="select-field select-header-month"></select>
+            </div>
           </div>
           <div class="banner-main">
             <div class="banner-val" id="statusPaceAmount">0 đ</div>
             <div class="banner-sub" id="statusPacePill">Đang tính toán...</div>
           </div>
           <div class="banner-meta">
-            <span>Mục tiêu lũy kế đến nay: <strong id="cumulativeTargetDisplay">0 đ</strong></span>
+            <span id="bannerMetaText">Mục tiêu lũy kế đến nay: <strong id="cumulativeTargetDisplay">0 đ</strong></span>
           </div>
         </div>
 
@@ -146,10 +151,6 @@
           <button class="tab-btn active" id="tabHistoryBtn">📋 Nhật ký tiết kiệm</button>
           <button class="tab-btn" id="tabChartBtn">📈 Biểu đồ xu hướng</button>
         </div>
-        <div class="tab-controls">
-          <select id="filterMonthSelect" class="select-field"></select>
-          <button id="clearAllBtn" class="btn-text-danger">Xóa tất cả</button>
-        </div>
       </div>
 
       <!-- Tab Content 1: History Table -->
@@ -183,6 +184,12 @@
 
     </section>
 
+    <!-- Discreet Safe Footer -->
+    <footer class="app-footer">
+      <span>Sổ Tiết Kiệm Daily • 100% Bảo Mật & Riêng Tư</span>
+      <button id="clearAllBtn" class="btn-text-danger-sm" title="Xóa toàn bộ nhật ký">⚠️ Xóa toàn bộ dữ liệu</button>
+    </footer>
+
   </div>
 
   <!-- Goal Configuration Modal -->
@@ -196,6 +203,47 @@
       <div class="modal-footer">
         <button id="saveGoalModalBtn" class="btn btn-primary">Lưu Thay Đổi</button>
         <button id="closeGoalModalBtn" class="btn btn-ghost">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase Cloud Config Modal -->
+  <div class="modal-overlay" id="cloudModal" style="display: none;">
+    <div class="modal-card modal-wide">
+      <h3>☁️ Kết Nối CSDL Đám Mây (Supabase Cloud)</h3>
+      <p class="modal-sub">Giúp tự động đồng bộ dữ liệu Realtime 100% miễn phí giữa Điện thoại & Máy tính.</p>
+
+      <div class="form-group">
+        <label for="supabaseUrlInput">Supabase Project URL</label>
+        <input type="text" id="supabaseUrlInput" class="input-field" placeholder="https://xyz...supabase.co">
+      </div>
+
+      <div class="form-group">
+        <label for="supabaseKeyInput">Supabase Anon Key</label>
+        <input type="password" id="supabaseKeyInput" class="input-field" placeholder="eyJhbGciOiJIUzI1NiI...">
+      </div>
+
+      <div class="sql-box">
+        <div class="sql-box-header">
+          <span>📜 Mã SQL khởi tạo bảng (Copy dán vào SQL Editor trên Supabase):</span>
+          <button id="copySqlBtn" class="btn-copy">📋 Copy SQL</button>
+        </div>
+        <pre class="sql-code"><code>create table if not exists savings_entries (
+  id uuid primary key default gen_random_uuid(),
+  entry_date date unique not null,
+  amount bigint not null,
+  note text default 'Thu nhập chạy app',
+  created_at timestamptz default now()
+);
+
+alter table savings_entries enable row level security;
+create policy "Public Access" on savings_entries for all using (true) with check (true);</code></pre>
+      </div>
+
+      <div class="modal-footer">
+        <button id="saveCloudConfigBtn" class="btn btn-primary">⚡ Lưu & Kết Nối Cloud</button>
+        <button id="disconnectCloudBtn" class="btn btn-ghost text-danger" style="display:none;">Hủy Kết Nối</button>
+        <button id="closeCloudModalBtn" class="btn btn-ghost">Đóng</button>
       </div>
     </div>
   </div>
