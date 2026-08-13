@@ -720,10 +720,10 @@
     const item = entries.find(e => e.id === id);
     if (!item) return;
 
-    if (confirm(`Xóa ghi nhận ngày ${item.date} (${formatShortNumber(item.amount)})?`)) {
+    if (confirm(`Xóa khoản tiết kiệm "${item.note || 'Thu nhập'}" (${formatShortNumber(item.amount)})?`)) {
       entries = entries.filter(e => e.id !== id);
       saveToStorage();
-      syncDeleteFromCloud(item.date);
+      syncDeleteFromCloud(item.id);
       refreshAll();
     }
   }
