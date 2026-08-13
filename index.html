@@ -73,8 +73,19 @@
             <span id="prevDetailText" class="badge-desc">Đạt 150.000đ (0%)</span>
           </div>
 
+          <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
+            <label style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; display: block;">Nguồn Thu</label>
+            <div class="category-pills-wrap" id="categoryPillsWrap">
+              <button type="button" class="category-pill active" data-category="Grab / Chạy xe">🚗 Grab / Chạy xe</button>
+              <button type="button" class="category-pill" data-category="Lương cố định">💼 Lương cố định</button>
+              <button type="button" class="category-pill" data-category="Thưởng">🏪 Thưởng</button>
+              <button type="button" class="category-pill" data-category="Khác">💰 Khác</button>
+            </div>
+            <input type="hidden" id="entryCategory" value="Grab / Chạy xe">
+          </div>
+
           <div class="form-group">
-            <input type="text" id="entryNote" class="input-field input-sm" placeholder="Thu nhập chạy app (Không bắt buộc nhập)">
+            <input type="text" id="entryNote" class="input-field input-sm" placeholder="Ghi chú thêm (Không bắt buộc nhập)">
           </div>
 
           <div class="btn-group">
@@ -183,8 +194,19 @@
 
       <!-- Tab Content 2: Chart View -->
       <div id="tabChartContent" class="tab-content" style="display: none;">
-        <div class="chart-container">
-          <canvas id="savingsChart"></canvas>
+        <div class="charts-grid-wrapper">
+          <div class="chart-box-main">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">📈 XU HƯỚNG TÍCH LŨY THEO NGÀY</div>
+            <div class="chart-container">
+              <canvas id="savingsChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-box-side">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; margin-bottom: 8px;">📊 TỶ TRỌNG NGUỒN THU THÁNG</div>
+            <div class="pie-chart-container">
+              <canvas id="categoryPieChart"></canvas>
+            </div>
+          </div>
         </div>
       </div>
 

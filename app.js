@@ -263,6 +263,22 @@
     }
   }
 
+  function parseEntryCategory(item) {
+    if (item && item.category) {
+      return item.category === 'Thu nhập khác' ? 'Khác' : item.category;
+    }
+    if (item && item.note) {
+      const match = item.note.match(/^\[(.*?)\]/);
+      if (match && match[1]) {
+        return match[1] === 'Thu nhập khác' ? 'Khác' : match[1];
+      }
+      if (item.note.includes('Grab')) return 'Grab / Chạy xe';
+      if (item.note.includes('Lương')) return 'Lương cố định';
+      if (item.note.includes('Thưởng')) return 'Thưởng';
+    }
+    return 'Khác';
+  }
+
   async function fetchFromCloud() {
     if (!supabaseClient || !currentUser) return;
     try {
@@ -279,6 +295,7 @@
           id: item.id,
           date: item.entry_date,
           amount: parseInt(item.amount),
+          category: item.category || parseEntryCategory(item),
           note: item.note || ''
         }));
         saveToStorage();
@@ -320,11 +337,15 @@
   async function syncSaveToCloud(entryItem) {
     if (!supabaseClient || !currentUser) return;
     try {
+      const catTag = entryItem.category ? `[${entryItem.category}] ` : '';
+      const cleanNote = (entryItem.note || '').replace(/^\[.*?\]\s*/, '');
+      const fullNote = `${catTag}${cleanNote}`.trim();
+
       const payload = {
         user_id: currentUser.id,
         entry_date: entryItem.date,
         amount: entryItem.amount,
-        note: entryItem.note
+        note: fullNote
       };
       if (entryItem.id && !entryItem.id.startsWith('entry-') && !entryItem.id.startsWith('sample-')) {
         payload.id = entryItem.id;
@@ -333,9 +354,7 @@
         .from('savings_entries')
         .upsert(payload);
 
-      if (error) {
-        console.error("Supabase Save Error:", error.message);
-      }
+      if (error) console.error("Cloud save warning:", error.message);
     } catch (err) {
       console.error("Cloud save error:", err);
     }
@@ -701,13 +720,25 @@
       const dateParts = dateKey.split('-');
       const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
-      // Notes formatting (ngắn gọn 1 dòng)
+  function cleanUserNote(noteStr) {
+    if (!noteStr) return '';
+    let s = noteStr.replace(/^\[.*?\]\s*/, '').trim();
+    if (s === 'Thu nhập' || s === 'Thu nhập chạy app' || s === 'Thu nhập app') {
+      return '';
+    }
+    return s.replace(/^Thu nhập chạy app\s*/i, '').replace(/^Thu nhập\s*/i, '').trim();
+  }
+
+      // Notes formatting (Chỉ hiển thị Tag Nguồn Thu + Ghi chú nếu có)
       let notesHtml = '';
       if (group.items.length === 1) {
-        notesHtml = `<span style="color: var(--text-muted); font-size: 0.8rem;">${group.items[0].note || '-'}</span>`;
+        const itemCat = group.items[0].category || parseEntryCategory(group.items[0]);
+        const cleanNote = cleanUserNote(group.items[0].note);
+        notesHtml = `<span class="badge-category-tag">${itemCat}</span>${cleanNote ? `<span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 4px;">${cleanNote}</span>` : ''}`;
       } else {
-        const firstNote = group.items[0].note || 'Thu nhập';
-        notesHtml = `<span style="color: #38bdf8; font-size: 0.8rem; font-weight: 500;">${firstNote}</span> <span style="color: var(--text-muted); font-size: 0.775rem;">(+${group.items.length - 1} khoản khác)</span>`;
+        const firstCat = group.items[0].category || parseEntryCategory(group.items[0]);
+        const firstNote = cleanUserNote(group.items[0].note);
+        notesHtml = `<span class="badge-category-tag">${firstCat}</span>${firstNote ? `<span style="color: #38bdf8; font-size: 0.8rem; font-weight: 500; margin-left: 4px;">${firstNote}</span> ` : ''}<span style="color: var(--text-muted); font-size: 0.775rem;">(+${group.items.length - 1} khoản khác)</span>`;
       }
 
       // Action buttons
@@ -745,11 +776,15 @@
         detailTr.style.display = 'none';
         detailTr.className = 'detail-row';
 
-        const subItemsHtml = group.items.map((sub, idx) => `
+        const subItemsHtml = group.items.map((sub, idx) => {
+          const cat = sub.category || parseEntryCategory(sub);
+          const cleanNote = cleanUserNote(sub.note);
+          return `
           <div class="sub-entry-item">
             <div class="sub-entry-top">
               <div class="sub-entry-left">
                 <span class="sub-idx">#${idx + 1}</span>
+                <span class="badge-category-tag">${cat}</span>
                 <span class="sub-amount">${formatShortNumber(sub.amount)}</span>
               </div>
               <div class="sub-actions">
@@ -757,9 +792,10 @@
                 <button class="action-icon delete-btn" data-id="${sub.id}">🗑️ Xóa</button>
               </div>
             </div>
-            <div class="sub-note">📝 ${sub.note || 'Thu nhập chạy app'}</div>
+            ${cleanNote ? `<div class="sub-note">📝 ${cleanNote}</div>` : ''}
           </div>
-        `).join('');
+        `;
+        }).join('');
 
         detailTr.innerHTML = `
           <td colspan="7" style="padding: 0; border-top: none;">
@@ -876,6 +912,136 @@
         }
       }
     });
+
+    // Render Category Pie Chart alongside Bar Chart
+    renderCategoryPieChart(selectedMonth);
+  }
+
+  // Category Pill Selector Engine
+  const categoryPillsWrap = document.getElementById('categoryPillsWrap');
+  const entryCategory = document.getElementById('entryCategory');
+
+  if (categoryPillsWrap) {
+    categoryPillsWrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('.category-pill');
+      if (!btn) return;
+      document.querySelectorAll('.category-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (entryCategory) entryCategory.value = btn.dataset.category || 'Grab / Chạy xe';
+    });
+  }
+
+  function setSelectedCategoryUI(catName) {
+    const pills = document.querySelectorAll('.category-pill');
+    let found = false;
+    pills.forEach(p => {
+      if (p.dataset.category === catName) {
+        p.classList.add('active');
+        found = true;
+      } else {
+        p.classList.remove('active');
+      }
+    });
+    if (!found) {
+      const defaultPill = Array.from(pills).find(p => p.dataset.category === 'Grab / Chạy xe') || pills[0];
+      if (defaultPill) defaultPill.classList.add('active');
+    }
+    if (entryCategory) entryCategory.value = found ? catName : 'Grab / Chạy xe';
+  }
+
+  let categoryPieChartInstance = null;
+
+  function renderCategoryPieChart(selectedMonthKey) {
+    const ctx = document.getElementById('categoryPieChart');
+    if (!ctx) return;
+
+    const monthEntries = entries.filter(e => e.date && e.date.startsWith(selectedMonthKey));
+
+    const categoryTotals = {
+      'Grab / Chạy xe': 0,
+      'Lương cố định': 0,
+      'Thưởng': 0,
+      'Thu nhập khác': 0
+    };
+
+    monthEntries.forEach(item => {
+      const cat = item.category || parseEntryCategory(item);
+      if (categoryTotals.hasOwnProperty(cat)) {
+        categoryTotals[cat] += item.amount;
+      } else {
+        categoryTotals['Thu nhập khác'] += item.amount;
+      }
+    });
+
+    const labels = Object.keys(categoryTotals);
+    const dataValues = Object.values(categoryTotals);
+    const totalMonthAmount = dataValues.reduce((a, b) => a + b, 0);
+
+    if (categoryPieChartInstance) {
+      categoryPieChartInstance.destroy();
+    }
+
+    if (totalMonthAmount === 0) {
+      categoryPieChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Chưa có dữ liệu'],
+          datasets: [{
+            data: [1],
+            backgroundColor: ['rgba(255, 255, 255, 0.08)'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+      return;
+    }
+
+    categoryPieChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: dataValues,
+          backgroundColor: [
+            '#10b981', // Grab - Emerald green
+            '#38bdf8', // Lương - Sky blue
+            '#f59e0b', // Thưởng - Gold
+            '#a855f7'  // Khác - Purple
+          ],
+          borderWidth: 2,
+          borderColor: '#0f172a'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#94a3b8',
+              font: { size: 10, weight: '600' },
+              padding: 8,
+              boxWidth: 12
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = context.parsed;
+                const pct = ((val / totalMonthAmount) * 100).toFixed(1);
+                return `${context.label}: ${val.toLocaleString('vi-VN')}đ (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
 
   // Form Submit
@@ -883,7 +1049,8 @@
     e.preventDefault();
     const dateVal = entryDate.value;
     const amountVal = parseFloat(entryAmount.value);
-    const noteVal = entryNote.value.trim() || 'Thu nhập chạy app';
+    const noteVal = entryNote.value.trim() || 'Thu nhập';
+    const catVal = entryCategory ? entryCategory.value : 'Grab / Chạy xe';
     const existingId = entryId.value;
 
     if (!dateVal || isNaN(amountVal) || amountVal < 0) {
@@ -895,6 +1062,7 @@
       id: existingId || generateUUID(),
       date: dateVal,
       amount: amountVal,
+      category: catVal,
       note: noteVal
     };
 
@@ -915,6 +1083,7 @@
     entryId.value = '';
     entryAmount.value = '150000';
     entryNote.value = '';
+    setSelectedCategoryUI('Grab / Chạy xe');
     saveBtn.textContent = 'Lưu Tiết Kiệm';
     cancelEditBtn.style.display = 'none';
     setDefaultDate();
