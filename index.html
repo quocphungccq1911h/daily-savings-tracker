@@ -18,19 +18,20 @@
     
     <!-- Minimalist Header -->
     <header class="app-header">
-      <div class="header-brand">
-        <span class="brand-icon">💰</span>
-        <div>
-          <h1>Sổ Tiết Kiệm Daily</h1>
-          <p class="brand-sub">Mục tiêu: <span id="headerGoalDisplay">150.000đ</span>/ngày <button id="configGoalBtn" class="link-btn">Sửa</button></p>
-        </div>
-      </div>
-      <div class="header-tools">
-        <div id="userProfileBadge" class="user-badge-wrap" style="display: none;">
-          <span class="user-email-pill">👤 <strong id="userEmailText">user@gmail.com</strong></span>
-          <button id="signOutBtn" class="btn-signout-compact" title="Đăng xuất khỏi ứng dụng">🚪 Đăng xuất</button>
+      <div class="header-main-row">
+        <div class="header-brand">
+          <span class="brand-icon">💰</span>
+          <div>
+            <h1>Sổ Tiết Kiệm Daily</h1>
+            <p class="brand-sub">Mục tiêu: <span id="headerGoalDisplay">150.000đ</span>/ngày <button id="configGoalBtn" class="link-btn">Sửa</button></p>
+          </div>
         </div>
         <button id="cloudStatusBtn" class="icon-tool-btn cloud-off" title="Trạng thái CSDL Đám mây">☁️ Chưa kết nối Cloud</button>
+      </div>
+
+      <div id="userProfileBadge" class="user-badge-wrap" style="display: none;">
+        <span class="user-email-pill">👤 <strong id="userEmailText" class="user-email-text">user@gmail.com</strong></span>
+        <button id="signOutBtn" class="btn-signout-compact" title="Đăng xuất khỏi ứng dụng">🚪 Đăng xuất</button>
       </div>
     </header>
 
