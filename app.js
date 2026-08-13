@@ -578,10 +578,13 @@
 
   const MILESTONE_BADGES = [
     { id: 'b1', name: 'Khởi Đầu', amount: 1000000, icon: '🥉' },
-    { id: 'b2', name: 'Tích Lũy', amount: 5000000, icon: '🥈' },
-    { id: 'b3', name: 'Bậc Thầy', amount: 10000000, icon: '🥇' },
-    { id: 'b4', name: 'Triệu Phú', amount: 50000000, icon: '💎' },
-    { id: 'b5', name: 'Đại Phú Hộ', amount: 100000000, icon: '👑' }
+    { id: 'b2', name: 'Tiến Bộ', amount: 3000000, icon: '🥈' },
+    { id: 'b3', name: 'Tích Lũy', amount: 5000000, icon: '🌟' },
+    { id: 'b4', name: 'Bậc Thầy', amount: 10000000, icon: '🥇' },
+    { id: 'b5', name: 'Triệu Phú', amount: 50000000, icon: '💎' },
+    { id: 'b6', name: 'Đại Phú Hộ', amount: 100000000, icon: '👑' },
+    { id: 'b7', name: 'Tỷ Phú Tương Lai', amount: 500000000, icon: '🚀' },
+    { id: 'b8', name: 'Huyền Thoại Bất Tử', amount: 1000000000, icon: '🏛️' }
   ];
 
   const tabBadgesBtn = document.getElementById('tabBadgesBtn');

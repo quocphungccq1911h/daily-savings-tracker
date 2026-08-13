@@ -372,7 +372,7 @@ body {
 /* Milestone Badges Tab 3 Layout */
 .badges-grid-tab {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
 }
 
