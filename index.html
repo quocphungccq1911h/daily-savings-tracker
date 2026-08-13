@@ -26,7 +26,10 @@
             <p class="brand-sub">Mục tiêu: <span id="headerGoalDisplay">150.000đ</span>/ngày <button id="configGoalBtn" class="link-btn">Sửa</button></p>
           </div>
         </div>
-        <button id="cloudStatusBtn" class="icon-tool-btn cloud-off" title="Trạng thái CSDL Đám mây">☁️ Chưa kết nối Cloud</button>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button id="notifyStatusBtn" class="icon-tool-btn" title="Cài đặt Nhắc Nhở Tiết Kiệm Hàng Ngày">🔔 Nhắc Nhở</button>
+          <button id="cloudStatusBtn" class="icon-tool-btn cloud-off" title="Trạng thái CSDL Đám mây">☁️ Chưa kết nối Cloud</button>
+        </div>
       </div>
 
       <div id="userProfileBadge" class="user-badge-wrap" style="display: none;">
@@ -40,6 +43,9 @@
 
       <!-- LEFT COLUMN: Quick Entry Form -->
       <section class="card-hero">
+        <div id="inAppReminderBanner" class="reminder-banner" style="display: none;">
+          ⚡ Hôm nay bạn chưa nhập tiết kiệm! Hãy ghi nhận ngay để giữ mốc 🔥
+        </div>
         <h2 class="card-title">✍️ Nhập Tiết Kiệm</h2>
         <form id="savingsForm">
           <input type="hidden" id="entryId">
@@ -332,6 +338,35 @@ create policy "Users access own entries"
       <div class="modal-footer" style="justify-content: center;">
         <button id="submitPinBtn" class="btn btn-primary" style="width: 100%;">🔓 Mở Khóa Kết Nối</button>
       </div>
+    </div>
+  <!-- Notification Config Modal -->
+  <div class="modal-overlay" id="notifyModal" style="display: none;">
+    <div class="modal-card" style="max-width: 380px;">
+      <div style="font-size: 2.5rem; margin-bottom: 6px; text-align: center;">🔔</div>
+      <h3 style="text-align: center; margin-bottom: 4px;">Cài Đặt Nhắc Nhở Hàng Ngày</h3>
+      <p class="modal-sub" style="text-align: center; margin-bottom: 16px;">Phát thông báo nhắc nhở nếu đến giờ mà hôm nay bạn chưa nhập khoản tiết kiệm nào.</p>
+      
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #fff;">
+          <span>Bật thông báo nhắc nhở</span>
+          <input type="checkbox" id="notifyEnableCheckbox" style="accent-color: var(--primary); width: 18px; height: 18px; cursor: pointer;">
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label for="notifyTimeInput">Giờ nhắc nhở hàng ngày</label>
+        <input type="time" id="notifyTimeInput" class="input-field" value="21:00">
+      </div>
+
+      <div id="notifyPermissionNotice" style="display: none; padding: 8px 12px; border-radius: 8px; font-size: 0.775rem; margin-bottom: 14px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fef08a;">
+        ⚠️ Hãy bấm "Cho phép" khi trình duyệt hỏi xin quyền gửi thông báo nhé!
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 14px;">
+        <button id="testNotifyBtn" class="btn btn-ghost" style="font-size: 0.8rem; width: 45%;">🧪 Thử Phát</button>
+        <button id="saveNotifyBtn" class="btn btn-primary" style="font-size: 0.8rem; width: 55%;">💾 Lưu Cài Đặt</button>
+      </div>
+      <button id="closeNotifyModalBtn" class="btn-text-danger-sm" style="margin-top: 12px; width: 100%; text-align: center;">Đóng</button>
     </div>
   </div>
 

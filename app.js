@@ -197,6 +197,8 @@
     if (savedPass && authPasswordInput) authPasswordInput.value = savedPass;
   }
 
+  let realtimeChannel = null;
+
   function onUserLoggedIn(user) {
     currentUser = user;
     userEmailText.textContent = user.email;
@@ -208,6 +210,10 @@
 
   function onUserLoggedOut() {
     currentUser = null;
+    if (realtimeChannel && supabaseClient) {
+      try { supabaseClient.removeChannel(realtimeChannel); } catch (e) {}
+      realtimeChannel = null;
+    }
     userProfileBadge.style.display = 'none';
     authScreenModal.style.display = 'flex';
     fillRememberedCredentials();
@@ -217,6 +223,8 @@
 
   // --- SUPABASE ENGINE ---
   function initSupabase(retryCount = 0) {
+    if (supabaseClient) return;
+
     supabaseUrl = DEFAULT_SUPABASE_URL;
     supabaseKey = DEFAULT_SUPABASE_KEY;
 
@@ -284,14 +292,18 @@
   function subscribeRealtime() {
     if (!supabaseClient || !currentUser) return;
     try {
-      supabaseClient
-        .channel('public:savings_entries')
+      if (realtimeChannel) {
+        try { supabaseClient.removeChannel(realtimeChannel); } catch (e) {}
+        realtimeChannel = null;
+      }
+      realtimeChannel = supabaseClient
+        .channel(`user-entries-${currentUser.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'savings_entries', filter: `user_id=eq.${currentUser.id}` }, () => {
           fetchFromCloud();
-        })
-        .subscribe();
+        });
+      realtimeChannel.subscribe();
     } catch (err) {
-      console.warn("Realtime sub error:", err);
+      console.warn("Realtime sub warning:", err.message);
     }
   }
 
@@ -1200,12 +1212,176 @@ create policy "Public Access" on savings_entries for all using (true) with check
     });
   }
 
+  // --- DAILY NOTIFICATION ENGINE ---
+  const NOTIFY_KEY = 'savings_notify_config_v1';
+
+  let notifyConfig = {
+    enabled: false,
+    time: '21:00'
+  };
+
+  function loadNotifyConfig() {
+    try {
+      const saved = localStorage.getItem(NOTIFY_KEY);
+      if (saved) {
+        notifyConfig = JSON.parse(saved);
+      }
+    } catch (e) {}
+    updateNotifyUI();
+  }
+
+  function saveNotifyConfig() {
+    localStorage.setItem(NOTIFY_KEY, JSON.stringify(notifyConfig));
+    updateNotifyUI();
+  }
+
+  const notifyStatusBtn = document.getElementById('notifyStatusBtn');
+  const notifyModal = document.getElementById('notifyModal');
+  const notifyEnableCheckbox = document.getElementById('notifyEnableCheckbox');
+  const notifyTimeInput = document.getElementById('notifyTimeInput');
+  const testNotifyBtn = document.getElementById('testNotifyBtn');
+  const saveNotifyBtn = document.getElementById('saveNotifyBtn');
+  const closeNotifyModalBtn = document.getElementById('closeNotifyModalBtn');
+  const notifyPermissionNotice = document.getElementById('notifyPermissionNotice');
+  const inAppReminderBanner = document.getElementById('inAppReminderBanner');
+
+  function updateNotifyUI() {
+    if (notifyEnableCheckbox) notifyEnableCheckbox.checked = notifyConfig.enabled;
+    if (notifyTimeInput) notifyTimeInput.value = notifyConfig.time || '21:00';
+    if (notifyStatusBtn) {
+      if (notifyConfig.enabled) {
+        notifyStatusBtn.className = 'icon-tool-btn notify-on';
+        notifyStatusBtn.innerHTML = `🔔 ${notifyConfig.time}`;
+      } else {
+        notifyStatusBtn.className = 'icon-tool-btn';
+        notifyStatusBtn.innerHTML = '🔔 Nhắc Nhở';
+      }
+    }
+    checkTodayInAppReminder();
+  }
+
+  function checkTodayInAppReminder() {
+    if (!inAppReminderBanner) return;
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const todayHasEntries = entries.some(e => e.date === todayKey);
+
+    if (!todayHasEntries) {
+      inAppReminderBanner.style.display = 'flex';
+    } else {
+      inAppReminderBanner.style.display = 'none';
+    }
+  }
+
+  async function requestNotificationPermission() {
+    if (window.location.protocol === 'file:') {
+      alert('⚠️ Lưu ý: Bạn đang mở file cục bộ (file:///). Trình duyệt Chrome quy định CHỈ cho phép phát Thông Báo Đẩy khi trang web chạy trên giao thức HTTPS (như trang online GitHub Pages https://quocphungccq1911h.github.io/daily-savings-tracker/) hoặc localhost!');
+      return false;
+    }
+    if (!('Notification' in window)) {
+      alert('Trình duyệt của bạn không hỗ trợ Thông báo Đẩy Web!');
+      return false;
+    }
+    if (Notification.permission === 'granted') return true;
+    if (Notification.permission !== 'denied') {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    }
+    return false;
+  }
+
+  function sendBrowserNotification(title, body) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body: body,
+          icon: 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png',
+          tag: 'savings-daily-reminder'
+        });
+      } catch (e) {
+        console.warn("Notification error:", e);
+      }
+    }
+  }
+
+  let lastNotifiedDate = '';
+  setInterval(() => {
+    if (!notifyConfig.enabled) return;
+    const now = new Date();
+    const currentHoursMinutes = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (currentHoursMinutes === notifyConfig.time && lastNotifiedDate !== todayKey) {
+      const todayHasEntries = entries.some(e => e.date === todayKey);
+      if (!todayHasEntries) {
+        lastNotifiedDate = todayKey;
+        sendBrowserNotification(
+          '💰 Sổ Tiết Kiệm Daily - Đừng quên hôm nay!',
+          'Hôm nay bạn chưa ghi nhận khoản tiết kiệm nào. Hãy nhập ngay để duy trì Chuỗi 🔥!'
+        );
+      }
+    }
+    checkTodayInAppReminder();
+  }, 30000);
+
+  if (notifyStatusBtn) {
+    notifyStatusBtn.addEventListener('click', () => {
+      notifyEnableCheckbox.checked = notifyConfig.enabled;
+      notifyTimeInput.value = notifyConfig.time || '21:00';
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        notifyPermissionNotice.style.display = 'block';
+      } else {
+        notifyPermissionNotice.style.display = 'none';
+      }
+      notifyModal.style.display = 'flex';
+    });
+  }
+
+  if (closeNotifyModalBtn) {
+    closeNotifyModalBtn.addEventListener('click', () => {
+      notifyModal.style.display = 'none';
+    });
+  }
+
+  if (saveNotifyBtn) {
+    saveNotifyBtn.addEventListener('click', async () => {
+      const enabled = notifyEnableCheckbox.checked;
+      const time = notifyTimeInput.value || '21:00';
+
+      if (enabled) {
+        const granted = await requestNotificationPermission();
+        if (!granted) {
+          alert('Cần cấp quyền Thông báo để trình duyệt có thể nhắc nhở bạn!');
+        }
+      }
+
+      notifyConfig = { enabled, time };
+      saveNotifyConfig();
+      notifyModal.style.display = 'none';
+    });
+  }
+
+  if (testNotifyBtn) {
+    testNotifyBtn.addEventListener('click', async () => {
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        sendBrowserNotification(
+          '🔔 Thử Nghiệm Thông Báo Tiết Kiệm!',
+          'Thông báo hoạt động 100% hoàn hảo. Bạn sẽ nhận được nhắc nhở lúc ' + (notifyTimeInput.value || '21:00') + ' mỗi ngày!'
+        );
+      } else {
+        alert('Trình duyệt chưa được cấp quyền phát Thông báo!');
+      }
+    });
+  }
+
   // App Initialize
   initSupabase();
   seedInitialSampleData();
   setDefaultDate();
   entryAmount.value = dailyGoal;
   updateEntryPreview();
+  loadNotifyConfig();
   refreshAll();
 
   // Retry on window load for local file:/// protocol
