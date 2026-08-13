@@ -235,12 +235,13 @@
         </div>
         <pre class="sql-code"><code>create table if not exists savings_entries (
   id uuid primary key default gen_random_uuid(),
-  entry_date date unique not null,
+  entry_date date not null,
   amount bigint not null,
   note text default 'Thu nhập chạy app',
   created_at timestamptz default now()
 );
 
+alter table savings_entries drop constraint if exists savings_entries_entry_date_key;
 alter table savings_entries enable row level security;
 create policy "Public Access" on savings_entries for all using (true) with check (true);</code></pre>
       </details>

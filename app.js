@@ -191,28 +191,46 @@
     }
   }
 
+  function generateUUID() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
   async function syncSaveToCloud(entryItem) {
     if (!supabaseClient) return;
     try {
-      await supabaseClient
+      const payload = {
+        entry_date: entryItem.date,
+        amount: entryItem.amount,
+        note: entryItem.note
+      };
+      if (entryItem.id && !entryItem.id.startsWith('entry-') && !entryItem.id.startsWith('sample-')) {
+        payload.id = entryItem.id;
+      }
+      const { error } = await supabaseClient
         .from('savings_entries')
-        .upsert({
-          entry_date: entryItem.date,
-          amount: entryItem.amount,
-          note: entryItem.note
-        }, { onConflict: 'entry_date' });
+        .upsert(payload);
+
+      if (error) {
+        console.error("Supabase Save Error:", error.message);
+      }
     } catch (err) {
       console.error("Cloud save error:", err);
     }
   }
 
-  async function syncDeleteFromCloud(entryDateVal) {
+  async function syncDeleteFromCloud(entryIdVal) {
     if (!supabaseClient) return;
     try {
       await supabaseClient
         .from('savings_entries')
         .delete()
-        .eq('entry_date', entryDateVal);
+        .eq('id', entryIdVal);
     } catch (err) {
       console.error("Cloud delete error:", err);
     }
@@ -411,7 +429,6 @@
     savingsTableBody.innerHTML = '';
 
     const filtered = entries.filter(e => e.date && e.date.startsWith(selectedMonth));
-    filtered.sort((a, b) => b.date.localeCompare(a.date));
 
     if (filtered.length === 0) {
       savingsTableBody.innerHTML = `
@@ -424,9 +441,22 @@
       return;
     }
 
+    // Group by Date YYYY-MM-DD
+    const dailyMap = {};
     filtered.forEach(item => {
-      const tr = document.createElement('tr');
-      const diff = item.amount - dailyGoal;
+      if (!dailyMap[item.date]) {
+        dailyMap[item.date] = { date: item.date, total: 0, items: [] };
+      }
+      dailyMap[item.date].total += item.amount;
+      dailyMap[item.date].items.push(item);
+    });
+
+    const sortedDates = Object.keys(dailyMap).sort().reverse();
+
+    sortedDates.forEach(dateKey => {
+      const group = dailyMap[dateKey];
+      const totalAmount = group.total;
+      const diff = totalAmount - dailyGoal;
       const percent = ((diff / dailyGoal) * 100).toFixed(1);
 
       let diffCell = '';
@@ -447,23 +477,96 @@
         pctCell = `<span class="text-danger">${percent}%</span>`;
       }
 
-      const dateParts = item.date.split('-');
+      const dateParts = dateKey.split('-');
       const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
+      // Notes formatting (ngắn gọn 1 dòng)
+      let notesHtml = '';
+      if (group.items.length === 1) {
+        notesHtml = `<span style="color: var(--text-muted); font-size: 0.8rem;">${group.items[0].note || '-'}</span>`;
+      } else {
+        const firstNote = group.items[0].note || 'Thu nhập';
+        notesHtml = `<span style="color: #38bdf8; font-size: 0.8rem; font-weight: 500;">${firstNote}</span> <span style="color: var(--text-muted); font-size: 0.775rem;">(+${group.items.length - 1} khoản khác)</span>`;
+      }
+
+      // Action buttons
+      let actionsHtml = '';
+      if (group.items.length === 1) {
+        actionsHtml = `
+          <button class="action-icon edit-btn" data-id="${group.items[0].id}" title="Sửa">✏️ Sửa</button>
+          <button class="action-icon delete-btn" data-id="${group.items[0].id}" title="Xóa">🗑️ Xóa</button>
+        `;
+      } else {
+        actionsHtml = `
+          <button class="btn-detail-toggle" data-target="detail-${dateKey}">
+            🔍 Xem ${group.items.length} khoản <span class="toggle-icon">▼</span>
+          </button>
+        `;
+      }
+
+      const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td data-label="Ngày"><strong>${formattedDate}</strong></td>
-        <td data-label="Số tiền" class="text-success"><strong>${formatShortNumber(item.amount)}</strong></td>
+        <td data-label="Ngày"><strong>${formattedDate}</strong> ${group.items.length > 1 ? `<span class="badge-pill pill-info" style="font-size: 0.68rem; padding: 1px 5px; margin-left: 4px;">${group.items.length} khoản</span>` : ''}</td>
+        <td data-label="Số tiền" class="text-success"><strong>${formatShortNumber(totalAmount)}</strong></td>
         <td data-label="So với 150k">${diffCell}</td>
         <td data-label="% Kỳ vọng">${pctCell}</td>
         <td data-label="Trạng thái">${statusCell}</td>
-        <td data-label="Ghi chú"><span style="color: var(--text-muted); font-size: 0.8rem;">${item.note || '-'}</span></td>
-        <td data-label="Thao tác" class="text-right">
-          <button class="action-icon edit-btn" data-id="${item.id}" title="Sửa">✏️ Sửa</button>
-          <button class="action-icon delete-btn" data-id="${item.id}" title="Xóa">🗑️ Xóa</button>
-        </td>
+        <td data-label="Ghi chú">${notesHtml}</td>
+        <td data-label="Thao tác" class="text-right">${actionsHtml}</td>
       `;
 
       savingsTableBody.appendChild(tr);
+
+      // Detail sub-row for multiple entries
+      if (group.items.length > 1) {
+        const detailTr = document.createElement('tr');
+        detailTr.id = `detail-${dateKey}`;
+        detailTr.style.display = 'none';
+        detailTr.className = 'detail-row';
+
+        const subItemsHtml = group.items.map((sub, idx) => `
+          <div class="sub-entry-item">
+            <span class="sub-idx">#${idx + 1}</span>
+            <span class="sub-amount">${formatShortNumber(sub.amount)}</span>
+            <span class="sub-note" title="${sub.note || 'Thu nhập'}">${sub.note || 'Thu nhập chạy app'}</span>
+            <div class="sub-actions">
+              <button class="action-icon edit-btn" data-id="${sub.id}">✏️ Sửa</button>
+              <button class="action-icon delete-btn" data-id="${sub.id}">🗑️ Xóa</button>
+            </div>
+          </div>
+        `).join('');
+
+        detailTr.innerHTML = `
+          <td colspan="7" style="padding: 0; border-top: none;">
+            <div class="sub-entries-container">
+              <div style="font-size: 0.775rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📋 CHI TIẾT ${group.items.length} KHOẢN THU NHẬP NGÀY ${formattedDate}:</span>
+                <span style="font-size: 0.75rem; color: #34d399;">Tổng: ${formatShortNumber(totalAmount)}</span>
+              </div>
+              <div class="sub-entries-list">
+                ${subItemsHtml}
+              </div>
+            </div>
+          </td>
+        `;
+
+        savingsTableBody.appendChild(detailTr);
+      }
+    });
+
+    // Detail Toggle listener
+    document.querySelectorAll('.btn-detail-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.dataset.target;
+        const detailRow = document.getElementById(targetId);
+        if (detailRow) {
+          const isHidden = (detailRow.style.display === 'none');
+          detailRow.style.display = isHidden ? 'table-row' : 'none';
+          e.currentTarget.classList.toggle('active', isHidden);
+          const icon = e.currentTarget.querySelector('.toggle-icon');
+          if (icon) icon.textContent = isHidden ? '▲' : '▼';
+        }
+      });
     });
 
     document.querySelectorAll('.edit-btn').forEach(btn => {
@@ -490,7 +593,7 @@
     entries.forEach(e => {
       if (e.date && e.date.startsWith(selectedMonth)) {
         const day = parseInt(e.date.split('-')[2]);
-        dayMap[day] = e.amount;
+        dayMap[day] = (dayMap[day] || 0) + e.amount;
       }
     });
 
@@ -564,7 +667,7 @@
     }
 
     const newEntry = {
-      id: existingId || ('entry-' + Date.now()),
+      id: existingId || generateUUID(),
       date: dateVal,
       amount: amountVal,
       note: noteVal
@@ -574,17 +677,7 @@
       const idx = entries.findIndex(item => item.id === existingId);
       if (idx !== -1) entries[idx] = newEntry;
     } else {
-      const existingDateIdx = entries.findIndex(item => item.date === dateVal);
-      if (existingDateIdx !== -1) {
-        if (confirm(`Ngày ${dateVal} đã có ghi nhận ${formatShortNumber(entries[existingDateIdx].amount)}. Ghi đè số tiền mới ${formatShortNumber(amountVal)}?`)) {
-          entries[existingDateIdx].amount = amountVal;
-          entries[existingDateIdx].note = noteVal;
-        } else {
-          return;
-        }
-      } else {
-        entries.push(newEntry);
-      }
+      entries.push(newEntry);
     }
 
     saveToStorage();
