@@ -767,7 +767,7 @@
     e.preventDefault();
     const dateVal = entryDate.value;
     const amountVal = parseFloat(entryAmount.value);
-    const noteVal = entryNote.value.trim();
+    const noteVal = entryNote.value.trim() || 'Thu nhập chạy app';
     const existingId = entryId.value;
 
     if (!dateVal || isNaN(amountVal) || amountVal < 0) {
@@ -798,7 +798,7 @@
   function resetForm() {
     entryId.value = '';
     entryAmount.value = '150000';
-    entryNote.value = 'Thu nhập chạy app';
+    entryNote.value = '';
     saveBtn.textContent = 'Lưu Tiết Kiệm';
     cancelEditBtn.style.display = 'none';
     setDefaultDate();
