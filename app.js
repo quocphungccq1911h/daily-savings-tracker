@@ -526,13 +526,17 @@
 
         const subItemsHtml = group.items.map((sub, idx) => `
           <div class="sub-entry-item">
-            <span class="sub-idx">#${idx + 1}</span>
-            <span class="sub-amount">${formatShortNumber(sub.amount)}</span>
-            <span class="sub-note" title="${sub.note || 'Thu nhập'}">${sub.note || 'Thu nhập chạy app'}</span>
-            <div class="sub-actions">
-              <button class="action-icon edit-btn" data-id="${sub.id}">✏️ Sửa</button>
-              <button class="action-icon delete-btn" data-id="${sub.id}">🗑️ Xóa</button>
+            <div class="sub-entry-top">
+              <div class="sub-entry-left">
+                <span class="sub-idx">#${idx + 1}</span>
+                <span class="sub-amount">${formatShortNumber(sub.amount)}</span>
+              </div>
+              <div class="sub-actions">
+                <button class="action-icon edit-btn" data-id="${sub.id}">✏️ Sửa</button>
+                <button class="action-icon delete-btn" data-id="${sub.id}">🗑️ Xóa</button>
+              </div>
             </div>
+            <div class="sub-note">📝 ${sub.note || 'Thu nhập chạy app'}</div>
           </div>
         `).join('');
 
