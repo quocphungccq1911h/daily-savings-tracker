@@ -688,35 +688,6 @@ body {
   color: #fca5a5;
 }
 
-/* In-App Reminder Banner & Notification Button */
-.reminder-banner {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2));
-  border: 1px solid rgba(245, 158, 11, 0.5);
-  color: #fef08a;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
-  animation: pulseGlow 2s infinite ease-in-out;
-}
-
-@keyframes pulseGlow {
-  0% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); }
-  50% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
-  100% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); }
-}
-
-.notify-on {
-  background: rgba(245, 158, 11, 0.15) !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
-  color: #fbbf24 !important;
-}
-
 /* Expandable Sub-entries Accordion */
 .btn-detail-toggle {
   background: rgba(56, 189, 248, 0.12);
