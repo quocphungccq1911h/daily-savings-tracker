@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.0.7">
+  <link rel="stylesheet" href="styles.css?v=1.1.2">
 </head>
 <body>
   <div class="app-container">
@@ -166,7 +166,8 @@
         <div class="tab-buttons">
           <button class="tab-btn active" id="tabHistoryBtn">📋 Nhật ký tiết kiệm</button>
           <button class="tab-btn" id="tabChartBtn">📈 Biểu đồ xu hướng</button>
-          <button class="tab-btn" id="tabBadgesBtn">🏆 Huy hiệu thành tích <span id="badgesUnlockedBadge" class="badge-pill pill-info" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 3px;">0/5</span></button>
+          <button class="tab-btn" id="tabBadgesBtn">🏆 Huy hiệu thành tích <span id="badgesUnlockedBadge" class="badge-pill pill-info" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 3px;">0/8</span></button>
+          <button class="tab-btn" id="tabWishlistBtn">🎯 Mục tiêu Wishlist <span id="wishlistCountBadge" class="badge-pill pill-info" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 3px;">0</span></button>
         </div>
       </div>
 
@@ -218,6 +219,19 @@
             <span style="font-size: 0.775rem; color: var(--text-muted);">Tổng tiết kiệm toàn thời gian: <strong id="lifetimeTotalDisplay" style="color: #34d399;">0 đ</strong></span>
           </div>
           <div class="badges-grid-tab" id="badgesGridContainer">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 4: Wishlist Target Goals -->
+      <div id="tabWishlistContent" class="tab-content" style="display: none;">
+        <div class="wishlist-tab-wrap" style="padding: 12px 4px;">
+          <div style="font-size: 0.825rem; font-weight: 700; color: #fbbf24; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span>🎯 MỤC TIÊU TÍCH LŨY & DỰ BÁO HOÀN THÀNH:</span>
+            <button id="openWishlistModalBtn" class="btn btn-primary" style="font-size: 0.75rem; padding: 6px 14px; border-radius: 20px;">➕ Thêm Mục Tiêu Mới</button>
+          </div>
+          <div class="wishlist-grid-tab" id="wishlistGridContainer">
             <!-- Rendered by JS -->
           </div>
         </div>
@@ -354,7 +368,54 @@ create policy "Users access own entries"
       <div class="modal-footer" style="justify-content: center;">
         <button id="submitPinBtn" class="btn btn-primary" style="width: 100%;">🔓 Mở Khóa Kết Nối</button>
       </div>
+  <!-- Wishlist Goal Modal -->
+  <div class="modal-overlay" id="wishlistModal" style="display: none; z-index: 10000;">
+    <div class="modal-card" style="max-width: 400px;">
+      <div style="font-size: 2.2rem; margin-bottom: 6px; text-align: center;" id="wishlistModalIconDisplay">🏠</div>
+      <h3 style="text-align: center; margin-bottom: 4px;" id="wishlistModalTitle">Thêm Mục Tiêu Ước Mơ</h3>
+      <p class="modal-sub" style="text-align: center; margin-bottom: 14px;">Đặt mục tiêu mua sắm hoặc tích lũy tài chính dài hạn</p>
+      
+      <form id="wishlistForm">
+        <input type="hidden" id="wishlistId">
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label for="wishlistTitleInput">Tên mục tiêu</label>
+          <input type="text" id="wishlistTitleInput" class="input-field" placeholder="Ví dụ: Xây nhà / Mua xe / Đổi iPhone" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label for="wishlistTargetInput">Số tiền cần tích lũy (VNĐ)</label>
+          <input type="number" id="wishlistTargetInput" class="input-field" placeholder="500000000" min="100000" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label for="wishlistAllocatedInput">Số tiền hiện đã tích lũy (VNĐ)</label>
+          <input type="number" id="wishlistAllocatedInput" class="input-field" placeholder="0" min="0" value="0">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="margin-bottom: 6px; display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Biểu tượng đại diện</label>
+          <div class="emoji-picker-wrap" id="emojiPickerWrap">
+            <button type="button" class="emoji-btn active" data-emoji="🏠">🏠 Xây nhà</button>
+            <button type="button" class="emoji-btn" data-emoji="🏞️">🏞️ Mua đất</button>
+            <button type="button" class="emoji-btn" data-emoji="🛡️">🛡️ Dự phòng</button>
+            <button type="button" class="emoji-btn" data-emoji="🛵">🛵 Xe máy</button>
+            <button type="button" class="emoji-btn" data-emoji="📱">📱 Điện thoại</button>
+            <button type="button" class="emoji-btn" data-emoji="🚗">🚗 Ô tô</button>
+            <button type="button" class="emoji-btn" data-emoji="✈️">✈️ Du lịch</button>
+            <button type="button" class="emoji-btn" data-emoji="💍">💍 Gia đình</button>
+          </div>
+          <input type="hidden" id="wishlistEmojiInput" value="🏠">
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 14px;">
+          <button type="submit" id="saveWishlistBtn" class="btn btn-primary" style="width: 100%;">💾 Lưu Mục Tiêu</button>
+        </div>
+        <button type="button" id="closeWishlistModalBtn" class="btn-text-danger-sm" style="margin-top: 12px; width: 100%; text-align: center;">Hủy / Đóng</button>
+      </form>
     </div>
-  <script src="app.js?v=1.0.7"></script>
+  </div>
+
+  <script src="app.js?v=1.1.2"></script>
 </body>
 </html>

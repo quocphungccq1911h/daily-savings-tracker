@@ -88,8 +88,12 @@
   // Tabs
   const tabHistoryBtn = document.getElementById('tabHistoryBtn');
   const tabChartBtn = document.getElementById('tabChartBtn');
+  const tabBadgesBtn = document.getElementById('tabBadgesBtn');
+  const tabWishlistBtn = document.getElementById('tabWishlistBtn');
   const tabHistoryContent = document.getElementById('tabHistoryContent');
   const tabChartContent = document.getElementById('tabChartContent');
+  const tabBadgesContent = document.getElementById('tabBadgesContent');
+  const tabWishlistContent = document.getElementById('tabWishlistContent');
 
   // Modal DOM
   const configGoalBtn = document.getElementById('configGoalBtn');
@@ -605,6 +609,7 @@
     avgDailyRateText.textContent = `${formatShortNumber(realAvgRate)}/ngày`;
 
     renderMilestoneBadges();
+    renderWishlistGoals();
   }
 
   const MILESTONE_BADGES = [
@@ -618,8 +623,6 @@
     { id: 'b8', name: 'Huyền Thoại Bất Tử', amount: 1000000000, icon: '🏛️' }
   ];
 
-  const tabBadgesBtn = document.getElementById('tabBadgesBtn');
-  const tabBadgesContent = document.getElementById('tabBadgesContent');
   const badgesUnlockedBadge = document.getElementById('badgesUnlockedBadge');
   const lifetimeTotalDisplay = document.getElementById('lifetimeTotalDisplay');
 
@@ -1137,18 +1140,22 @@
     tabHistoryBtn.classList.add('active');
     tabChartBtn.classList.remove('active');
     if (tabBadgesBtn) tabBadgesBtn.classList.remove('active');
+    if (tabWishlistBtn) tabWishlistBtn.classList.remove('active');
     tabHistoryContent.style.display = 'block';
     tabChartContent.style.display = 'none';
     if (tabBadgesContent) tabBadgesContent.style.display = 'none';
+    if (tabWishlistContent) tabWishlistContent.style.display = 'none';
   });
 
   tabChartBtn.addEventListener('click', () => {
     tabChartBtn.classList.add('active');
     tabHistoryBtn.classList.remove('active');
     if (tabBadgesBtn) tabBadgesBtn.classList.remove('active');
+    if (tabWishlistBtn) tabWishlistBtn.classList.remove('active');
     tabHistoryContent.style.display = 'none';
     tabChartContent.style.display = 'block';
     if (tabBadgesContent) tabBadgesContent.style.display = 'none';
+    if (tabWishlistContent) tabWishlistContent.style.display = 'none';
     renderChart();
   });
 
@@ -1157,10 +1164,255 @@
       tabBadgesBtn.classList.add('active');
       tabHistoryBtn.classList.remove('active');
       tabChartBtn.classList.remove('active');
+      if (tabWishlistBtn) tabWishlistBtn.classList.remove('active');
       tabHistoryContent.style.display = 'none';
       tabChartContent.style.display = 'none';
       tabBadgesContent.style.display = 'block';
+      if (tabWishlistContent) tabWishlistContent.style.display = 'none';
       renderMilestoneBadges();
+    });
+  }
+
+  if (tabWishlistBtn) {
+    tabWishlistBtn.addEventListener('click', () => {
+      tabWishlistBtn.classList.add('active');
+      tabHistoryBtn.classList.remove('active');
+      tabChartBtn.classList.remove('active');
+      if (tabBadgesBtn) tabBadgesBtn.classList.remove('active');
+      tabHistoryContent.style.display = 'none';
+      tabChartContent.style.display = 'none';
+      if (tabBadgesContent) tabBadgesContent.style.display = 'none';
+      tabWishlistContent.style.display = 'block';
+      renderWishlistGoals();
+    });
+  }
+
+  // --- WISHLIST TARGET GOALS ENGINE ---
+  const WISHLIST_KEY = 'savings_wishlist_goals_v1';
+
+  const DEFAULT_WISHLIST_GOALS = [
+    { id: 'w1', title: 'Xây nhà / Mua nhà', targetAmount: 500000000, allocatedAmount: 0, emoji: '🏠' },
+    { id: 'w2', title: 'Mua đất', targetAmount: 200000000, allocatedAmount: 0, emoji: '🏞️' },
+    { id: 'w3', title: 'Quỹ dự phòng khẩn cấp', targetAmount: 10000000, allocatedAmount: 0, emoji: '🛡️' }
+  ];
+
+  let wishlistGoals = [];
+
+  function loadWishlistGoals() {
+    try {
+      const saved = localStorage.getItem(WISHLIST_KEY);
+      if (saved) {
+        let parsed = JSON.parse(saved);
+        if (parsed.some(g => g.id === 'w4' || g.title === 'Đổi iPhone 16 Pro' || g.title === 'Mua Xe máy mới')) {
+          wishlistGoals = DEFAULT_WISHLIST_GOALS;
+          localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlistGoals));
+        } else {
+          wishlistGoals = parsed;
+        }
+      } else {
+        wishlistGoals = DEFAULT_WISHLIST_GOALS;
+      }
+    } catch (e) {
+      wishlistGoals = DEFAULT_WISHLIST_GOALS;
+    }
+  }
+
+  function saveWishlistGoals() {
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlistGoals));
+    renderWishlistGoals();
+  }
+
+  function renderWishlistGoals() {
+    const wishlistGridContainer = document.getElementById('wishlistGridContainer');
+    const wishlistCountBadge = document.getElementById('wishlistCountBadge');
+    if (!wishlistGridContainer) return;
+
+    let totalLifetimeSaved = 0;
+    entries.forEach(e => totalLifetimeSaved += (e.amount || 0));
+
+    if (wishlistCountBadge) {
+      wishlistCountBadge.textContent = wishlistGoals.length.toString();
+    }
+
+    const now = new Date();
+    const daysPassed = now.getDate();
+    let currentMonthSaved = 0;
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    entries.filter(e => e.date && e.date.startsWith(currentMonthKey)).forEach(e => currentMonthSaved += e.amount);
+    const avgDailyPace = daysPassed > 0 ? Math.round(currentMonthSaved / daysPassed) : dailyGoal;
+    const effectivePace = Math.max(avgDailyPace, dailyGoal);
+
+    if (wishlistGoals.length === 0) {
+      wishlistGridContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 24px; color: var(--text-muted);">
+          Chưa có mục tiêu ước mơ nào. Hãy bấm "➕ Thêm Mục Tiêu Mới" để đặt mục tiêu nhé!
+        </div>
+      `;
+      return;
+    }
+
+    const html = wishlistGoals.map(item => {
+      const allocated = item.allocatedAmount || 0;
+      const currentSaved = Math.min(item.targetAmount, Math.max(allocated, totalLifetimeSaved));
+      const pct = Math.min(100, Math.round((currentSaved / item.targetAmount) * 100));
+      const isCompleted = pct >= 100;
+      const remaining = Math.max(0, item.targetAmount - currentSaved);
+
+      let forecastText = '';
+      if (isCompleted) {
+        forecastText = '🎉 CHÚC MỪNG! ĐÃ HOÀN THÀNH MỤC TIÊU!';
+      } else {
+        const daysNeeded = Math.ceil(remaining / effectivePace);
+        forecastText = `🚀 Còn thiếu ${formatShortNumber(remaining)} — Dự kiến đạt sau ~<strong>${daysNeeded} ngày</strong> (Tốc độ: ${formatShortNumber(effectivePace)}/ngày)`;
+      }
+
+      return `
+        <div class="wishlist-card ${isCompleted ? 'completed' : ''}">
+          <div class="wishlist-card-top">
+            <div class="wishlist-card-brand">
+              <span class="wishlist-card-icon">${item.emoji || '🏠'}</span>
+              <div>
+                <div class="wishlist-card-title">${item.title}</div>
+                <div class="wishlist-card-target">Mục tiêu: ${formatShortNumber(item.targetAmount)}</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button class="action-icon edit-wishlist-btn" data-id="${item.id}" title="Sửa">✏️</button>
+              <button class="action-icon delete-wishlist-btn" data-id="${item.id}" title="Xóa">🗑️</button>
+            </div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.775rem; color: var(--text-muted); margin-bottom: 4px;">
+              <span>Tiến độ tích lũy:</span>
+              <strong style="color: ${isCompleted ? '#34d399' : '#fbbf24'};">${formatShortNumber(currentSaved)} (${pct}%)</strong>
+            </div>
+            <div class="wishlist-progress-track">
+              <div class="wishlist-progress-fill" style="width: ${pct}%;"></div>
+            </div>
+          </div>
+          <div class="wishlist-forecast-note">
+            ${forecastText}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    wishlistGridContainer.innerHTML = html;
+
+    document.querySelectorAll('.edit-wishlist-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => editWishlistGoal(e.currentTarget.dataset.id));
+    });
+
+    document.querySelectorAll('.delete-wishlist-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => deleteWishlistGoal(e.currentTarget.dataset.id));
+    });
+  }
+
+  const openWishlistModalBtn = document.getElementById('openWishlistModalBtn');
+  const wishlistModal = document.getElementById('wishlistModal');
+  const wishlistForm = document.getElementById('wishlistForm');
+  const wishlistId = document.getElementById('wishlistId');
+  const wishlistTitleInput = document.getElementById('wishlistTitleInput');
+  const wishlistTargetInput = document.getElementById('wishlistTargetInput');
+  const wishlistAllocatedInput = document.getElementById('wishlistAllocatedInput');
+  const wishlistEmojiInput = document.getElementById('wishlistEmojiInput');
+  const wishlistModalTitle = document.getElementById('wishlistModalTitle');
+  const wishlistModalIconDisplay = document.getElementById('wishlistModalIconDisplay');
+  const closeWishlistModalBtn = document.getElementById('closeWishlistModalBtn');
+  const emojiPickerWrap = document.getElementById('emojiPickerWrap');
+
+  if (emojiPickerWrap) {
+    emojiPickerWrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('.emoji-btn');
+      if (!btn) return;
+      document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const emoji = btn.dataset.emoji || '🏠';
+      if (wishlistEmojiInput) wishlistEmojiInput.value = emoji;
+      if (wishlistModalIconDisplay) wishlistModalIconDisplay.textContent = emoji;
+    });
+  }
+
+  if (openWishlistModalBtn) {
+    openWishlistModalBtn.addEventListener('click', () => {
+      resetWishlistForm();
+      wishlistModal.style.display = 'flex';
+    });
+  }
+
+  if (closeWishlistModalBtn) {
+    closeWishlistModalBtn.addEventListener('click', () => {
+      wishlistModal.style.display = 'none';
+    });
+  }
+
+  function resetWishlistForm() {
+    wishlistId.value = '';
+    wishlistTitleInput.value = '';
+    wishlistTargetInput.value = '';
+    wishlistAllocatedInput.value = '0';
+    wishlistEmojiInput.value = '🏠';
+    if (wishlistModalTitle) wishlistModalTitle.textContent = 'Thêm Mục Tiêu Ước Mơ';
+    if (wishlistModalIconDisplay) wishlistModalIconDisplay.textContent = '🏠';
+    document.querySelectorAll('.emoji-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.emoji === '🏠');
+    });
+  }
+
+  function editWishlistGoal(id) {
+    const goal = wishlistGoals.find(g => g.id === id);
+    if (!goal) return;
+    wishlistId.value = goal.id;
+    wishlistTitleInput.value = goal.title;
+    wishlistTargetInput.value = goal.targetAmount;
+    wishlistAllocatedInput.value = goal.allocatedAmount || 0;
+    wishlistEmojiInput.value = goal.emoji || '🏠';
+    if (wishlistModalTitle) wishlistModalTitle.textContent = 'Chỉnh Sửa Mục Tiêu';
+    if (wishlistModalIconDisplay) wishlistModalIconDisplay.textContent = goal.emoji || '🏠';
+    document.querySelectorAll('.emoji-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.emoji === (goal.emoji || '🏠'));
+    });
+    wishlistModal.style.display = 'flex';
+  }
+
+  function deleteWishlistGoal(id) {
+    if (confirm('Bạn có chắc chắn muốn xóa mục tiêu này không?')) {
+      wishlistGoals = wishlistGoals.filter(g => g.id !== id);
+      saveWishlistGoals();
+    }
+  }
+
+  if (wishlistForm) {
+    wishlistForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = wishlistTitleInput.value.trim();
+      const targetAmount = parseFloat(wishlistTargetInput.value);
+      const allocatedAmount = parseFloat(wishlistAllocatedInput.value) || 0;
+      const emoji = wishlistEmojiInput.value || '🏠';
+      const existingId = wishlistId.value;
+
+      if (!title || isNaN(targetAmount) || targetAmount < 100000) {
+        alert('Vui lòng nhập tên mục tiêu và số tiền hợp lệ (Tối thiểu 100.000đ)!');
+        return;
+      }
+
+      const newGoal = {
+        id: existingId || `wishlist-${Date.now()}`,
+        title: title,
+        targetAmount: targetAmount,
+        allocatedAmount: allocatedAmount,
+        emoji: emoji
+      };
+
+      if (existingId) {
+        const idx = wishlistGoals.findIndex(g => g.id === existingId);
+        if (idx !== -1) wishlistGoals[idx] = newGoal;
+      } else {
+        wishlistGoals.push(newGoal);
+      }
+
+      saveWishlistGoals();
+      wishlistModal.style.display = 'none';
     });
   }
 
@@ -1384,6 +1636,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
   // App Initialize
   initSupabase();
   seedInitialSampleData();
+  loadWishlistGoals();
   setDefaultDate();
   entryAmount.value = dailyGoal;
   updateEntryPreview();
