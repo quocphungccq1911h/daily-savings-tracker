@@ -8,8 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Supabase JS SDK -->
+  <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -26,9 +27,6 @@
       </div>
       <div class="header-tools">
         <button id="cloudStatusBtn" class="icon-tool-btn cloud-off" title="Trạng thái CSDL Đám mây">☁️ Chưa kết nối Cloud</button>
-        <button id="exportDataBtn" class="icon-tool-btn" title="Xuất file sao lưu">📥 Tải file</button>
-        <button id="importDataBtn" class="icon-tool-btn" title="Nhập file sao lưu">📤 Nạp file</button>
-        <input type="file" id="importFileInput" accept=".json" style="display: none;">
       </div>
     </header>
 

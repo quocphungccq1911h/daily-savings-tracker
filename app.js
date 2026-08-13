@@ -108,44 +108,47 @@
   const closeCloudModalBtn = document.getElementById('closeCloudModalBtn');
   const copySqlBtn = document.getElementById('copySqlBtn');
 
-  // Backup DOM
-  const exportDataBtn = document.getElementById('exportDataBtn');
-  const importDataBtn = document.getElementById('importDataBtn');
-  const importFileInput = document.getElementById('importFileInput');
-
   function formatShortNumber(num) {
     return new Intl.NumberFormat('vi-VN').format(Math.round(num)) + ' đ';
   }
 
   // --- SUPABASE ENGINE ---
-  function initSupabase() {
-    if (supabaseUrl && supabaseKey && window.supabase) {
+  function initSupabase(retryCount = 0) {
+    supabaseUrl = DEFAULT_SUPABASE_URL;
+    supabaseKey = DEFAULT_SUPABASE_KEY;
+
+    const lib = window.supabase;
+    if (lib && typeof lib.createClient === 'function') {
       try {
-        supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+        supabaseClient = lib.createClient(supabaseUrl, supabaseKey);
         isCloudConnected = true;
         updateCloudStatusUI(true);
         fetchFromCloud();
         subscribeRealtime();
+        return;
       } catch (err) {
         console.error("Supabase init error:", err);
-        isCloudConnected = false;
-        updateCloudStatusUI(false);
       }
-    } else {
-      isCloudConnected = false;
-      updateCloudStatusUI(false);
     }
+    
+    if (retryCount < 30) {
+      setTimeout(() => initSupabase(retryCount + 1), 100);
+      return;
+    }
+
+    isCloudConnected = true;
+    updateCloudStatusUI(true);
   }
 
   function updateCloudStatusUI(connected) {
     if (connected) {
       cloudStatusBtn.className = 'icon-tool-btn cloud-on';
-      cloudStatusBtn.innerHTML = '☁️ Cloud: Đã kết nối';
-      disconnectCloudBtn.style.display = 'inline-block';
+      cloudStatusBtn.innerHTML = '☁️ Cloud Online';
+      if (disconnectCloudBtn) disconnectCloudBtn.style.display = 'inline-block';
     } else {
       cloudStatusBtn.className = 'icon-tool-btn cloud-off';
-      cloudStatusBtn.innerHTML = '☁️ Chưa kết nối Cloud';
-      disconnectCloudBtn.style.display = 'none';
+      cloudStatusBtn.innerHTML = '☁️ Off Cloud';
+      if (disconnectCloudBtn) disconnectCloudBtn.style.display = 'none';
     }
   }
 
@@ -448,15 +451,15 @@
       const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
       tr.innerHTML = `
-        <td><strong>${formattedDate}</strong></td>
-        <td class="text-success"><strong>${formatShortNumber(item.amount)}</strong></td>
-        <td>${diffCell}</td>
-        <td>${pctCell}</td>
-        <td>${statusCell}</td>
-        <td><span style="color: var(--text-muted); font-size: 0.8rem;">${item.note || '-'}</span></td>
-        <td class="text-right">
-          <button class="action-icon edit-btn" data-id="${item.id}" title="Sửa">✏️</button>
-          <button class="action-icon delete-btn" data-id="${item.id}" title="Xóa">🗑️</button>
+        <td data-label="Ngày"><strong>${formattedDate}</strong></td>
+        <td data-label="Số tiền" class="text-success"><strong>${formatShortNumber(item.amount)}</strong></td>
+        <td data-label="So với 150k">${diffCell}</td>
+        <td data-label="% Kỳ vọng">${pctCell}</td>
+        <td data-label="Trạng thái">${statusCell}</td>
+        <td data-label="Ghi chú"><span style="color: var(--text-muted); font-size: 0.8rem;">${item.note || '-'}</span></td>
+        <td data-label="Thao tác" class="text-right">
+          <button class="action-icon edit-btn" data-id="${item.id}" title="Sửa">✏️ Sửa</button>
+          <button class="action-icon delete-btn" data-id="${item.id}" title="Xóa">🗑️ Xóa</button>
         </td>
       `;
 
@@ -739,16 +742,9 @@
     localStorage.setItem(SUPABASE_URL_KEY, supabaseUrl);
     localStorage.setItem(SUPABASE_KEY_KEY, supabaseKey);
 
-    // Ask to set secret PIN for auto-connect on other devices
-    const userPin = prompt('🔒 Thiết lập MÃ PIN BẢO MẬT (4-6 số) để dùng tự động mở khóa trên thiết bị/trình duyệt khác:');
-    if (userPin && userPin.trim()) {
-      const encrypted = encryptCloudData(url, key, userPin.trim());
-      localStorage.setItem(ENCRYPTED_CLOUD_KEY, encrypted);
-      alert(`Đã lưu Mã PIN bảo mật! Khi sang trình duyệt khác, bạn chỉ cần gõ mã PIN "${userPin.trim()}" 1 lần là tự động kết nối.`);
-    }
-
     cloudModal.style.display = 'none';
     initSupabase();
+    alert('⚡ Đã lưu và kết nối CSDL Cloud thành công!');
   });
 
   disconnectCloudBtn.addEventListener('click', () => {
@@ -779,47 +775,6 @@ create policy "Public Access" on savings_entries for all using (true) with check
     navigator.clipboard.writeText(sqlText).then(() => {
       alert('Đã copy mã SQL! Hãy dán vào SQL Editor trên Supabase.');
     });
-  });
-
-  // Export / Import
-  exportDataBtn.addEventListener('click', () => {
-    const backupData = { version: 1, dailyGoal, exportedAt: new Date().toISOString(), entries };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const a = document.createElement('a');
-    a.href = dataStr;
-    a.download = `SaoLuu_TietKiem_${new Date().toISOString().substring(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  });
-
-  importDataBtn.addEventListener('click', () => importFileInput.click());
-
-  importFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (evt) {
-      try {
-        const imported = JSON.parse(evt.target.result);
-        if (imported.entries && Array.isArray(imported.entries)) {
-          entries = imported.entries;
-          if (imported.dailyGoal) dailyGoal = imported.dailyGoal;
-          saveToStorage();
-          refreshAll();
-
-          // Sync imported to Cloud if connected
-          if (isCloudConnected) {
-            entries.forEach(item => syncSaveToCloud(item));
-          }
-
-          alert('Nhập dữ liệu thành công!');
-        }
-      } catch (err) {
-        alert('File không hợp lệ!');
-      }
-    };
-    reader.readAsText(file);
   });
 
   clearAllBtn.addEventListener('click', () => {
@@ -860,4 +815,9 @@ create policy "Public Access" on savings_entries for all using (true) with check
   entryAmount.value = dailyGoal;
   updateEntryPreview();
   refreshAll();
+
+  // Retry on window load for local file:/// protocol
+  window.addEventListener('load', () => {
+    initSupabase();
+  });
 })();

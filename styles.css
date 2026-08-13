@@ -478,8 +478,35 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 0.9rem;
-  padding: 2px 4px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.edit-btn {
+  color: #fb923c;
+  background: rgba(251, 146, 60, 0.12);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.edit-btn:hover {
+  background: rgba(251, 146, 60, 0.25);
+  color: #fdba74;
+}
+
+.delete-btn {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  margin-left: 4px;
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
 }
 
 /* Chart Container */
@@ -607,4 +634,93 @@ body {
 .btn-text-danger-sm:hover {
   opacity: 1;
   text-decoration: underline;
+}
+
+/* Mobile Responsive Optimizations */
+@media (max-width: 640px) {
+  body {
+    padding: 12px 8px;
+  }
+
+  /* Header Optimization */
+  .app-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-icon {
+    font-size: 1.35rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.05rem;
+  }
+
+  .brand-sub {
+    font-size: 0.775rem;
+  }
+
+  .header-tools {
+    width: auto;
+  }
+
+  .icon-tool-btn {
+    width: auto;
+    padding: 4px 10px;
+    font-size: 0.725rem;
+    border-radius: 20px;
+  }
+
+  /* Table Card View on Mobile */
+  .table-wrap {
+    overflow-x: visible;
+  }
+
+  .minimal-table thead {
+    display: none;
+  }
+
+  .minimal-table, .minimal-table tbody, .minimal-table tr, .minimal-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .minimal-table tr {
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    padding: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .minimal-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    font-size: 0.85rem;
+  }
+
+  .minimal-table td:last-child {
+    border-bottom: none;
+    padding-top: 8px;
+  }
+
+  .minimal-table td:before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: 0.775rem;
+    font-weight: 600;
+  }
 }
