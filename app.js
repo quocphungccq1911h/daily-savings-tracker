@@ -630,6 +630,8 @@
 
     const endOfYear = new Date(currentYear, 11, 31);
     const activeYearDays = Math.max(1, Math.round((endOfYear - earliestDateInYear) / (1000 * 60 * 60 * 24)) + 1);
+    const yearTarget = activeYearDays * dailyGoal;
+
     let totalLifetimeSaved = 0;
     entries.forEach(e => totalLifetimeSaved += (e.amount || 0));
     const realAvgRate = totalLifetimeSaved / Math.max(1, entries.length);
