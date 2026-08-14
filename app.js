@@ -1299,9 +1299,9 @@
   const WISHLIST_KEY = 'savings_wishlist_goals_v1';
 
   const DEFAULT_WISHLIST_GOALS = [
-    { id: 'w1', title: 'Xây nhà / Mua nhà', targetAmount: 500000000, allocatedAmount: 0, emoji: '🏠' },
+    { id: 'w3', title: 'Quỹ dự phòng khẩn cấp', targetAmount: 10000000, allocatedAmount: 0, emoji: '🛡️' },
     { id: 'w2', title: 'Mua đất', targetAmount: 200000000, allocatedAmount: 0, emoji: '🏞️' },
-    { id: 'w3', title: 'Quỹ dự phòng khẩn cấp', targetAmount: 10000000, allocatedAmount: 0, emoji: '🛡️' }
+    { id: 'w1', title: 'Xây nhà / Mua nhà', targetAmount: 500000000, allocatedAmount: 0, emoji: '🏠' }
   ];
 
   let wishlistGoals = [];
@@ -1359,7 +1359,8 @@
       return;
     }
 
-    const html = wishlistGoals.map(item => {
+    const sortedGoals = [...wishlistGoals].sort((a, b) => a.targetAmount - b.targetAmount);
+    const html = sortedGoals.map(item => {
       const allocated = item.allocatedAmount || 0;
       const currentSaved = Math.min(item.targetAmount, Math.max(allocated, totalLifetimeSaved));
       const pct = Math.min(100, Math.round((currentSaved / item.targetAmount) * 100));

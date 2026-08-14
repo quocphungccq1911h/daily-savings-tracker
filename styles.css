@@ -164,11 +164,18 @@ body {
 }
 
 /* Cards */
-.card-hero, .bottom-card {
+.card-hero {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 18px 20px;
+}
+
+.bottom-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 14px 16px;
 }
 
 .card-title {
@@ -492,7 +499,7 @@ body {
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -999,7 +1006,7 @@ body {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.7));
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  padding: 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1245,12 +1252,16 @@ body {
     padding: 10px 6px;
   }
 
-  .card-hero, .bottom-card {
+  .card-hero {
     padding: 14px 12px;
   }
 
-  .status-banner, .mini-card {
-    padding: 14px 12px;
+  .bottom-card {
+    padding: 10px 8px;
+  }
+
+  .status-banner, .mini-card, .badge-tab-card, .wishlist-card {
+    padding: 12px 10px;
   }
 
   /* Header Optimization */
