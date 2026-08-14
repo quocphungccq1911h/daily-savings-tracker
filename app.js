@@ -71,6 +71,11 @@
 
   // Form DOM
   const savingsForm = document.getElementById('savingsForm');
+  const formHeaderToggle = document.getElementById('formHeaderToggle');
+  const toggleFormBtn = document.getElementById('toggleFormBtn');
+  const toggleFormText = document.getElementById('toggleFormText');
+  const toggleFormIcon = document.getElementById('toggleFormIcon');
+  const formBodyWrap = document.getElementById('formBodyWrap');
   const entryId = document.getElementById('entryId');
   const entryDate = document.getElementById('entryDate');
   const entryAmount = document.getElementById('entryAmount');
@@ -1047,9 +1052,83 @@
     });
   }
 
+  // --- TOAST NOTIFICATION ENGINE ---
+  function showToast(message, icon = '✅') {
+    let toast = document.getElementById('toastNotification');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toastNotification';
+      toast.className = 'toast-notification';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2800);
+  }
+
+  // --- COLLAPSIBLE FORM ENGINE ---
+  let isFormOpen = window.innerWidth > 768; // Open on Desktop, Collapsed by default on Mobile!
+
+  function updateFormStateUI() {
+    if (!formBodyWrap) return;
+    if (isFormOpen) {
+      formBodyWrap.classList.remove('collapsed');
+      if (toggleFormBtn) toggleFormBtn.classList.add('open');
+      if (toggleFormText) toggleFormText.textContent = 'Thu Gọn';
+    } else {
+      formBodyWrap.classList.add('collapsed');
+      if (toggleFormBtn) toggleFormBtn.classList.remove('open');
+      if (toggleFormText) toggleFormText.textContent = '➕ Thêm Khoản Mới';
+    }
+  }
+
+  function toggleFormState() {
+    isFormOpen = !isFormOpen;
+    updateFormStateUI();
+  }
+
+  if (formHeaderToggle) {
+    formHeaderToggle.addEventListener('click', () => toggleFormState());
+  }
+
+  // Initialize Form Collapsed State
+  updateFormStateUI();
+
+  // --- TOUCH DRAG GUARDRAIL FOR SAVE BUTTON ---
+  let touchStartY = 0;
+  let touchStartX = 0;
+  let isDraggingTouch = false;
+
+  if (saveBtn) {
+    saveBtn.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isDraggingTouch = false;
+      }
+    }, { passive: true });
+
+    saveBtn.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) {
+        const moveX = Math.abs(e.touches[0].clientX - touchStartX);
+        const moveY = Math.abs(e.touches[0].clientY - touchStartY);
+        if (moveX > 10 || moveY > 10) {
+          isDraggingTouch = true;
+        }
+      }
+    }, { passive: true });
+  }
+
   // Form Submit
   savingsForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (isDraggingTouch) {
+      isDraggingTouch = false;
+      return; // Ignore submit if user was scrolling/dragging thumb across button!
+    }
+
     const dateVal = entryDate.value;
     const amountVal = parseFloat(entryAmount.value);
     const noteVal = entryNote.value.trim() || 'Thu nhập';
@@ -1078,8 +1157,18 @@
 
     saveToStorage();
     syncSaveToCloud(newEntry);
+
+    const actionMsg = existingId ? 'Cập nhật thành công' : 'Đã lưu khoản ' + formatShortNumber(amountVal);
+    showToast(actionMsg, '🎉');
+
     resetForm();
     refreshAll();
+
+    // Auto collapse form on mobile after saving to prevent accidental taps while scrolling!
+    if (window.innerWidth <= 768) {
+      isFormOpen = false;
+      updateFormStateUI();
+    }
   });
 
   function resetForm() {
@@ -1103,6 +1192,10 @@
     entryNote.value = item.note || '';
 
     saveBtn.textContent = '🔄 Cập Nhật';
+
+    // Auto expand form when editing an entry!
+    isFormOpen = true;
+    updateFormStateUI();
     cancelEditBtn.style.display = 'inline-block';
 
     updateEntryPreview();

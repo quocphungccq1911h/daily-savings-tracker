@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.1.3">
+  <link rel="stylesheet" href="styles.css?v=1.1.4">
 </head>
 <body>
   <div class="app-container">
@@ -38,61 +38,73 @@
     <!-- Main Grid Layout -->
     <main class="dashboard-grid">
 
-      <!-- LEFT COLUMN: Quick Entry Form -->
+      <!-- LEFT COLUMN: Quick Entry Form (Collapsible) -->
       <section class="card-hero">
-        <h2 class="card-title">✍️ Nhập Tiết Kiệm</h2>
-        <form id="savingsForm">
-          <input type="hidden" id="entryId">
-          
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label for="entryDate">Ngày chọn</label>
-              <input type="date" id="entryDate" class="input-field" required>
+        <div class="card-hero-header" id="formHeaderToggle">
+          <div class="hero-header-title">
+            <span class="hero-header-icon">✍️</span>
+            <h2 class="card-title" style="margin: 0; display: inline;">Nhập Tiết Kiệm</h2>
+          </div>
+          <button type="button" id="toggleFormBtn" class="btn-toggle-form">
+            <span id="toggleFormText">➕ Thêm Khoản Mới</span>
+            <span id="toggleFormIcon" class="toggle-arrow">▼</span>
+          </button>
+        </div>
+
+        <div id="formBodyWrap" class="form-body-wrap">
+          <form id="savingsForm">
+            <input type="hidden" id="entryId">
+            
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="entryDate">Ngày chọn</label>
+                <input type="date" id="entryDate" class="input-field" required>
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="entryAmount">Số tiền tiết kiệm (VNĐ)</label>
-            <div class="input-money-group">
-              <input type="number" id="entryAmount" class="input-field money-input" placeholder="150000" min="0" step="1000" required>
-              <span class="money-unit">đ</span>
+            <div class="form-group">
+              <label for="entryAmount">Số tiền tiết kiệm (VNĐ)</label>
+              <div class="input-money-group">
+                <input type="number" id="entryAmount" class="input-field money-input" placeholder="150000" min="0" step="1000" required>
+                <span class="money-unit">đ</span>
+              </div>
             </div>
-          </div>
 
-          <!-- Quick Amount Chips -->
-          <div class="chip-group">
-            <button type="button" class="chip-btn" data-val="100000">+100k</button>
-            <button type="button" class="chip-btn" data-val="120000">+120k</button>
-            <button type="button" class="chip-btn active" data-val="150000">+150k</button>
-            <button type="button" class="chip-btn" data-val="170000">+170k</button>
-          </div>
-
-          <!-- Live Comparison Badge -->
-          <div class="live-badge" id="entryPreviewBox">
-            <span id="prevStatusTag" class="badge-pill pill-info">Đúng kế hoạch</span>
-            <span id="prevDetailText" class="badge-desc">Đạt 150.000đ (0%)</span>
-          </div>
-
-          <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
-            <label style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; display: block;">Nguồn Thu</label>
-            <div class="category-pills-wrap" id="categoryPillsWrap">
-              <button type="button" class="category-pill active" data-category="Grab / Chạy xe">🚗 Grab / Chạy xe</button>
-              <button type="button" class="category-pill" data-category="Lương cố định">💼 Lương cố định</button>
-              <button type="button" class="category-pill" data-category="Thưởng">🏪 Thưởng</button>
-              <button type="button" class="category-pill" data-category="Khác">💰 Khác</button>
+            <!-- Quick Amount Chips -->
+            <div class="chip-group">
+              <button type="button" class="chip-btn" data-val="100000">+100k</button>
+              <button type="button" class="chip-btn" data-val="120000">+120k</button>
+              <button type="button" class="chip-btn active" data-val="150000">+150k</button>
+              <button type="button" class="chip-btn" data-val="170000">+170k</button>
             </div>
-            <input type="hidden" id="entryCategory" value="Grab / Chạy xe">
-          </div>
 
-          <div class="form-group">
-            <input type="text" id="entryNote" class="input-field input-sm" placeholder="Ghi chú thêm (Không bắt buộc nhập)">
-          </div>
+            <!-- Live Comparison Badge -->
+            <div class="live-badge" id="entryPreviewBox">
+              <span id="prevStatusTag" class="badge-pill pill-info">Đúng kế hoạch</span>
+              <span id="prevDetailText" class="badge-desc">Đạt 150.000đ (0%)</span>
+            </div>
 
-          <div class="btn-group">
-            <button type="submit" id="saveBtn" class="btn btn-primary">Lưu Tiết Kiệm</button>
-            <button type="button" id="cancelEditBtn" class="btn btn-ghost" style="display: none;">Hủy</button>
-          </div>
-        </form>
+            <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
+              <label style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; display: block;">Nguồn Thu</label>
+              <div class="category-pills-wrap" id="categoryPillsWrap">
+                <button type="button" class="category-pill active" data-category="Grab / Chạy xe">🚗 Grab / Chạy xe</button>
+                <button type="button" class="category-pill" data-category="Lương cố định">💼 Lương cố định</button>
+                <button type="button" class="category-pill" data-category="Thưởng">🏪 Thưởng</button>
+                <button type="button" class="category-pill" data-category="Khác">💰 Khác</button>
+              </div>
+              <input type="hidden" id="entryCategory" value="Grab / Chạy xe">
+            </div>
+
+            <div class="form-group">
+              <input type="text" id="entryNote" class="input-field input-sm" placeholder="Ghi chú thêm (Không bắt buộc nhập)">
+            </div>
+
+            <div class="btn-group">
+              <button type="submit" id="saveBtn" class="btn btn-primary">Lưu Tiết Kiệm</button>
+              <button type="button" id="cancelEditBtn" class="btn btn-ghost" style="display: none;">Hủy</button>
+            </div>
+          </form>
+        </div>
       </section>
 
       <!-- RIGHT COLUMN: Clean Overview Stats & Target Progress -->
@@ -416,6 +428,6 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.1.3"></script>
+  <script src="app.js?v=1.1.4"></script>
 </body>
 </html>
