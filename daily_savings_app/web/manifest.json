@@ -1,0 +1,11 @@
+{
+    "name": "Sổ Tiết Kiệm Daily",
+    "short_name": "SavingsDaily",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0b0f19",
+    "theme_color": "#10b981",
+    "description": "Sổ Tiết Kiệm Daily - Native Flutter Mobile Application",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false
+}

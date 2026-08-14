@@ -1,0 +1,75 @@
+import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../../models/savings_entry.dart';
+import '../../models/wishlist_goal.dart';
+import '../core/constants/app_constants.dart';
+
+class LocalStorageService {
+  static const String _entriesBoxName = 'savings_entries_box_v1';
+  static const String _wishlistBoxName = 'wishlist_goals_box_v1';
+  static const String _settingsBoxName = 'settings_box_v1';
+
+  static Future<void> init() async {
+    await Hive.initFlutter();
+    await Hive.openBox(_entriesBoxName);
+    await Hive.openBox(_wishlistBoxName);
+    await Hive.openBox(_settingsBoxName);
+  }
+
+  // Savings Entries
+  static List<SavingsEntry> getEntries() {
+    final box = Hive.box(_entriesBoxName);
+    final List<SavingsEntry> list = [];
+    for (var key in box.keys) {
+      final String? jsonStr = box.get(key);
+      if (jsonStr != null) {
+        list.add(SavingsEntry.fromMap(jsonDecode(jsonStr)));
+      }
+    }
+    return list;
+  }
+
+  static Future<void> saveEntry(SavingsEntry entry) async {
+    final box = Hive.box(_entriesBoxName);
+    await box.put(entry.id, jsonEncode(entry.toMap()));
+  }
+
+  static Future<void> deleteEntry(String id) async {
+    final box = Hive.box(_entriesBoxName);
+    await box.delete(id);
+  }
+
+  // Wishlist Goals
+  static List<WishlistGoal> getWishlistGoals() {
+    final box = Hive.box(_wishlistBoxName);
+    if (box.isEmpty) {
+      // Seed initial 3 default wishlist goals
+      final defaults = AppConstants.defaultWishlistGoals
+          .map((m) => WishlistGoal.fromMap(m))
+          .toList();
+      for (var goal in defaults) {
+        saveWishlistGoal(goal);
+      }
+      return defaults;
+    }
+
+    final List<WishlistGoal> list = [];
+    for (var key in box.keys) {
+      final String? jsonStr = box.get(key);
+      if (jsonStr != null) {
+        list.add(WishlistGoal.fromMap(jsonDecode(jsonStr)));
+      }
+    }
+    return list;
+  }
+
+  static Future<void> saveWishlistGoal(WishlistGoal goal) async {
+    final box = Hive.box(_wishlistBoxName);
+    await box.put(goal.id, jsonEncode(goal.toMap()));
+  }
+
+  static Future<void> deleteWishlistGoal(String id) async {
+    final box = Hive.box(_wishlistBoxName);
+    await box.delete(id);
+  }
+}
