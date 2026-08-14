@@ -65,7 +65,7 @@
             <div class="form-group">
               <label for="entryAmount">Số tiền tiết kiệm (VNĐ)</label>
               <div class="input-money-group">
-                <input type="number" id="entryAmount" class="input-field money-input" placeholder="150000" min="0" step="1000" required>
+                <input type="text" id="entryAmount" class="input-field money-input" placeholder="150.000" inputmode="numeric" autocomplete="off" required>
                 <span class="money-unit">đ</span>
               </div>
             </div>
@@ -114,7 +114,7 @@
         <div class="status-banner" id="statusBanner">
           <div class="banner-header">
             <span class="banner-title" id="bannerTitleText">LŨY KẾ ĐẾN HÔM NAY (<span id="currentDateBadge">--/--</span>)</span>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="banner-controls">
               <span id="streakBadgeBox" class="streak-badge" title="Số ngày liên tiếp đạt mốc 150k">🔥 Chuỗi 0 ngày</span>
               <div class="month-select-wrapper">
                 <select id="filterMonthSelect" class="select-field select-header-month"></select>

@@ -438,8 +438,19 @@
     filterMonthSelect.value = currentMonthKey;
   }
 
+  function parseMoneyValue(val) {
+    if (val === null || val === undefined) return 0;
+    const cleanStr = String(val).replace(/[^\d]/g, '');
+    return cleanStr ? parseInt(cleanStr, 10) : 0;
+  }
+
+  function formatMoneyInput(val) {
+    const num = parseMoneyValue(val);
+    return num > 0 ? num.toLocaleString('vi-VN') : '';
+  }
+
   function updateEntryPreview() {
-    const val = parseFloat(entryAmount.value) || 0;
+    const val = parseMoneyValue(entryAmount.value);
     const diff = val - dailyGoal;
     const percent = ((diff / dailyGoal) * 100).toFixed(1);
 
@@ -1130,7 +1141,7 @@
     }
 
     const dateVal = entryDate.value;
-    const amountVal = parseFloat(entryAmount.value);
+    const amountVal = parseMoneyValue(entryAmount.value);
     const noteVal = entryNote.value.trim() || 'Thu nhập';
     const catVal = entryCategory ? entryCategory.value : 'Grab / Chạy xe';
     const existingId = entryId.value;
@@ -1173,7 +1184,7 @@
 
   function resetForm() {
     entryId.value = '';
-    entryAmount.value = '150000';
+    entryAmount.value = formatMoneyInput(150000);
     entryNote.value = '';
     setSelectedCategoryUI('Grab / Chạy xe');
     saveBtn.textContent = 'Lưu Tiết Kiệm';
@@ -1188,7 +1199,7 @@
 
     entryId.value = item.id;
     entryDate.value = item.date;
-    entryAmount.value = item.amount;
+    entryAmount.value = formatMoneyInput(item.amount);
     entryNote.value = item.note || '';
 
     saveBtn.textContent = '🔄 Cập Nhật';
@@ -1221,12 +1232,16 @@
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
       e.currentTarget.classList.add('active');
-      entryAmount.value = e.currentTarget.dataset.val;
+      entryAmount.value = formatMoneyInput(e.currentTarget.dataset.val);
       updateEntryPreview();
     });
   });
 
-  entryAmount.addEventListener('input', updateEntryPreview);
+  entryAmount.addEventListener('input', () => {
+    const formatted = formatMoneyInput(entryAmount.value);
+    entryAmount.value = formatted;
+    updateEntryPreview();
+  });
 
   // Tab Switcher
   tabHistoryBtn.addEventListener('click', () => {
@@ -1731,7 +1746,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
   seedInitialSampleData();
   loadWishlistGoals();
   setDefaultDate();
-  entryAmount.value = dailyGoal;
+  entryAmount.value = formatMoneyInput(dailyGoal);
   updateEntryPreview();
   refreshAll();
 
