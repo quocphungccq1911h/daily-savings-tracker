@@ -45,9 +45,12 @@ class SavingsState {
 
     int streak = 0;
     DateTime checkDate = DateTime.now();
-    
-    String formatDateKey(DateTime d) =>
-        '${d.year}-${String.fromCharCodes([d.month]).padLeft(2, '0')}-${String.fromCharCodes([d.day]).padLeft(2, '0')}';
+
+    String formatDateKey(DateTime d) => '${d.year}-${String.fromCharCodes([
+              d.month
+            ]).padLeft(2, '0')}-${String.fromCharCodes([
+              d.day
+            ]).padLeft(2, '0')}';
 
     final String todayKey =
         '${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
@@ -76,8 +79,7 @@ class SavingsState {
   /// Calculates current month total savings
   double get currentMonthTotal {
     final now = DateTime.now();
-    final monthPrefix =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    final monthPrefix = '${now.year}-${now.month.toString().padLeft(2, '0')}';
     return entries
         .where((e) => e.date.startsWith(monthPrefix))
         .fold(0.0, (sum, e) => sum + e.amount);
@@ -85,15 +87,26 @@ class SavingsState {
 }
 
 class SavingsNotifier extends StateNotifier<SavingsState> {
-  SavingsNotifier()
-      : super(SavingsState(entries: [], wishlistGoals: [])) {
+  SavingsNotifier() : super(SavingsState(entries: [], wishlistGoals: [])) {
     _loadInitialData();
   }
 
-  void _loadInitialData() {
+  Future<void> _loadInitialData() async {
+    // 1. Load local Hive cache immediately for 0ms startup
     final localEntries = LocalStorageService.getEntries();
     final localGoals = LocalStorageService.getWishlistGoals();
     state = state.copyWith(entries: localEntries, wishlistGoals: localGoals);
+
+    // 2. Fetch live entries from Supabase CSDL Cloud
+    try {
+      final cloudEntries = await SupabaseService.fetchEntries();
+      if (cloudEntries.isNotEmpty) {
+        state = state.copyWith(entries: cloudEntries);
+        for (var e in cloudEntries) {
+          await LocalStorageService.saveEntry(e);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> addOrUpdateEntry(SavingsEntry entry) async {
@@ -102,17 +115,32 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     if (idx != -1) {
       updated[idx] = entry;
     } else {
-      updated.add(entry);
+      updated.insert(0, entry);
     }
+    updated.sort((a, b) => b.date.compareTo(a.date));
     state = state.copyWith(entries: updated);
+
     await LocalStorageService.saveEntry(entry);
     await SupabaseService.syncSaveEntry(entry);
+
+    try {
+      final cloudEntries = await SupabaseService.fetchEntries();
+      if (cloudEntries.isNotEmpty) {
+        state = state.copyWith(entries: cloudEntries);
+      }
+    } catch (_) {}
   }
 
   Future<void> deleteEntry(String id) async {
     final updated = state.entries.where((e) => e.id != id).toList();
     state = state.copyWith(entries: updated);
     await LocalStorageService.deleteEntry(id);
+    await SupabaseService.syncDeleteEntry(id);
+
+    try {
+      final cloudEntries = await SupabaseService.fetchEntries();
+      state = state.copyWith(entries: cloudEntries);
+    } catch (_) {}
   }
 
   Future<void> addOrUpdateGoal(WishlistGoal goal) async {

@@ -12,7 +12,8 @@ class WishlistTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(savingsProvider);
-    final goals = state.wishlistGoals;
+    final goals = List<WishlistGoal>.from(state.wishlistGoals)
+      ..sort((a, b) => a.targetAmount.compareTo(b.targetAmount));
     final totalLifetimeSaved = state.lifetimeTotal;
 
     // Daily pace

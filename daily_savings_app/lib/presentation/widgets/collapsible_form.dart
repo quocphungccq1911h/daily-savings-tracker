@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/constants/app_constants.dart';
@@ -6,6 +7,33 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/savings_entry.dart';
 import '../../providers/savings_provider.dart';
+
+class VndInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final cleanText = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanText.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final doubleValue = double.tryParse(cleanText);
+    if (doubleValue == null) return oldValue;
+
+    final formatted = Formatters.formatNumberDot(doubleValue.toInt());
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 class CollapsibleFormWidget extends ConsumerStatefulWidget {
   final VoidCallback onSaved;
@@ -17,7 +45,7 @@ class CollapsibleFormWidget extends ConsumerStatefulWidget {
 
 class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
   bool _isExpanded = false;
-  final _amountController = TextEditingController(text: '150000');
+  final _amountController = TextEditingController(text: '150.000');
   final _noteController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = AppConstants.defaultCategory;
@@ -30,8 +58,35 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
   }
 
   void _submitForm() {
-    final amount = double.tryParse(_amountController.text) ?? 0.0;
-    if (amount <= 0) return;
+    final rawText =
+        _amountController.text.replaceAll('.', '').replaceAll(',', '').trim();
+    final amount = double.tryParse(rawText) ?? 0.0;
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.amber),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Vui lòng nhập số tiền tiết kiệm hợp lệ (> 0đ)!',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppTheme.bgCard,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: const BorderSide(color: Colors.amber),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
 
     final dateStr =
         '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
@@ -47,9 +102,36 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
     ref.read(savingsProvider.notifier).addOrUpdateEntry(entry);
     widget.onSaved();
 
+    _noteController.clear();
+    _amountController.text = '150.000';
     setState(() {
       _isExpanded = false;
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldLight),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '✅ Đã lưu khoản tiết kiệm ${Formatters.formatShortNumber(amount)} thành công!',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.bgCard,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppTheme.emeraldLight),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -138,6 +220,10 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                   TextField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      VndInputFormatter(),
+                    ],
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

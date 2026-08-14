@@ -9,6 +9,11 @@ class Formatters {
     return '${_currencyFormat.format(amount.round())} đ';
   }
 
+  /// Formats raw number into dotted string (e.g. 150000 -> 150.000)
+  static String formatNumberDot(num amount) {
+    return _currencyFormat.format(amount.round());
+  }
+
   /// Formats date string YYYY-MM-DD into DD/MM/YYYY
   static String formatDateVN(String dateStr) {
     try {

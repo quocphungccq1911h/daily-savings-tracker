@@ -12,16 +12,16 @@ class AppConstants {
 
   static const String defaultCategory = 'Grab / Chạy xe';
 
-  // Default Wishlist Goals
+  // Default Wishlist Goals (Sắp xếp tăng dần từ mục tiêu dễ đạt -> lớn hơn)
   static const List<Map<String, dynamic>> defaultWishlistGoals = [
     {
-      'id': 'w1',
-      'title': 'Xây nhà / Mua nhà',
-      'target_amount': 500000000.0,
-      'targetAmount': 500000000.0,
+      'id': 'w3',
+      'title': 'Quỹ dự phòng khẩn cấp',
+      'target_amount': 10000000.0,
+      'targetAmount': 10000000.0,
       'allocated_amount': 0.0,
       'allocatedAmount': 0.0,
-      'emoji': '🏠',
+      'emoji': '🛡️',
     },
     {
       'id': 'w2',
@@ -33,13 +33,13 @@ class AppConstants {
       'emoji': '🏞️',
     },
     {
-      'id': 'w3',
-      'title': 'Quỹ dự phòng khẩn cấp',
-      'target_amount': 10000000.0,
-      'targetAmount': 10000000.0,
+      'id': 'w1',
+      'title': 'Xây nhà / Mua nhà',
+      'target_amount': 500000000.0,
+      'targetAmount': 500000000.0,
       'allocated_amount': 0.0,
       'allocatedAmount': 0.0,
-      'emoji': '🛡️',
+      'emoji': '🏠',
     },
   ];
 

@@ -21,13 +21,29 @@ class SavingsEntry {
         'note': note,
       };
 
-  factory SavingsEntry.fromMap(Map<String, dynamic> map) => SavingsEntry(
-        id: map['id'] ?? '',
-        date: map['entry_date'] ?? map['date'] ?? '',
-        amount: ((map['amount'] ?? 0.0) as num).toDouble(),
-        category: map['category'] ?? 'Grab / Chạy xe',
-        note: map['note'] ?? '',
-      );
+  factory SavingsEntry.fromMap(Map<String, dynamic> map) {
+    final String rawNote = map['note'] ?? '';
+    String cat = map['category'] ?? '';
+    String cleanNote = rawNote;
+
+    if (cat.isEmpty) {
+      final match = RegExp(r'^\[(.*?)\]').firstMatch(rawNote);
+      if (match != null && match.group(1) != null) {
+        cat = match.group(1)!;
+        cleanNote = rawNote.replaceFirst(RegExp(r'^\[.*?\]\s*'), '');
+      } else {
+        cat = 'Khác';
+      }
+    }
+
+    return SavingsEntry(
+      id: map['id'] ?? '',
+      date: map['entry_date'] ?? map['date'] ?? '',
+      amount: ((map['amount'] ?? 0.0) as num).toDouble(),
+      category: cat,
+      note: cleanNote,
+    );
+  }
 
   SavingsEntry copyWith({
     String? id,

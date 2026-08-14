@@ -72,4 +72,30 @@ class LocalStorageService {
     final box = Hive.box(_wishlistBoxName);
     await box.delete(id);
   }
+
+  // Auth Credentials (Remember Me)
+  static Future<void> saveSavedCredentials(
+      String email, String password, bool remember) async {
+    final box = Hive.box(_settingsBoxName);
+    await box.put('remember_me', remember);
+    if (remember) {
+      await box.put('saved_email', email);
+      await box.put('saved_password', password);
+    } else {
+      await box.delete('saved_email');
+      await box.delete('saved_password');
+    }
+  }
+
+  static Map<String, dynamic> getSavedCredentials() {
+    final box = Hive.box(_settingsBoxName);
+    final bool remember = box.get('remember_me', defaultValue: true);
+    final String email = box.get('saved_email', defaultValue: 'quocphungccq1911h@gmail.com');
+    final String password = box.get('saved_password', defaultValue: '');
+    return {
+      'remember': remember,
+      'email': email,
+      'password': password,
+    };
+  }
 }

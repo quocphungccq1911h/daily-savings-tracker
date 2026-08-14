@@ -127,7 +127,42 @@ class OverviewBannerCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
+
+          // Total Lifetime Savings Banner (Tổng Tiết Kiệm Tích Lũy Toàn Bộ)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.amberGold.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppTheme.amberGold.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded,
+                    size: 16, color: AppTheme.amberGoldLight),
+                const SizedBox(width: 8),
+                const Text(
+                  'Tổng Tích Lũy Toàn Bộ:',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  Formatters.formatShortNumber(lifetimeTotal),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.amberGoldLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
 
           // 2 Mini Overview Cards Row
           Row(
@@ -147,17 +182,29 @@ class OverviewBannerCard extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('TIẾN ĐỘ THÁNG',
+                          const Flexible(
+                            child: Text(
+                              'TIẾN ĐỘ THÁNG',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.textMuted)),
-                          Text(
-                            Formatters.formatShortNumber(monthTotal),
-                            style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.emeraldLight),
+                                  color: AppTheme.textMuted),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                Formatters.formatShortNumber(monthTotal),
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.emeraldLight),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -176,7 +223,10 @@ class OverviewBannerCard extends ConsumerWidget {
                       Text(
                         '${(monthProgressPct * 100).toStringAsFixed(0)}% mục tiêu',
                         style: const TextStyle(
-                            fontSize: 10, color: AppTheme.textMuted),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -199,17 +249,29 @@ class OverviewBannerCard extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('TIẾN ĐỘ CẢ NĂM',
+                          const Flexible(
+                            child: Text(
+                              'TIẾN ĐỘ CẢ NĂM',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.textMuted)),
-                          Text(
-                            Formatters.formatShortNumber(lifetimeTotal),
-                            style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.amberGoldLight),
+                                  color: Colors.white70),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                Formatters.formatShortNumber(lifetimeTotal),
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.amberGoldLight),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -229,7 +291,10 @@ class OverviewBannerCard extends ConsumerWidget {
                       Text(
                         'Dự báo: ${Formatters.formatShortNumber(yearForecast)}',
                         style: const TextStyle(
-                            fontSize: 10, color: AppTheme.textMuted),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.amberGoldLight,
+                        ),
                       ),
                     ],
                   ),
