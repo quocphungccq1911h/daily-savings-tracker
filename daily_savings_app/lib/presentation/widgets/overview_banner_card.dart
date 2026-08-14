@@ -25,12 +25,32 @@ class OverviewBannerCard extends ConsumerWidget {
     final double monthProgressPct = (monthTotal / monthlyTarget).clamp(0.0, 1.0);
     final double monthDiff = monthTotal - (dailyGoal * now.day);
 
-    // Year Forecast
-    final int daysInYear = (now.year % 4 == 0) ? 366 : 365;
-    final double avgDailyRate = state.entries.isEmpty
+    // Year Forecast & Active Days Target
+    final currentYearStr = '${now.year}';
+    final yearEntries = state.entries.where((e) => e.date.startsWith(currentYearStr)).toList();
+    DateTime earliestDateInYear = DateTime(now.year, 1, 1);
+    if (yearEntries.isNotEmpty) {
+      final dates = yearEntries
+          .map((e) => DateTime.tryParse(e.date))
+          .whereType<DateTime>()
+          .toList();
+      if (dates.isNotEmpty) {
+        final minDate = dates.reduce((a, b) => a.isBefore(b) ? a : b);
+        if (minDate.year == now.year) {
+          earliestDateInYear = minDate;
+        }
+      }
+    }
+
+    final endOfYear = DateTime(now.year, 12, 31);
+    final int activeYearDays = max(1, endOfYear.difference(earliestDateInYear).inDays + 1);
+    final double yearlyTarget = activeYearDays * dailyGoal;
+
+    final double realAvgRate = state.entries.isEmpty
         ? dailyGoal
         : lifetimeTotal / max(1, state.entries.length);
-    final double yearForecast = avgDailyRate * daysInYear;
+    final double yearForecast = realAvgRate * activeYearDays;
+    final double yearProgressPct = (lifetimeTotal / yearlyTarget).clamp(0.0, 1.0);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -179,34 +199,23 @@ class OverviewBannerCard extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Flexible(
-                            child: Text(
-                              'TIẾN ĐỘ THÁNG',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textMuted),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                Formatters.formatShortNumber(monthTotal),
-                                style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.emeraldLight),
-                              ),
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'TIẾN ĐỘ THÁNG',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textMuted,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        Formatters.formatShortNumber(monthTotal),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.emeraldLight,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       ClipRRect(
@@ -246,41 +255,29 @@ class OverviewBannerCard extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Flexible(
-                            child: Text(
-                              'TIẾN ĐỘ CẢ NĂM',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white70),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                Formatters.formatShortNumber(lifetimeTotal),
-                                style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.amberGoldLight),
-                              ),
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'TIẾN ĐỘ CẢ NĂM',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white70,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        Formatters.formatShortNumber(lifetimeTotal),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.amberGoldLight,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
-                          value: (lifetimeTotal / (dailyGoal * daysInYear))
-                              .clamp(0.0, 1.0),
+                          value: yearProgressPct,
                           minHeight: 6,
                           backgroundColor: Colors.white10,
                           valueColor: const AlwaysStoppedAnimation<Color>(
@@ -289,10 +286,18 @@ class OverviewBannerCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
+                        '${(yearProgressPct * 100).toStringAsFixed(1)}% (${Formatters.formatShortNumber(yearlyTarget)})',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
                         'Dự báo: ${Formatters.formatShortNumber(yearForecast)}',
                         style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
                           color: AppTheme.amberGoldLight,
                         ),
                       ),

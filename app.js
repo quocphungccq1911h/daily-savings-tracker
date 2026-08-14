@@ -608,14 +608,32 @@
     let yearTotalSaved = 0;
     yearEntries.forEach(e => yearTotalSaved += e.amount);
 
-    const totalDaysInYear = (currentYear % 4 === 0 && currentYear % 100 !== 0) || (currentYear % 400 === 0) ? 366 : 365;
-    const yearTarget = totalDaysInYear * dailyGoal;
+    // Dynamic start date for the year: calculate active days from earliest entry to Dec 31
+    let earliestDateInYear = new Date(currentYear, 0, 1);
+    if (yearEntries.length > 0) {
+      const dates = yearEntries.map(e => {
+        if (!e.date) return null;
+        const parts = e.date.split('-');
+        if (parts.length === 3) {
+          return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+        return new Date(e.date);
+      }).filter(d => d && !isNaN(d.getTime()));
 
-    const startOfYear = new Date(currentYear, 0, 1);
-    const elapsedDays = Math.max(1, Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24)) + 1);
+      if (dates.length > 0) {
+        const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+        if (minDate.getFullYear() === currentYear) {
+          earliestDateInYear = minDate;
+        }
+      }
+    }
 
-    const realAvgRate = yearTotalSaved / Math.max(1, yearEntries.length || elapsedDays);
-    const yearForecast = Math.round(realAvgRate * totalDaysInYear);
+    const endOfYear = new Date(currentYear, 11, 31);
+    const activeYearDays = Math.max(1, Math.round((endOfYear - earliestDateInYear) / (1000 * 60 * 60 * 24)) + 1);
+    let totalLifetimeSaved = 0;
+    entries.forEach(e => totalLifetimeSaved += (e.amount || 0));
+    const realAvgRate = totalLifetimeSaved / Math.max(1, entries.length);
+    const yearForecast = Math.round(realAvgRate * activeYearDays);
     yearSavedTotal.textContent = formatShortNumber(yearTotalSaved);
     yearForecastTotal.textContent = formatShortNumber(yearForecast);
 
