@@ -27,7 +27,7 @@ class OverviewBannerCard extends ConsumerWidget {
     final double monthExpectedTarget = dailyGoal * currentDay;
     final double monthDiff = monthTotal - monthExpectedTarget;
     final double remainingMonthAmount = max(0.0, monthlyTarget - monthTotal);
-    final int daysLeftInMonth = max(1, daysInMonth - currentDay + 1);
+    final int daysLeftInMonth = max(1, daysInMonth - currentDay);
     final double neededDailyRate = remainingMonthAmount / daysLeftInMonth;
 
     // Year Forecast & Active Days Target
@@ -278,8 +278,9 @@ class OverviewBannerCard extends ConsumerWidget {
                           ? 'Cần ~${Formatters.formatShortNumber(neededDailyRate)}/ngày cho $daysLeftInMonth ngày còn lại.'
                           : '🎉 Đã hoàn thành mục tiêu tháng!',
                       style: const TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.textMuted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
                       ),
                     ),
                   ],
@@ -358,8 +359,9 @@ class OverviewBannerCard extends ConsumerWidget {
                     Text(
                       'Tốc độ thực tế: ${Formatters.formatShortNumber(realAvgRate)}/ngày',
                       style: const TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.textMuted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
                       ),
                     ),
                   ],

@@ -483,10 +483,6 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
             Row(
               children: [
                 Text(
-                  'So với ${(dailyGoal / 1000).toStringAsFixed(0)}k: ',
-                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                ),
-                Text(
                   diffStr,
                   style: TextStyle(
                     fontSize: 11,
@@ -528,7 +524,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
             ),
             const SizedBox(height: 8),
 
-            // Row 3: Category, Note & Action Buttons (Sửa & Xóa)
+            // Row 3: Category, Note & Action Button (Xóa)
             Row(
               children: [
                 Container(
@@ -559,21 +555,6 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                   ),
                 ] else
                   const Spacer(),
-
-                // Edit Button
-                OutlinedButton.icon(
-                  onPressed: () => _showEditDialog(context, item),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    side: BorderSide(color: AppTheme.amberGold.withOpacity(0.5)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.edit_outlined, size: 12, color: AppTheme.amberGoldLight),
-                  label: const Text('Sửa', style: TextStyle(fontSize: 11, color: AppTheme.amberGoldLight)),
-                ),
-                const SizedBox(width: 6),
 
                 // Delete Button
                 OutlinedButton.icon(
