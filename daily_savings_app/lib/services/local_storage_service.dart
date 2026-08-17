@@ -109,4 +109,16 @@ class LocalStorageService {
     final box = Hive.box(_settingsBoxName);
     await box.put('daily_goal', goal);
   }
+
+  // Theme Mode Persistence ('dark' or 'light')
+  static String getThemeMode() {
+    final box = Hive.box(_settingsBoxName);
+    return box.get('theme_mode', defaultValue: 'dark') as String;
+  }
+
+  static Future<void> saveThemeMode(String mode) async {
+    final box = Hive.box(_settingsBoxName);
+    await box.put('theme_mode', mode);
+  }
 }
+

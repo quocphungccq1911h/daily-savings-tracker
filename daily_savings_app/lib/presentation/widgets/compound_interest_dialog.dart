@@ -13,9 +13,9 @@ class CompoundInterestDialog extends ConsumerStatefulWidget {
 }
 
 class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog> {
+  double _interestRate = 6.0; // 6.0% default bank savings interest rate
+  int _selectedYears = 3; // 3 years default horizon
   late double _dailyAmount;
-  double _interestRate = 6.0; // 6%/năm
-  int _selectedYears = 1;
 
   @override
   void initState() {
@@ -23,9 +23,6 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
     _dailyAmount = ref.read(savingsProvider).dailyGoal;
   }
 
-  /// Calculates total accumulated amount with compound interest
-  /// Formula: P = dailyAmount * 365
-  /// Future value = sum of annuity with annual deposit & monthly interest compounding
   double _calculateFutureValue(int years) {
     final double yearlyDeposit = _dailyAmount * 365;
     final double r = _interestRate / 100;
@@ -40,18 +37,25 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
   Widget build(BuildContext context) {
     final double rawSavings = _dailyAmount * 365 * _selectedYears;
     final double futureVal = _calculateFutureValue(_selectedYears);
-    final double interestGained = max(0, futureVal - rawSavings);
+    final double interestGained = max(0.0, futureVal - rawSavings);
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final innerBgColor = isDark ? AppTheme.bgApp : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
 
     return AlertDialog(
-      backgroundColor: AppTheme.bgCard,
+      backgroundColor: cardBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.calculate_outlined, color: AppTheme.amberGoldLight),
-          SizedBox(width: 8),
+          const Icon(Icons.calculate_outlined, color: AppTheme.amberGoldLight),
+          const SizedBox(width: 8),
           Text(
             '🧮 Dự Báo Lãi Kép & Tích Lũy',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -60,9 +64,9 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Tính toán sức mạnh của tích lũy hằng ngày khi được gửi tiết kiệm sinh lời:',
-              style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+              style: TextStyle(color: textMutedColor, fontSize: 11),
             ),
             const SizedBox(height: 14),
 
@@ -70,7 +74,7 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Mức gửi ngày:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text('Mức gửi ngày:', style: TextStyle(color: textColor, fontSize: 12)),
                 Text(
                   Formatters.formatShortNumber(_dailyAmount),
                   style: const TextStyle(color: AppTheme.emeraldLight, fontWeight: FontWeight.bold, fontSize: 14),
@@ -81,7 +85,7 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Lãi suất ngân hàng:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text('Lãi suất ngân hàng:', style: TextStyle(color: textColor, fontSize: 12)),
                 Text(
                   '${_interestRate.toStringAsFixed(1)}%/năm',
                   style: const TextStyle(color: AppTheme.amberGoldLight, fontWeight: FontWeight.bold, fontSize: 14),
@@ -94,13 +98,13 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
               max: 12.0,
               divisions: 22,
               activeColor: AppTheme.amberGoldLight,
-              inactiveColor: AppTheme.bgApp,
+              inactiveColor: isDark ? AppTheme.bgApp : const Color(0xFFE2E8F0),
               onChanged: (val) => setState(() => _interestRate = val),
             ),
             const SizedBox(height: 10),
 
             // Time horizon selector (1, 3, 5, 10 năm)
-            const Text('Thời gian tích lũy:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('Thời gian tích lũy:', style: TextStyle(color: textColor, fontSize: 12)),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -110,9 +114,9 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
                   label: Text('$y Năm'),
                   selected: isSelected,
                   selectedColor: AppTheme.skyBlueAccent,
-                  backgroundColor: AppTheme.bgApp,
+                  backgroundColor: innerBgColor,
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.black : Colors.white70,
+                    color: isSelected ? Colors.white : textColor,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 12,
                   ),
@@ -126,28 +130,28 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.bgApp,
+                color: innerBgColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderColor),
+                border: Border.all(color: borderColor),
               ),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tiền gốc tự tiết kiệm:', style: TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-                      Text(Formatters.formatShortNumber(rawSavings), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text('Tiền gốc tự tiết kiệm:', style: TextStyle(color: textMutedColor, fontSize: 11)),
+                      Text(Formatters.formatShortNumber(rawSavings), style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 12)),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tiền lãi phát sinh (+):', style: TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                      Text('Tiền lãi phát sinh (+):', style: TextStyle(color: textMutedColor, fontSize: 11)),
                       Text('+${Formatters.formatShortNumber(interestGained)}', style: const TextStyle(color: AppTheme.amberGoldLight, fontWeight: FontWeight.bold, fontSize: 12)),
                     ],
                   ),
-                  const Divider(color: AppTheme.borderColor, height: 16),
+                  Divider(color: borderColor, height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -167,8 +171,8 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
       actions: [
         ElevatedButton(
           onPressed: () => Navigator.pop(context),
-          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.skyBlueAccent),
-          child: const Text('Đóng', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.emeraldLight),
+          child: const Text('Đóng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ],
     );

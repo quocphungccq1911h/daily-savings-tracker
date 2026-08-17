@@ -1,43 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/savings_entry.dart';
 import '../../providers/savings_provider.dart';
 
-class VndInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.isEmpty) {
-      return newValue.copyWith(text: '');
-    }
-
-    final cleanText = newValue.text.replaceAll(RegExp(r'\D'), '');
-    if (cleanText.isEmpty) {
-      return newValue.copyWith(text: '');
-    }
-
-    final doubleValue = double.tryParse(cleanText);
-    if (doubleValue == null) return oldValue;
-
-    final formatted = Formatters.formatNumberDot(doubleValue.toInt());
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
-}
-
 class CollapsibleFormWidget extends ConsumerStatefulWidget {
-  final VoidCallback onSaved;
-  const CollapsibleFormWidget({super.key, required this.onSaved});
+  const CollapsibleFormWidget({super.key});
 
   @override
   ConsumerState<CollapsibleFormWidget> createState() => _CollapsibleFormWidgetState();
@@ -45,10 +16,10 @@ class CollapsibleFormWidget extends ConsumerStatefulWidget {
 
 class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
   bool _isExpanded = false;
-  final _amountController = TextEditingController(text: '150.000');
+  final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  String _selectedCategory = AppConstants.incomeCategories.first;
   DateTime _selectedDate = DateTime.now();
-  String _selectedCategory = AppConstants.defaultCategory;
 
   @override
   void dispose() {
@@ -58,75 +29,45 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
   }
 
   void _submitForm() {
-    final rawText =
-        _amountController.text.replaceAll('.', '').replaceAll(',', '').trim();
-    final amount = double.tryParse(rawText) ?? 0.0;
-    if (amount <= 0) {
+    final rawText = _amountController.text.replaceAll('.', '').replaceAll(',', '').trim();
+    final double? amount = double.tryParse(rawText);
+
+    if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.amber),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Vui lòng nhập số tiền tiết kiệm hợp lệ (> 0đ)!',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppTheme.bgCard,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: const BorderSide(color: Colors.amber),
-          ),
-          duration: const Duration(seconds: 2),
+        const SnackBar(
+          content: Text('⚠️ Vui lòng nhập số tiền tiết kiệm hợp lệ!'),
+          backgroundColor: Colors.orangeAccent,
         ),
       );
       return;
     }
 
-    final dateStr =
-        '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+    final dateStr = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
 
     final entry = SavingsEntry(
-      id: const Uuid().v4(),
-      date: dateStr,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       amount: amount,
+      date: dateStr,
       category: _selectedCategory,
       note: _noteController.text.trim(),
     );
 
     ref.read(savingsProvider.notifier).addOrUpdateEntry(entry);
-    widget.onSaved();
 
+    _amountController.clear();
     _noteController.clear();
-    _amountController.text = '150.000';
     setState(() {
       _isExpanded = false;
+      _selectedDate = DateTime.now();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldLight),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '✅ Đã lưu khoản tiết kiệm ${Formatters.formatShortNumber(amount)} thành công!',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.bgCard,
+        content: Text('🎉 Đã thêm ${Formatters.formatShortNumber(amount)} vào sổ tiết kiệm!'),
+        backgroundColor: AppTheme.emeraldLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: AppTheme.emeraldLight),
         ),
         duration: const Duration(seconds: 3),
@@ -136,12 +77,28 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final cardBorder = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+    final titleTextColor = isDark ? Colors.white : Colors.black87;
+    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final inputBg = isDark ? AppTheme.bgApp : const Color(0xFFF1F5F9);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         children: [
@@ -155,13 +112,13 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                 children: [
                   const Text('✍️', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Nhập Tiết Kiệm',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: titleTextColor,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -171,13 +128,13 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: _isExpanded
-                          ? Colors.red.withOpacity(0.15)
-                          : AppTheme.emeraldPrimary.withOpacity(0.15),
+                          ? Colors.red.withValues(alpha: 0.15)
+                          : AppTheme.emeraldPrimary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: _isExpanded
-                            ? Colors.red.withOpacity(0.4)
-                            : AppTheme.emeraldLight.withOpacity(0.4),
+                            ? Colors.red.withValues(alpha: 0.4)
+                            : AppTheme.emeraldLight.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Row(
@@ -214,15 +171,16 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Amount Field
-                  const Text('Số tiền tiết kiệm (VNĐ)',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  Text(
+                    'Số tiền tiết kiệm (VNĐ)',
+                    style: TextStyle(fontSize: 12, color: textMutedColor, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      VndInputFormatter(),
                     ],
                     style: const TextStyle(
                       fontSize: 20,
@@ -231,10 +189,14 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                     ),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: AppTheme.bgApp,
+                      fillColor: inputBg,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppTheme.borderColor),
+                        borderSide: BorderSide(color: cardBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: cardBorder),
                       ),
                       suffixText: 'đ',
                     ),
@@ -242,8 +204,10 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                   const SizedBox(height: 12),
 
                   // Category Pills
-                  const Text('Nguồn Thu',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  Text(
+                    'Nguồn Thu',
+                    style: TextStyle(fontSize: 12, color: textMutedColor, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
@@ -253,10 +217,12 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                       return ChoiceChip(
                         label: Text(cat),
                         selected: isSelected,
-                        selectedColor: AppTheme.emeraldPrimary.withOpacity(0.3),
-                        backgroundColor: AppTheme.bgApp,
+                        selectedColor: AppTheme.emeraldPrimary.withValues(alpha: 0.3),
+                        backgroundColor: inputBg,
                         labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : AppTheme.textMuted,
+                          color: isSelected
+                              ? (isDark ? Colors.white : AppTheme.emeraldPrimary)
+                              : textMutedColor,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           fontSize: 12,
                         ),
@@ -293,8 +259,7 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                 ],
               ),
             ),
-            crossFadeState:
-                _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 300),
           ),
         ],

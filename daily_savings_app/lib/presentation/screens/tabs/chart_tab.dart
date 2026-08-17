@@ -98,39 +98,43 @@ class _ChartTabState extends ConsumerState<ChartTab> {
       'Thu nhập khác': AppTheme.purpleCategory,
     };
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final emeraldTextColor = isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
+    final amberTextColor = isDark ? AppTheme.amberGoldLight : const Color(0xFFB45309);
+
     return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Month Filter Bar
+          // Month Selector Header
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.calendar_today_rounded,
-                  size: 16, color: AppTheme.skyBlueAccent),
-              const SizedBox(width: 8),
-              const Text(
-                'Tháng xem biểu đồ:',
+              Text(
+                'THỐNG KÊ THÁNG $month/$year',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textMuted,
+                  letterSpacing: 0.8,
+                  color: textMutedColor,
                 ),
               ),
-              const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgCard,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.borderColor),
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedMonth,
-                    dropdownColor: AppTheme.bgCard,
+                    dropdownColor: cardBg,
                     isDense: true,
                     style: const TextStyle(
                       fontSize: 13,
@@ -165,9 +169,18 @@ class _ChartTabState extends ConsumerState<ChartTab> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.bgCard,
+              color: cardBg,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.borderColor),
+              border: Border.all(color: borderColor),
+              boxShadow: isDark
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,9 +208,9 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Text(
+                    Text(
                       'Đã tiết kiệm',
-                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                      style: TextStyle(fontSize: 11, color: textMutedColor),
                     ),
                     const SizedBox(width: 16),
                     Container(
@@ -208,7 +221,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                     const SizedBox(width: 6),
                     Text(
                       'Mục tiêu (${Formatters.formatShortNumber(state.dailyGoal)})',
-                      style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                      style: TextStyle(fontSize: 11, color: textMutedColor),
                     ),
                   ],
                 ),
@@ -257,8 +270,8 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                               if (value == 0) return const Text('');
                               return Text(
                                 '${(value / 1000).toInt()}k',
-                                style: const TextStyle(
-                                  color: AppTheme.textMuted,
+                                style: TextStyle(
+                                  color: textMutedColor,
                                   fontSize: 9,
                                 ),
                               );
@@ -274,8 +287,8 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                               if (day % 3 == 1 || day == daysInMonth) {
                                 return Text(
                                   '$day',
-                                  style: const TextStyle(
-                                    color: AppTheme.textMuted,
+                                  style: TextStyle(
+                                    color: textMutedColor,
                                     fontSize: 9,
                                   ),
                                 );
@@ -289,7 +302,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                         show: true,
                         drawVerticalLine: false,
                         getDrawingHorizontalLine: (val) => FlLine(
-                          color: Colors.white.withOpacity(0.05),
+                          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
                           strokeWidth: 1,
                         ),
                       ),
@@ -308,7 +321,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                         final day = index + 1;
                         final amount = dayAmountMap[day] ?? 0.0;
 
-                        Color barColor = Colors.white10;
+                        Color barColor = isDark ? Colors.white10 : const Color(0xFFE2E8F0);
                         if (amount >= state.dailyGoal) {
                           barColor = AppTheme.emeraldLight;
                         } else if (amount > 0) {
@@ -342,19 +355,19 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.bgCard,
+                    color: cardBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.borderColor),
+                    border: Border.all(color: borderColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'TỐC ĐỘ THỰC TẾ',
                         style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textMuted),
+                            color: textMutedColor),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -374,27 +387,27 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.bgCard,
+                    color: cardBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.borderColor),
+                    border: Border.all(color: borderColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'ĐẠT TARGET THÁNG',
                         style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textMuted),
+                            color: textMutedColor),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '$targetAchievedDaysCount/$daysInMonth ngày',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.emeraldLight,
+                          color: emeraldTextColor,
                         ),
                       ),
                     ],
@@ -409,20 +422,20 @@ class _ChartTabState extends ConsumerState<ChartTab> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.bgCard,
+              color: cardBg,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.borderColor),
+              border: Border.all(color: borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '📊 TỶ TRỌNG NGUỒN THU THÁNG',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
-                    color: AppTheme.amberGoldLight,
+                    color: amberTextColor,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -431,10 +444,10 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                 SizedBox(
                   height: 200,
                   child: monthTotal == 0
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'Chưa có dữ liệu tiết kiệm tháng này',
-                            style: TextStyle(color: AppTheme.textMuted),
+                            style: TextStyle(color: textMutedColor),
                           ),
                         )
                       : PieChart(
@@ -463,7 +476,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                 ),
                 const SizedBox(height: 16),
 
-                // Category Legends Grid (Matching Web)
+                // Category Legends Grid
                 Wrap(
                   spacing: 16,
                   runSpacing: 10,
@@ -486,9 +499,9 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                         const SizedBox(width: 6),
                         Text(
                           '$cat (${Formatters.formatShortNumber(amt)})',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.textMuted,
+                            color: textMutedColor,
                           ),
                         ),
                       ],

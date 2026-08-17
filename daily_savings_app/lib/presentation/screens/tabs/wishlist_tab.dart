@@ -18,11 +18,18 @@ class WishlistTab extends ConsumerWidget {
 
     // Daily pace
     final dailyPace = state.dailyGoal;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final emeraldTextColor = isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
+    final amberTextColor = isDark ? AppTheme.amberGoldLight : const Color(0xFFB45309);
+    final skyBlueTextColor = isDark ? AppTheme.skyBlueAccent : const Color(0xFF0284C7);
 
     if (goals.isEmpty) {
-      return const Center(
+      return Center(
         child: Text('Chưa có mục tiêu ước mơ nào.',
-            style: TextStyle(color: AppTheme.textMuted)),
+            style: TextStyle(color: textMutedColor)),
       );
     }
 
@@ -45,14 +52,23 @@ class WishlistTab extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isCompleted
-                ? AppTheme.emeraldPrimary.withOpacity(0.15)
-                : AppTheme.bgCard,
+                ? (isDark ? AppTheme.emeraldPrimary.withValues(alpha: 0.15) : const Color(0xFFECFDF5))
+                : cardBg,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isCompleted
-                  ? AppTheme.emeraldLight
-                  : AppTheme.amberGold.withOpacity(0.4),
+                  ? emeraldTextColor
+                  : AppTheme.amberGold.withValues(alpha: isDark ? 0.4 : 0.6),
             ),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,16 +83,16 @@ class WishlistTab extends ConsumerWidget {
                       children: [
                         Text(
                           item.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: textColor,
                           ),
                         ),
                         Text(
                           'Mục tiêu: ${Formatters.formatShortNumber(item.targetAmount)}',
-                          style: const TextStyle(
-                              fontSize: 12, color: AppTheme.textMuted),
+                          style: TextStyle(
+                              fontSize: 12, color: textMutedColor),
                         ),
                       ],
                     ),
@@ -89,16 +105,16 @@ class WishlistTab extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Tiến độ tích lũy:',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  Text('Tiến độ tích lũy:',
+                      style: TextStyle(fontSize: 12, color: textMutedColor)),
                   Text(
                     '${Formatters.formatShortNumber(currentSaved)} (${(pct * 100).toStringAsFixed(0)}%)',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: isCompleted
-                          ? AppTheme.emeraldLight
-                          : AppTheme.amberGoldLight,
+                          ? emeraldTextColor
+                          : amberTextColor,
                     ),
                   ),
                 ],
@@ -109,10 +125,10 @@ class WishlistTab extends ConsumerWidget {
                 child: LinearProgressIndicator(
                   value: pct,
                   minHeight: 8,
-                  backgroundColor: Colors.white10,
+                  backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     isCompleted
-                        ? AppTheme.emeraldLight
+                        ? emeraldTextColor
                         : AppTheme.amberGold,
                   ),
                 ),
@@ -125,20 +141,24 @@ class WishlistTab extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppTheme.skyBlueAccent.withOpacity(0.1),
+                  color: isDark
+                      ? AppTheme.skyBlueAccent.withValues(alpha: 0.1)
+                      : const Color(0xFFE0F2FE),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppTheme.skyBlueAccent.withOpacity(0.3),
+                    color: isDark
+                        ? AppTheme.skyBlueAccent.withValues(alpha: 0.3)
+                        : const Color(0xFFBAE6FD),
                   ),
                 ),
                 child: Text(
                   isCompleted
                       ? '🎉 CHÚC MỪNG! ĐÃ HOÀN THÀNH MỤC TIÊU!'
                       : '🚀 Còn thiếu ${Formatters.formatShortNumber(remaining)} — Dự kiến đạt sau ~$daysNeeded ngày',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.skyBlueAccent,
+                    color: skyBlueTextColor,
                   ),
                 ),
               ),

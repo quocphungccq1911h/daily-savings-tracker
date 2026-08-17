@@ -5,6 +5,7 @@ import 'core/observers/app_provider_observer.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
+import 'providers/theme_provider.dart';
 import 'services/local_storage_service.dart';
 import 'services/supabase_service.dart';
 
@@ -40,15 +41,19 @@ void main() async {
   });
 }
 
-class DailySavingsApp extends StatelessWidget {
+class DailySavingsApp extends ConsumerWidget {
   const DailySavingsApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'Sổ Tiết Kiệm Daily',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: const RootGate(),
     );
   }

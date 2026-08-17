@@ -133,17 +133,19 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
     final firstWeekday = DateTime(_viewMonthDate.year, _viewMonthDate.month, 1).weekday;
     final leadingPadding = (firstWeekday == 7) ? 6 : (firstWeekday - 1); // Monday = 0 padding, Sunday = 6 padding
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.bgCard,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.5), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
+              color: isDark ? Colors.black.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.15),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),

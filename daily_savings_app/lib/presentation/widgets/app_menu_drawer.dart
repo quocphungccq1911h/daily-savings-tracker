@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../services/supabase_service.dart';
 import '../screens/login_screen.dart';
 import 'change_target_dialog.dart';
@@ -13,17 +14,24 @@ class AppMenuDrawer extends ConsumerWidget {
   const AppMenuDrawer({super.key});
 
   void _handleLogout(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.bgCard,
+        backgroundColor: isDark ? AppTheme.bgCard : AppTheme.bgCardLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('🚪 Đăng Xuất Tài Khoản', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+        title: Text(
+          '🚪 Đăng Xuất Tài Khoản',
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?',
+          style: TextStyle(color: isDark ? AppTheme.textMuted : const Color(0xFF334155), fontSize: 13),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
+            child: Text('Hủy', style: TextStyle(color: isDark ? AppTheme.textMuted : const Color(0xFF64748B), fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -65,6 +73,14 @@ class AppMenuDrawer extends ConsumerWidget {
     final email = user?.email ?? 'quocphungccq1911h@gmail.com';
     final savingsState = ref.watch(savingsProvider);
 
+    final themeMode = ref.watch(themeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+
+    final cardBgColor = isDark ? AppTheme.bgCard : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtextColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+
     // Calculate Today's Lunar Info
     final now = DateTime.now();
     final todayMidnight = DateTime(now.year, now.month, now.day);
@@ -87,7 +103,7 @@ class AppMenuDrawer extends ConsumerWidget {
     final estimatedTetFund = daysLeftToTet * dailyGoal;
 
     return Drawer(
-      backgroundColor: AppTheme.bgApp,
+      backgroundColor: isDark ? AppTheme.bgApp : AppTheme.bgAppLight,
       child: SafeArea(
         child: Column(
           children: [
@@ -95,9 +111,9 @@ class AppMenuDrawer extends ConsumerWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AppTheme.bgCard,
-                border: Border(bottom: BorderSide(color: AppTheme.borderColor)),
+              decoration: BoxDecoration(
+                color: cardBgColor,
+                border: Border(bottom: BorderSide(color: borderColor)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,8 +139,8 @@ class AppMenuDrawer extends ConsumerWidget {
                               email,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: textColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -139,11 +155,11 @@ class AppMenuDrawer extends ConsumerWidget {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.cloud_done, color: Colors.greenAccent, size: 10),
+                                  Icon(Icons.cloud_done, color: Colors.green, size: 10),
                                   SizedBox(width: 4),
                                   Text(
                                     'Supabase Cloud Online',
-                                    style: TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -178,17 +194,47 @@ class AppMenuDrawer extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  // ☀️ / 🌙 THEME SWITCHER SECTION
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
-                      'CẤU HÌNH TÍCH LŨY',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+                      'GIAO DIỆN & CẤU HÌNH',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
+                    ),
+                  ),
+                  SwitchListTile(
+                    value: isDark,
+                    onChanged: (_) {
+                      ref.read(themeProvider.notifier).toggleTheme();
+                    },
+                    secondary: Icon(
+                      isDark ? Icons.dark_mode : Icons.light_mode,
+                      color: isDark ? AppTheme.amberGoldLight : Colors.orangeAccent,
+                    ),
+                    title: Text(
+                      isDark ? 'Chế Độ Tối (Dark Mode)' : 'Chế Độ Sáng (Light Mode)',
+                      style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      isDark ? 'Giao diện tối dịu mắt ban đêm' : 'Giao diện sáng rõ ràng ban ngày',
+                      style: TextStyle(color: subtextColor, fontSize: 11),
+                    ),
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: AppTheme.emeraldPrimary,
+                  ),
+                  const Divider(color: AppTheme.borderColor, height: 16, indent: 16, endIndent: 16),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(
+                      'MỤC TIÊU TÍCH LŨY',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
                     ),
                   ),
                   ListTile(
                     leading: const Icon(Icons.track_changes, color: AppTheme.skyBlueAccent),
-                    title: const Text('🎯 Đổi Mục Tiêu Ngày', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Thay đổi số tiền mục tiêu ${Formatters.formatShortNumber(dailyGoal)}/ngày', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                    title: Text('Đổi Mục Tiêu Ngày', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: Text('Thay đổi số tiền mục tiêu ${Formatters.formatShortNumber(dailyGoal)}/ngày', style: TextStyle(color: subtextColor, fontSize: 11)),
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(context: context, builder: (_) => const ChangeTargetDialog());
@@ -196,17 +242,17 @@ class AppMenuDrawer extends ConsumerWidget {
                   ),
                   const Divider(color: AppTheme.borderColor, height: 16, indent: 16, endIndent: 16),
 
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
                       'BỘ CÔNG CỤ TIỆN ÍCH',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
                     ),
                   ),
                   ListTile(
                     leading: const Icon(Icons.calendar_month_outlined, color: AppTheme.emeraldLight),
-                    title: const Text('🗓️ Lịch Vạn Niên & Âm Lịch', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Tra cứu ngày âm, Mùng 1 & Ngày Rằm', style: TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                    title: Text('Lịch Vạn Niên & Âm Lịch', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: Text('Tra cứu ngày âm, Mùng 1 & Ngày Rằm', style: TextStyle(color: subtextColor, fontSize: 11)),
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(context: context, builder: (_) => const PerpetualCalendarDialog());
@@ -214,8 +260,8 @@ class AppMenuDrawer extends ConsumerWidget {
                   ),
                   ListTile(
                     leading: const Icon(Icons.calculate_outlined, color: AppTheme.amberGoldLight),
-                    title: const Text('🧮 Máy Tính Lãi Kép & Dự Báo', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Dự tính số tiền tích lũy sau 1, 3, 5 năm', style: TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                    title: Text('Máy Tính Lãi Kép & Dự Báo', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: Text('Dự tính số tiền tích lũy sau 1, 3, 5 năm', style: TextStyle(color: subtextColor, fontSize: 11)),
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(context: context, builder: (_) => const CompoundInterestDialog());
@@ -358,9 +404,18 @@ class AppMenuDrawer extends ConsumerWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppTheme.bgCard,
+                      color: cardBgColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppTheme.emeraldLight.withValues(alpha: 0.4)),
+                      boxShadow: isDark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,7 +489,7 @@ class AppMenuDrawer extends ConsumerWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     'Tháng $todayLunarMonth Âm',
-                                    style: const TextStyle(fontSize: 10.5, color: Colors.white, fontWeight: FontWeight.bold),
+                                    style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -446,7 +501,7 @@ class AppMenuDrawer extends ConsumerWidget {
                                 children: [
                                   Text(
                                     'Ngày $todayCanChiDay',
-                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
@@ -454,9 +509,9 @@ class AppMenuDrawer extends ConsumerWidget {
                                     style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 4),
-                                  const Text(
+                                  Text(
                                     '✨ Tiết Lập Thu • Hướng Hỷ Thần: Tây Nam',
-                                    style: TextStyle(color: AppTheme.textMuted, fontSize: 9.5),
+                                    style: TextStyle(color: subtextColor, fontSize: 9.5),
                                   ),
                                 ],
                               ),
@@ -464,11 +519,11 @@ class AppMenuDrawer extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        const Divider(color: Colors.white10, height: 1),
+                        Divider(color: borderColor, height: 1),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           '🌟 Giờ Hoàng Đạo: Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)',
-                          style: TextStyle(color: AppTheme.textMuted, fontSize: 9.5, height: 1.3),
+                          style: TextStyle(color: subtextColor, fontSize: 9.5, height: 1.3),
                         ),
                       ],
                     ),
@@ -481,9 +536,9 @@ class AppMenuDrawer extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               alignment: Alignment.center,
-              child: const Text(
+              child: Text(
                 'Sổ Tiết Kiệm Daily v1.2.0 • Build 2026',
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 10),
+                style: TextStyle(color: subtextColor, fontSize: 10),
               ),
             ),
           ],

@@ -61,11 +61,18 @@ class _AuthDialogState extends State<AuthDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final inputBg = isDark ? AppTheme.bgApp : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+
     return Dialog(
-      backgroundColor: AppTheme.bgCard,
+      backgroundColor: cardBg,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppTheme.borderColor),
+        side: BorderSide(color: borderColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -82,16 +89,16 @@ class _AuthDialogState extends State<AuthDialog> {
                     const SizedBox(width: 8),
                     Text(
                       _isSignUpMode ? 'Đăng Ký Tài Khoản' : 'Đăng Nhập Supabase',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: textColor,
                       ),
                     ),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppTheme.textMuted),
+                  icon: Icon(Icons.close, color: textMutedColor),
                   onPressed: () => Navigator.pop(context),
                 )
               ],
@@ -101,7 +108,7 @@ class _AuthDialogState extends State<AuthDialog> {
               _isSignUpMode
                   ? 'Tạo tài khoản mới để lưu trữ & đồng bộ đám mây vĩnh viễn.'
                   : 'Nhập thông tin tài khoản Supabase của bạn để đồng bộ.',
-              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              style: TextStyle(fontSize: 12, color: textMutedColor),
             ),
             const SizedBox(height: 16),
 
@@ -110,7 +117,7 @@ class _AuthDialogState extends State<AuthDialog> {
                 padding: const EdgeInsets.all(10),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.15),
+                  color: Colors.red.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.redAccent),
                 ),
@@ -126,14 +133,15 @@ class _AuthDialogState extends State<AuthDialog> {
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 labelText: 'Email',
+                labelStyle: TextStyle(color: textMutedColor),
                 filled: true,
-                fillColor: AppTheme.bgApp,
+                fillColor: inputBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppTheme.borderColor),
+                  borderSide: BorderSide(color: borderColor),
                 ),
               ),
             ),
@@ -143,9 +151,10 @@ class _AuthDialogState extends State<AuthDialog> {
             TextField(
               controller: _passwordController,
               obscureText: !_showPassword,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 labelText: 'Mật khẩu',
+                labelStyle: TextStyle(color: textMutedColor),
                 suffixIcon: GestureDetector(
                   onTapDown: (_) => setState(() => _showPassword = true),
                   onTapUp: (_) => setState(() => _showPassword = false),
@@ -157,7 +166,7 @@ class _AuthDialogState extends State<AuthDialog> {
                           : Icons.visibility_off_outlined,
                       color: _showPassword
                           ? AppTheme.skyBlueAccent
-                          : AppTheme.textMuted,
+                          : textMutedColor,
                     ),
                     onPressed: () {
                       setState(() => _showPassword = !_showPassword);
@@ -165,10 +174,10 @@ class _AuthDialogState extends State<AuthDialog> {
                   ),
                 ),
                 filled: true,
-                fillColor: AppTheme.bgApp,
+                fillColor: inputBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppTheme.borderColor),
+                  borderSide: BorderSide(color: borderColor),
                 ),
               ),
             ),
@@ -200,7 +209,7 @@ class _AuthDialogState extends State<AuthDialog> {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
                       ),
               ),

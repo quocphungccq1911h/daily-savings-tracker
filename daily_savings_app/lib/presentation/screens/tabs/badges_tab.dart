@@ -13,6 +13,12 @@ class BadgesTab extends ConsumerWidget {
     final state = ref.watch(savingsProvider);
     final lifetimeSaved = state.lifetimeTotal;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final emeraldTextColor = isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -31,19 +37,19 @@ class BadgesTab extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isUnlocked
-                ? AppTheme.emeraldPrimary.withOpacity(0.12)
-                : AppTheme.bgApp.withOpacity(0.5),
+                ? (isDark ? AppTheme.emeraldPrimary.withValues(alpha: 0.12) : const Color(0xFFECFDF5))
+                : cardBg,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isUnlocked
-                  ? AppTheme.emeraldLight
-                  : AppTheme.borderColor.withOpacity(0.4),
+                  ? emeraldTextColor
+                  : (isDark ? AppTheme.borderColor : AppTheme.borderColorLight),
               width: isUnlocked ? 1.5 : 1.0,
             ),
             boxShadow: isUnlocked
                 ? [
                     BoxShadow(
-                      color: AppTheme.emeraldPrimary.withOpacity(0.15),
+                      color: AppTheme.emeraldPrimary.withValues(alpha: isDark ? 0.15 : 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -51,7 +57,7 @@ class BadgesTab extends ConsumerWidget {
                 : null,
           ),
           child: Opacity(
-            opacity: isUnlocked ? 1.0 : 0.45, // Làm mờ mờ huy hiệu chưa active
+            opacity: isUnlocked ? 1.0 : 0.7,
             child: Row(
               children: [
                 // Badge Icon
@@ -59,8 +65,8 @@ class BadgesTab extends ConsumerWidget {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isUnlocked
-                        ? AppTheme.emeraldPrimary.withOpacity(0.2)
-                        : Colors.white.withOpacity(0.05),
+                        ? AppTheme.emeraldPrimary.withValues(alpha: 0.2)
+                        : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9)),
                     shape: BoxShape.circle,
                   ),
                   child: Text(
@@ -83,7 +89,9 @@ class BadgesTab extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: isUnlocked ? Colors.white : Colors.white70,
+                              color: isUnlocked
+                                  ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                                  : textColor,
                             ),
                           ),
                           Container(
@@ -91,13 +99,13 @@ class BadgesTab extends ConsumerWidget {
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: isUnlocked
-                                  ? AppTheme.emeraldLight.withOpacity(0.15)
-                                  : Colors.white.withOpacity(0.06),
+                                  ? emeraldTextColor.withValues(alpha: 0.15)
+                                  : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9)),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: isUnlocked
-                                    ? AppTheme.emeraldLight.withOpacity(0.4)
-                                    : Colors.white.withOpacity(0.1),
+                                    ? emeraldTextColor.withValues(alpha: 0.4)
+                                    : (isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFCBD5E1)),
                               ),
                             ),
                             child: Text(
@@ -106,8 +114,8 @@ class BadgesTab extends ConsumerWidget {
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: isUnlocked
-                                    ? AppTheme.emeraldLight
-                                    : AppTheme.textMuted,
+                                    ? emeraldTextColor
+                                    : textMutedColor,
                               ),
                             ),
                           ),
@@ -118,9 +126,7 @@ class BadgesTab extends ConsumerWidget {
                         'Mục tiêu: ${Formatters.formatShortNumber(amount)}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isUnlocked
-                              ? AppTheme.textMuted
-                              : AppTheme.textMuted.withOpacity(0.7),
+                          color: textMutedColor,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -129,11 +135,11 @@ class BadgesTab extends ConsumerWidget {
                         child: LinearProgressIndicator(
                           value: progressPct,
                           minHeight: 6,
-                          backgroundColor: Colors.white.withOpacity(0.08),
+                          backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             isUnlocked
-                                ? AppTheme.emeraldLight
-                                : Colors.white30,
+                                ? emeraldTextColor
+                                : (isDark ? Colors.white30 : const Color(0xFF94A3B8)),
                           ),
                         ),
                       ),

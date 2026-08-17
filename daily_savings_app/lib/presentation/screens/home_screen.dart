@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
-import '../widgets/overview_banner_card.dart';
+import '../../providers/theme_provider.dart';
+import '../widgets/app_menu_drawer.dart';
 import '../widgets/collapsible_form.dart';
+import '../widgets/overview_banner_card.dart';
 import '../widgets/toast_notification.dart';
 import 'tabs/badges_tab.dart';
 import 'tabs/chart_tab.dart';
 import 'tabs/history_tab.dart';
 import 'tabs/wishlist_tab.dart';
-
-import '../widgets/app_menu_drawer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -26,14 +26,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(savingsProvider);
+    final themeMode = ref.watch(themeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+
+    final bgColor = isDark ? AppTheme.bgApp : AppTheme.bgAppLight;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
 
     return Scaffold(
-      backgroundColor: AppTheme.bgApp,
+      backgroundColor: bgColor,
       resizeToAvoidBottomInset: false,
       endDrawer: const AppMenuDrawer(),
       appBar: AppBar(
-        backgroundColor: AppTheme.bgApp,
+        backgroundColor: bgColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
         title: Row(
           children: [
             ClipRRect(
@@ -51,23 +58,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Sổ Tiết Kiệm Daily',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: titleColor,
                     ),
                   ),
                   Text(
                     'Mục tiêu: ${Formatters.formatShortNumber(state.dailyGoal)}/ngày',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppTheme.textMuted,
+                      color: subtitleColor,
                     ),
                   ),
                 ],
@@ -78,7 +85,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         actions: [
           Builder(
             builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+              icon: Icon(Icons.menu_rounded, color: titleColor, size: 26),
               onPressed: () => Scaffold.of(ctx).openEndDrawer(),
               tooltip: 'Menu Tiện Ích',
             ),
@@ -95,24 +102,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const OverviewBannerCard(),
 
               // Collapsible Form Widget
-              CollapsibleFormWidget(
-                onSaved: () {
-                  ToastNotification.show(context, 'Đã lưu khoản tiết kiệm!');
-                },
-              ),
+              const CollapsibleFormWidget(),
 
               // Custom Glassmorphic TabBar (Evenly Fitted Across Screen Width)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: [
-                    Expanded(child: _buildTabPill('📋 Nhật ký', 0)),
+                    Expanded(child: _buildTabPill('📋 Nhật ký', 0, isDark)),
                     const SizedBox(width: 6),
-                    Expanded(child: _buildTabPill('📈 Biểu đồ', 1)),
+                    Expanded(child: _buildTabPill('📈 Biểu đồ', 1, isDark)),
                     const SizedBox(width: 6),
-                    Expanded(child: _buildTabPill('🏆 Huy hiệu', 2)),
+                    Expanded(child: _buildTabPill('🏆 Huy hiệu', 2, isDark)),
                     const SizedBox(width: 6),
-                    Expanded(child: _buildTabPill('🎯 Wishlist', 3)),
+                    Expanded(child: _buildTabPill('🎯 Wishlist', 3, isDark)),
                   ],
                 ),
               ),
@@ -143,8 +146,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTabPill(String title, int index) {
+  Widget _buildTabPill(String title, int index, bool isDark) {
     final isSelected = _selectedIndex == index;
+    final unselectedBg = isDark ? AppTheme.bgCard : Colors.white;
+    final unselectedBorder = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+    final unselectedTextColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
+    final selectedTextColor = isDark ? Colors.white : AppTheme.skyBlueAccent;
+
     return InkWell(
       onTap: () {
         setState(() => _selectedIndex = index);
@@ -155,15 +163,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.skyBlueAccent.withOpacity(0.2)
-              : AppTheme.bgCard,
+          color: isSelected ? AppTheme.skyBlueAccent.withValues(alpha: 0.2) : unselectedBg,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected
-                ? AppTheme.skyBlueAccent
-                : AppTheme.borderColor,
+            color: isSelected ? AppTheme.skyBlueAccent : unselectedBorder,
           ),
+          boxShadow: (!isSelected && !isDark)
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
@@ -173,7 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : AppTheme.textMuted,
+              color: isSelected ? selectedTextColor : unselectedTextColor,
             ),
           ),
         ),

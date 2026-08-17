@@ -44,16 +44,23 @@ class _ChangeTargetDialogState extends ConsumerState<ChangeTargetDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = Theme.of(context).cardColor;
+    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final inputBg = isDark ? AppTheme.bgApp : const Color(0xFFF1F5F9);
+    final hintColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
+
     return AlertDialog(
-      backgroundColor: AppTheme.bgCard,
+      backgroundColor: cardBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.track_changes, color: AppTheme.skyBlueAccent),
-          SizedBox(width: 8),
+          const Icon(Icons.track_changes, color: AppTheme.skyBlueAccent),
+          const SizedBox(width: 8),
           Text(
             '🎯 Cài Đặt Mục Tiêu Ngày',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -61,23 +68,23 @@ class _ChangeTargetDialogState extends ConsumerState<ChangeTargetDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Nhập số tiền mục tiêu bạn muốn tích lũy mỗi ngày:',
-            style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            style: TextStyle(color: textMutedColor, fontSize: 12),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _controller,
             keyboardType: TextInputType.number,
             autofocus: true,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16),
             decoration: InputDecoration(
               labelText: 'Mục tiêu ngày (VNĐ)',
-              labelStyle: const TextStyle(color: AppTheme.textMuted),
+              labelStyle: TextStyle(color: hintColor),
               suffixText: 'đ',
               suffixStyle: const TextStyle(color: AppTheme.emeraldLight, fontWeight: FontWeight.bold),
               filled: true,
-              fillColor: AppTheme.bgApp,
+              fillColor: inputBg,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -95,8 +102,8 @@ class _ChangeTargetDialogState extends ConsumerState<ChangeTargetDialog> {
                 onSelected: (_) {
                   _controller.text = preset.toString();
                 },
-                backgroundColor: AppTheme.bgApp,
-                labelStyle: const TextStyle(color: Colors.white70, fontSize: 11),
+                backgroundColor: inputBg,
+                labelStyle: TextStyle(color: textMutedColor, fontSize: 11, fontWeight: FontWeight.bold),
               );
             }).toList(),
           ),
@@ -105,12 +112,12 @@ class _ChangeTargetDialogState extends ConsumerState<ChangeTargetDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
+          child: Text('Hủy', style: TextStyle(color: hintColor, fontWeight: FontWeight.bold)),
         ),
         ElevatedButton(
           onPressed: _saveTarget,
           style: ElevatedButton.styleFrom(backgroundColor: AppTheme.skyBlueAccent),
-          child: const Text('Lưu Thay Đổi', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          child: const Text('Lưu Thay Đổi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ],
     );
