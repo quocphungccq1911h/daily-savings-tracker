@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/savings_entry.dart';
 import '../../providers/savings_provider.dart';
+import 'package:uuid/uuid.dart';
 
 class CollapsibleFormWidget extends ConsumerStatefulWidget {
   const CollapsibleFormWidget({super.key});
@@ -16,7 +17,7 @@ class CollapsibleFormWidget extends ConsumerStatefulWidget {
 
 class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
   bool _isExpanded = false;
-  final _amountController = TextEditingController();
+  final _amountController = TextEditingController(text: '150.000');
   final _noteController = TextEditingController();
   String _selectedCategory = AppConstants.incomeCategories.first;
   DateTime _selectedDate = DateTime.now();
@@ -45,7 +46,7 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
     final dateStr = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
 
     final entry = SavingsEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       amount: amount,
       date: dateStr,
       category: _selectedCategory,
@@ -54,7 +55,7 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
 
     ref.read(savingsProvider.notifier).addOrUpdateEntry(entry);
 
-    _amountController.clear();
+    _amountController.text = '150.000';
     _noteController.clear();
     setState(() {
       _isExpanded = false;
@@ -180,7 +181,7 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
                     controller: _amountController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
+                      ThousandsSeparatorInputFormatter(),
                     ],
                     style: const TextStyle(
                       fontSize: 20,
@@ -264,6 +265,33 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.selection.baseOffset == 0) {
+      return newValue;
+    }
+
+    final String cleanString = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleanString.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final double? value = double.tryParse(cleanString);
+    if (value == null) {
+      return oldValue;
+    }
+
+    final String formatted = Formatters.formatNumberDot(value);
+    
+    return newValue.copyWith(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
