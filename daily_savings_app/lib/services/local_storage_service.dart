@@ -98,4 +98,15 @@ class LocalStorageService {
       'password': password,
     };
   }
+
+  // Daily Goal Persistence
+  static double getDailyGoal() {
+    final box = Hive.box(_settingsBoxName);
+    return (box.get('daily_goal', defaultValue: AppConstants.defaultDailyGoal) as num).toDouble();
+  }
+
+  static Future<void> saveDailyGoal(double goal) async {
+    final box = Hive.box(_settingsBoxName);
+    await box.put('daily_goal', goal);
+  }
 }

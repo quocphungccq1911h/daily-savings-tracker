@@ -95,7 +95,8 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     // 1. Load local Hive cache immediately for 0ms startup
     final localEntries = LocalStorageService.getEntries();
     final localGoals = LocalStorageService.getWishlistGoals();
-    state = state.copyWith(entries: localEntries, wishlistGoals: localGoals);
+    final savedGoal = LocalStorageService.getDailyGoal();
+    state = state.copyWith(entries: localEntries, wishlistGoals: localGoals, dailyGoal: savedGoal);
 
     // 2. Fetch live entries from Supabase CSDL Cloud
     try {
@@ -107,6 +108,11 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
         }
       }
     } catch (_) {}
+  }
+
+  void updateDailyGoal(double newGoal) {
+    state = state.copyWith(dailyGoal: newGoal);
+    LocalStorageService.saveDailyGoal(newGoal);
   }
 
   Future<void> addOrUpdateEntry(SavingsEntry entry) async {

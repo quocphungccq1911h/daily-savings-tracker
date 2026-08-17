@@ -24,4 +24,18 @@ class Formatters {
     } catch (_) {}
     return dateStr;
   }
+
+  /// Formats day of week in Vietnamese
+  static String formatDayOfWeek(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday: return 'Hai';
+      case DateTime.tuesday: return 'Ba';
+      case DateTime.wednesday: return 'Tư';
+      case DateTime.thursday: return 'Năm';
+      case DateTime.friday: return 'Sáu';
+      case DateTime.saturday: return 'Bảy';
+      case DateTime.sunday: return 'Chủ Nhật';
+      default: return '';
+    }
+  }
 }

@@ -11,7 +11,7 @@ import 'tabs/chart_tab.dart';
 import 'tabs/history_tab.dart';
 import 'tabs/wishlist_tab.dart';
 
-import '../../services/supabase_service.dart';
+import '../widgets/app_menu_drawer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -26,11 +26,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(savingsProvider);
-    final user = SupabaseService.currentUser;
 
     return Scaffold(
       backgroundColor: AppTheme.bgApp,
       resizeToAvoidBottomInset: false,
+      endDrawer: const AppMenuDrawer(),
       appBar: AppBar(
         backgroundColor: AppTheme.bgApp,
         elevation: 0,
@@ -76,43 +76,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: InkWell(
-              onTap: () async {
-                await SupabaseService.signOut();
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppTheme.emeraldPrimary.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.emeraldLight.withOpacity(0.5)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        '👤 ${user?.email ?? 'User'}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.emeraldLight,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.logout, size: 14, color: AppTheme.emeraldLight),
-                  ],
-                ),
-              ),
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+              onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+              tooltip: 'Menu Tiện Ích',
             ),
           ),
+          const SizedBox(width: 6),
         ],
       ),
       body: SafeArea(
