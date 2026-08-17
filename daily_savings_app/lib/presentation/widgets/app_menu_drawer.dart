@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../services/notification_service.dart';
 import '../../services/supabase_service.dart';
 import '../screens/login_screen.dart';
 import 'change_target_dialog.dart';
@@ -195,35 +196,6 @@ class AppMenuDrawer extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  // ☀️ / 🌙 THEME SWITCHER SECTION
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      'GIAO DIỆN & CẤU HÌNH',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
-                    ),
-                  ),
-                  SwitchListTile(
-                    value: isDark,
-                    onChanged: (_) {
-                      ref.read(themeProvider.notifier).toggleTheme();
-                    },
-                    secondary: Icon(
-                      isDark ? Icons.dark_mode : Icons.light_mode,
-                      color: isDark ? AppTheme.amberGoldLight : Colors.orangeAccent,
-                    ),
-                    title: Text(
-                      isDark ? 'Chế Độ Tối (Dark Mode)' : 'Chế Độ Sáng (Light Mode)',
-                      style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      isDark ? 'Giao diện tối dịu mắt ban đêm' : 'Giao diện sáng rõ ràng ban ngày',
-                      style: TextStyle(color: subtextColor, fontSize: 11),
-                    ),
-                    activeThumbColor: Colors.white,
-                    activeTrackColor: AppTheme.emeraldPrimary,
-                  ),
-                  const Divider(color: AppTheme.borderColor, height: 16, indent: 16, endIndent: 16),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -529,6 +501,67 @@ class AppMenuDrawer extends ConsumerWidget {
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 10),
+                  const Divider(color: AppTheme.borderColor, height: 16, indent: 16, endIndent: 16),
+
+                  // ☀️ / 🌙 THEME & NOTIFICATION SECTION (DƯỚI CÙNG HOÀN TOÀN)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(
+                      'GIAO DIỆN & THÔNG BÁO',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
+                    ),
+                  ),
+                  SwitchListTile(
+                    value: isDark,
+                    onChanged: (_) {
+                      ref.read(themeProvider.notifier).toggleTheme();
+                    },
+                    secondary: Icon(
+                      isDark ? Icons.dark_mode : Icons.light_mode,
+                      color: isDark ? AppTheme.amberGoldLight : Colors.orangeAccent,
+                    ),
+                    title: Text(
+                      isDark ? 'Chế Độ Tối (Dark Mode)' : 'Chế Độ Sáng (Light Mode)',
+                      style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      isDark ? 'Giao diện tối dịu mắt ban đêm' : 'Giao diện sáng rõ ràng ban ngày',
+                      style: TextStyle(color: subtextColor, fontSize: 11),
+                    ),
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: AppTheme.emeraldPrimary,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_active_rounded, color: AppTheme.amberGoldLight),
+                    title: Text('Nhắc Nhở Tối (20:00)', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: Text('Tự động phát lúc 20:00 mỗi tối (Bấm để thử ngay 🔔)', style: TextStyle(color: subtextColor, fontSize: 11)),
+                    onTap: () async {
+                      final notif = NotificationService();
+                      final granted = await notif.requestPermissions();
+                      if (context.mounted) {
+                        if (granted) {
+                          await notif.showTestNotification();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('🔔 Đã phát thông báo thử nghiệm! Đã bật nhắc nhở 20:00 hàng ngày.'),
+                              backgroundColor: AppTheme.emeraldPrimary,
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('⚠️ Vui lòng cấp quyền thông báo cho ứng dụng trong Cài Đặt máy!'),
+                              backgroundColor: Colors.orangeAccent,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),

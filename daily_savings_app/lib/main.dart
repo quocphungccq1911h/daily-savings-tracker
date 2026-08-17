@@ -7,6 +7,7 @@ import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'providers/theme_provider.dart';
 import 'services/local_storage_service.dart';
+import 'services/notification_service.dart';
 import 'services/supabase_service.dart';
 
 void main() async {
@@ -25,6 +26,15 @@ void main() async {
 
     await LocalStorageService.init();
     await SupabaseService.init();
+    
+    // Tự động khởi tạo & đặt lịch nhắc nhở nạp tiền tiết kiệm lúc 20:00 tối hàng ngày
+    try {
+      final notifService = NotificationService();
+      await notifService.init();
+      await notifService.scheduleDailyReminder(hour: 20, minute: 0);
+    } catch (e) {
+      debugPrint('Notification init warning: $e');
+    }
 
     runApp(
       const ProviderScope(
