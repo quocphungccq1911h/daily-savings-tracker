@@ -100,7 +100,8 @@ class AppMenuDrawer extends ConsumerWidget {
     final tetYearCanChi = LunarUtils.getCanChiYear(tetLunarList[2]);
 
     final dailyGoal = savingsState.dailyGoal;
-    final estimatedTetFund = daysLeftToTet * dailyGoal;
+    final lifetimeTotal = savingsState.lifetimeTotal;
+    final estimatedTetFund = lifetimeTotal + (daysLeftToTet * dailyGoal);
 
     return Drawer(
       backgroundColor: isDark ? AppTheme.bgApp : AppTheme.bgAppLight,
@@ -374,7 +375,7 @@ class AppMenuDrawer extends ConsumerWidget {
                                   const Text('Dự kiến quỹ ăn Tết:', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '+${Formatters.formatShortNumber(estimatedTetFund)}',
+                                    Formatters.formatShortNumber(estimatedTetFund),
                                     style: const TextStyle(
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w900,
@@ -390,7 +391,7 @@ class AppMenuDrawer extends ConsumerWidget {
                         const Divider(color: Colors.white24, height: 1),
                         const SizedBox(height: 8),
                         Text(
-                          '💰 Giữ vững ${Formatters.formatShortNumber(dailyGoal)}/ngày từ hôm nay để đón Tết $tetYearCanChi sung túc & rực rỡ!',
+                          '💰 Đã có ${Formatters.formatShortNumber(lifetimeTotal)} + tích lũy ${Formatters.formatShortNumber(dailyGoal)}/ngày trong $daysLeftToTet ngày tới để đón Tết $tetYearCanChi rực rỡ!',
                           style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.3),
                         ),
                       ],
