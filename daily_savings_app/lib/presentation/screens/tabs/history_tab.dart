@@ -413,7 +413,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
       statusColor = emeraldTextColor;
     } else if (diff == 0) {
       statusText = 'Đạt';
-      statusColor = AppTheme.skyBlueAccent;
+      statusColor = isDark ? AppTheme.skyBlueAccent : const Color(0xFF0284C7);
     } else {
       statusText = 'Thiếu';
       statusColor = Colors.redAccent;
@@ -456,7 +456,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: emeraldTextColor,
+                    color: statusColor,
                   ),
                 ),
               ],

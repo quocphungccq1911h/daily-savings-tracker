@@ -28,7 +28,7 @@ class OverviewBannerCard extends ConsumerWidget {
     final double monthProgressPct = (monthTotal / monthTarget).clamp(0.0, 1.0);
     final double remainingMonthAmount = max(0.0, monthTarget - monthTotal);
 
-    final int daysLeftInMonth = max(1, daysInMonth - now.day + 1);
+    final int daysLeftInMonth = max(1, daysInMonth - now.day);
     final double neededDailyRate = remainingMonthAmount / daysLeftInMonth;
 
     final double monthExpectedTarget = dailyGoal * now.day;
