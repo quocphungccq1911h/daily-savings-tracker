@@ -14,7 +14,9 @@ class BadgesTab extends ConsumerWidget {
     final lifetimeSaved = state.lifetimeTotal;
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       itemCount: AppConstants.milestoneBadges.length,
       itemBuilder: (context, index) {
         final badge = AppConstants.milestoneBadges[index];

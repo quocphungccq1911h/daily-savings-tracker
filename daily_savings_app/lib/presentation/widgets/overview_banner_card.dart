@@ -20,10 +20,15 @@ class OverviewBannerCard extends ConsumerWidget {
     final double dailyGoal = state.dailyGoal;
 
     // Monthly Target Progress
+    final int currentDay = now.day;
     final int daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final double monthlyTarget = dailyGoal * daysInMonth;
     final double monthProgressPct = (monthTotal / monthlyTarget).clamp(0.0, 1.0);
-    final double monthDiff = monthTotal - (dailyGoal * now.day);
+    final double monthExpectedTarget = dailyGoal * currentDay;
+    final double monthDiff = monthTotal - monthExpectedTarget;
+    final double remainingMonthAmount = max(0.0, monthlyTarget - monthTotal);
+    final int daysLeftInMonth = max(1, daysInMonth - currentDay + 1);
+    final double neededDailyRate = remainingMonthAmount / daysLeftInMonth;
 
     // Year Forecast & Active Days Target
     final currentYearStr = '${now.year}';
@@ -53,8 +58,8 @@ class OverviewBannerCard extends ConsumerWidget {
     final double yearProgressPct = (lifetimeTotal / yearlyTarget).clamp(0.0, 1.0);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.bgCard,
         borderRadius: BorderRadius.circular(16),
@@ -122,6 +127,7 @@ class OverviewBannerCard extends ConsumerWidget {
           const SizedBox(height: 8),
 
           // Big Savings Amount Display
+          // Big Savings Amount Display
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 8,
@@ -138,7 +144,7 @@ class OverviewBannerCard extends ConsumerWidget {
               Text(
                 monthDiff >= 0
                     ? 'Dư +${Formatters.formatShortNumber(monthDiff)} so với lũy kế'
-                    : 'Thiếu ${Formatters.formatShortNumber(monthDiff.abs())}',
+                    : 'Thiếu -${Formatters.formatShortNumber(monthDiff.abs())} so với lũy kế',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -146,6 +152,14 @@ class OverviewBannerCard extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Mục tiêu lũy kế đến nay: ${Formatters.formatShortNumber(monthExpectedTarget)}',
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppTheme.textMuted,
+            ),
           ),
           const SizedBox(height: 10),
 
@@ -184,125 +198,171 @@ class OverviewBannerCard extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
-          // 2 Mini Overview Cards Row
-          Row(
+          // 2 Mini Overview Cards in Vertical List Format
+          Column(
             children: [
-              // Card 1: Month Progress
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.bgApp,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.borderColor),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'TIẾN ĐỘ THÁNG',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textMuted,
-                          letterSpacing: 0.5,
+              // Card 1: Month Progress (Full Width)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppTheme.bgApp,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.borderColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'TIẾN ĐỘ THÁNG',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textMuted,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        Formatters.formatShortNumber(monthTotal),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.emeraldLight,
+                        Text(
+                          Formatters.formatShortNumber(monthTotal),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.emeraldLight,
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: monthProgressPct,
+                        minHeight: 8,
+                        backgroundColor: Colors.white10,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.emeraldPrimary),
                       ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: monthProgressPct,
-                          minHeight: 6,
-                          backgroundColor: Colors.white10,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppTheme.emeraldPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${(monthProgressPct * 100).toStringAsFixed(0)}% mục tiêu',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${(monthProgressPct * 100).toStringAsFixed(0)}% mục tiêu',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                        Text(
+                          remainingMonthAmount > 0
+                              ? 'Thiếu: ${Formatters.formatShortNumber(remainingMonthAmount)}'
+                              : 'Đạt 100%',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: remainingMonthAmount > 0
+                                ? Colors.redAccent
+                                : AppTheme.emeraldLight,
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      remainingMonthAmount > 0
+                          ? 'Cần ~${Formatters.formatShortNumber(neededDailyRate)}/ngày cho $daysLeftInMonth ngày còn lại.'
+                          : '🎉 Đã hoàn thành mục tiêu tháng!',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textMuted,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(height: 10),
 
-              // Card 2: Year Forecast
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.bgApp,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.borderColor),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'TIẾN ĐỘ CẢ NĂM',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white70,
-                          letterSpacing: 0.5,
+              // Card 2: Year Forecast (Full Width)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppTheme.bgApp,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.borderColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'TIẾN ĐỘ CẢ NĂM',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        Formatters.formatShortNumber(lifetimeTotal),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.amberGoldLight,
+                        Text(
+                          Formatters.formatShortNumber(lifetimeTotal),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.amberGoldLight,
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: yearProgressPct,
+                        minHeight: 8,
+                        backgroundColor: Colors.white10,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.amberGold),
                       ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: yearProgressPct,
-                          minHeight: 6,
-                          backgroundColor: Colors.white10,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppTheme.amberGold),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${(yearProgressPct * 100).toStringAsFixed(1)}% (${Formatters.formatShortNumber(yearlyTarget)})',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${(yearProgressPct * 100).toStringAsFixed(1)}% (${Formatters.formatShortNumber(yearlyTarget)})',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                        Text(
+                          'Dự báo: ${Formatters.formatShortNumber(yearForecast)}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.amberGoldLight,
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tốc độ thực tế: ${Formatters.formatShortNumber(realAvgRate)}/ngày',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textMuted,
                       ),
-                      Text(
-                        'Dự báo: ${Formatters.formatShortNumber(yearForecast)}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.amberGoldLight,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],

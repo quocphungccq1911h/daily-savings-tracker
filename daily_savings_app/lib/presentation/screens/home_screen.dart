@@ -11,7 +11,6 @@ import 'tabs/chart_tab.dart';
 import 'tabs/history_tab.dart';
 import 'tabs/wishlist_tab.dart';
 
-import '../widgets/auth_dialog.dart';
 import '../../services/supabase_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -23,19 +22,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: 0);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +36,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         elevation: 0,
         title: Row(
           children: [
-            const Text('💰', style: TextStyle(fontSize: 22)),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 28,
+                height: 28,
+                fit: BoxFit.cover,
+              ),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -122,51 +116,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Hero Overview Banner Card
-            const OverviewBannerCard(),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              // Hero Overview Banner Card
+              const OverviewBannerCard(),
 
-            // Collapsible Form Widget
-            CollapsibleFormWidget(
-              onSaved: () {
-                ToastNotification.show(context, 'Đã lưu khoản tiết kiệm!');
-              },
-            ),
-
-            // Custom Glassmorphic TabBar (Evenly Fitted Across Screen Width)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(child: _buildTabPill('📋 Nhật ký', 0)),
-                  const SizedBox(width: 6),
-                  Expanded(child: _buildTabPill('📈 Biểu đồ', 1)),
-                  const SizedBox(width: 6),
-                  Expanded(child: _buildTabPill('🏆 Huy hiệu', 2)),
-                  const SizedBox(width: 6),
-                  Expanded(child: _buildTabPill('🎯 Wishlist', 3)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Flexible PageView Tabs
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() => _selectedIndex = index);
+              // Collapsible Form Widget
+              CollapsibleFormWidget(
+                onSaved: () {
+                  ToastNotification.show(context, 'Đã lưu khoản tiết kiệm!');
                 },
-                children: const [
-                  HistoryTab(),
-                  ChartTab(),
-                  BadgesTab(),
-                  WishlistTab(),
-                ],
               ),
-            ),
-          ],
+
+              // Custom Glassmorphic TabBar (Evenly Fitted Across Screen Width)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    Expanded(child: _buildTabPill('📋 Nhật ký', 0)),
+                    const SizedBox(width: 6),
+                    Expanded(child: _buildTabPill('📈 Biểu đồ', 1)),
+                    const SizedBox(width: 6),
+                    Expanded(child: _buildTabPill('🏆 Huy hiệu', 2)),
+                    const SizedBox(width: 6),
+                    Expanded(child: _buildTabPill('🎯 Wishlist', 3)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Tab Content Body (Dynamically Adapts Height To Selected Tab)
+              Builder(
+                builder: (context) {
+                  switch (_selectedIndex) {
+                    case 0:
+                      return const HistoryTab();
+                    case 1:
+                      return const ChartTab();
+                    case 2:
+                      return const BadgesTab();
+                    case 3:
+                      return const WishlistTab();
+                    default:
+                      return const HistoryTab();
+                  }
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -177,11 +177,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return InkWell(
       onTap: () {
         setState(() => _selectedIndex = index);
-        _pageController.animateToPage(
-          index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
       },
       borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(

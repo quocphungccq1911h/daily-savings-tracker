@@ -99,7 +99,8 @@ class _ChartTabState extends ConsumerState<ChartTab> {
     };
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

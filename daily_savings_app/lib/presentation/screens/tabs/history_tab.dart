@@ -118,7 +118,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
       children: [
         // Month Filter Dropdown Bar
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           child: Row(
             children: [
               const Icon(Icons.filter_alt_outlined,
@@ -185,9 +185,10 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
         ),
 
         // History List Grouped By Month & Date
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             itemCount: monthGroups.length,
             itemBuilder: (context, mIndex) {
               final monthGroup = monthGroups[mIndex];
@@ -243,107 +244,7 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
 
                     if (isSingle) {
                       final item = dateGroup.items.first;
-                      return Card(
-                        color: AppTheme.bgCard,
-                        margin: const EdgeInsets.only(bottom: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: AppTheme.borderColor),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            Formatters.formatDateVN(item.date),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
-                          ),
-                          subtitle: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color:
-                                      AppTheme.skyBlueAccent.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                      color: AppTheme.skyBlueAccent
-                                          .withOpacity(0.3)),
-                                ),
-                                child: Text(
-                                  item.category,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.skyBlueAccent,
-                                  ),
-                                ),
-                              ),
-                              if (item.note.isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    item.note,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppTheme.textMuted),
-                                  ),
-                                ),
-                              ]
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                Formatters.formatShortNumber(item.amount),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.emeraldLight,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    size: 20, color: Colors.redAccent),
-                                onPressed: () {
-                                  ref
-                                      .read(savingsProvider.notifier)
-                                      .deleteEntry(item.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Row(
-                                        children: [
-                                          Icon(Icons.delete_outline_rounded,
-                                              color: Colors.redAccent),
-                                          SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              '🗑️ Đã xóa khoản tiết kiệm thành công!',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      backgroundColor: AppTheme.bgCard,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        side: const BorderSide(
-                                            color: Colors.redAccent),
-                                      ),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                              )
-                            ],
-                          ),
-                        ),
-                      );
+                      return _buildItemDetailCard(context, item, state.dailyGoal);
                     }
 
                     // Multiple entries for the same date -> Expansion Card
@@ -488,41 +389,19 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                                   ),
                                   const SizedBox(width: 4),
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        size: 18, color: Colors.redAccent),
+                                    icon: const Icon(Icons.edit_outlined,
+                                        size: 16, color: AppTheme.amberGoldLight),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
-                                    onPressed: () {
-                                      ref
-                                          .read(savingsProvider.notifier)
-                                          .deleteEntry(subItem.id);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: const Row(
-                                            children: [
-                                              Icon(Icons.delete_outline_rounded,
-                                                  color: Colors.redAccent),
-                                              SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  '🗑️ Đã xóa khoản tiết kiệm thành công!',
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          backgroundColor: AppTheme.bgCard,
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            side: const BorderSide(
-                                                color: Colors.redAccent),
-                                          ),
-                                          duration: const Duration(seconds: 2),
-                                        ),
-                                      );
-                                    },
+                                    onPressed: () => _showEditDialog(context, subItem),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline,
+                                        size: 16, color: Colors.redAccent),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () => _handleDelete(context, subItem.id),
                                   ),
                                 ],
                               ),
@@ -536,8 +415,274 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
               );
             },
           ),
+        ],
+      );
+  }
+
+  Widget _buildItemDetailCard(BuildContext context, SavingsEntry item, double dailyGoal) {
+    final double diff = item.amount - dailyGoal;
+    final double pct = (diff / dailyGoal) * 100;
+
+    String statusText;
+    Color statusColor;
+    if (diff > 0) {
+      statusText = 'Thừa';
+      statusColor = AppTheme.emeraldLight;
+    } else if (diff == 0) {
+      statusText = 'Đạt';
+      statusColor = AppTheme.skyBlueAccent;
+    } else {
+      statusText = 'Thiếu';
+      statusColor = Colors.redAccent;
+    }
+
+    final String diffStr = diff >= 0
+        ? '+${Formatters.formatShortNumber(diff)}'
+        : '-${Formatters.formatShortNumber(diff.abs())}';
+    final String pctStr = diff >= 0
+        ? '+${pct.toStringAsFixed(1)}%'
+        : '${pct.toStringAsFixed(1)}%';
+
+    return Card(
+      color: AppTheme.bgCard,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppTheme.borderColor),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Row 1: Date & Amount
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  Formatters.formatDateVN(item.date),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  Formatters.formatShortNumber(item.amount),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.emeraldLight,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+
+            // Row 2: Analytics vs Target & Status Badge
+            Row(
+              children: [
+                Text(
+                  'So với ${(dailyGoal / 1000).toStringAsFixed(0)}k: ',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                ),
+                Text(
+                  diffStr,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: diff >= 0 ? AppTheme.emeraldLight : Colors.redAccent,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  '% Kỳ vọng: ',
+                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                ),
+                Text(
+                  pctStr,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: diff >= 0 ? AppTheme.emeraldLight : Colors.redAccent,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: statusColor.withOpacity(0.4)),
+                  ),
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Row 3: Category, Note & Action Buttons (Sửa & Xóa)
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.skyBlueAccent.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.skyBlueAccent.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    item.category,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.skyBlueAccent,
+                    ),
+                  ),
+                ),
+                if (item.note.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.note,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    ),
+                  ),
+                ] else
+                  const Spacer(),
+
+                // Edit Button
+                OutlinedButton.icon(
+                  onPressed: () => _showEditDialog(context, item),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    side: BorderSide(color: AppTheme.amberGold.withOpacity(0.5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.edit_outlined, size: 12, color: AppTheme.amberGoldLight),
+                  label: const Text('Sửa', style: TextStyle(fontSize: 11, color: AppTheme.amberGoldLight)),
+                ),
+                const SizedBox(width: 6),
+
+                // Delete Button
+                OutlinedButton.icon(
+                  onPressed: () => _handleDelete(context, item.id),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.delete_outline, size: 12, color: Colors.redAccent),
+                  label: const Text('Xóa', style: TextStyle(fontSize: 11, color: Colors.redAccent)),
+                ),
+              ],
+            ),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, SavingsEntry item) {
+    final dateCtrl = TextEditingController(text: item.date);
+    final amountCtrl = TextEditingController(text: item.amount.toInt().toString());
+    final noteCtrl = TextEditingController(text: item.note);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.bgCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('✏️ Chỉnh Sửa Khoản Tiết Kiệm', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: dateCtrl,
+                decoration: const InputDecoration(labelText: 'Ngày (YYYY-MM-DD)', labelStyle: TextStyle(color: AppTheme.textMuted)),
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: amountCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Số tiền (VNĐ)', labelStyle: TextStyle(color: AppTheme.textMuted)),
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: noteCtrl,
+                decoration: const InputDecoration(labelText: 'Ghi chú', labelStyle: TextStyle(color: AppTheme.textMuted)),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newAmount = double.tryParse(amountCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? item.amount;
+              final updated = item.copyWith(
+                date: dateCtrl.text.trim(),
+                amount: newAmount,
+                note: noteCtrl.text.trim(),
+              );
+              ref.read(savingsProvider.notifier).addOrUpdateEntry(updated);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('✅ Đã cập nhật khoản tiết kiệm thành công!')),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.skyBlueAccent),
+            child: const Text('Lưu Thay Đổi', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleDelete(BuildContext context, String id) {
+    ref.read(savingsProvider.notifier).deleteEntry(id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '🗑️ Đã xóa khoản tiết kiệm thành công!',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.bgCard,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Colors.redAccent),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 }

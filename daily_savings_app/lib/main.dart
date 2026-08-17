@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/observers/app_provider_observer.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
@@ -26,6 +27,7 @@ void main() async {
 
     runApp(
       const ProviderScope(
+        observers: [AppProviderObserver()],
         child: DailySavingsApp(),
       ),
     );

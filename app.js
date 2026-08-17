@@ -1753,6 +1753,37 @@ create policy "Public Access" on savings_entries for all using (true) with check
     toggleAuthModeBtn.addEventListener('click', toggleAuthMode);
   }
 
+  const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+  const authPasswordInput = document.getElementById('authPasswordInput');
+
+  if (togglePasswordBtn && authPasswordInput) {
+    const showPass = () => {
+      authPasswordInput.type = 'text';
+      togglePasswordBtn.textContent = '👁️‍🗨️';
+      togglePasswordBtn.style.opacity = '1';
+    };
+    const hidePass = () => {
+      authPasswordInput.type = 'password';
+      togglePasswordBtn.textContent = '👁️';
+      togglePasswordBtn.style.opacity = '0.7';
+    };
+
+    togglePasswordBtn.addEventListener('mousedown', showPass);
+    togglePasswordBtn.addEventListener('mouseup', hidePass);
+    togglePasswordBtn.addEventListener('mouseleave', hidePass);
+
+    togglePasswordBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      showPass();
+    });
+    togglePasswordBtn.addEventListener('touchend', hidePass);
+    togglePasswordBtn.addEventListener('touchcancel', hidePass);
+
+    togglePasswordBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+    });
+  }
+
   if (signOutBtn) {
     signOutBtn.addEventListener('click', async () => {
       if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?')) {

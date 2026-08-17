@@ -20,7 +20,7 @@
     <header class="app-header">
       <div class="header-main-row">
         <div class="header-brand">
-          <span class="brand-icon">💰</span>
+          <img src="assets/images/app_logo.png" alt="App Logo" style="width: 36px; height: 36px; border-radius: 9px; vertical-align: middle; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
           <div>
             <h1>Sổ Tiết Kiệm Daily</h1>
             <p class="brand-sub">Mục tiêu: <span id="headerGoalDisplay">150.000đ</span>/ngày <button id="configGoalBtn" class="link-btn">Sửa</button></p>
@@ -346,7 +346,10 @@ create policy "Users access own entries"
 
         <div class="form-group" style="text-align: left; margin-top: 12px;">
           <label for="authPasswordInput">Mật khẩu</label>
-          <input type="password" id="authPasswordInput" class="input-field" placeholder="••••••••" required minlength="6">
+          <div style="position: relative;">
+            <input type="password" id="authPasswordInput" class="input-field" placeholder="••••••••" required minlength="6" style="padding-right: 42px;">
+            <button type="button" id="togglePasswordBtn" title="Nhấn và giữ để xem mật khẩu" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-muted); opacity: 0.7; transition: opacity 0.2s;">👁️</button>
+          </div>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); text-align: left;">

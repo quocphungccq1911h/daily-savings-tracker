@@ -27,7 +27,9 @@ class WishlistTab extends ConsumerWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       itemCount: goals.length,
       itemBuilder: (context, index) {
         final item = goals[index];

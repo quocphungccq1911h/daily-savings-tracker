@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = true;
   bool _isSignUpMode = false;
   bool _isLoading = false;
+  bool _showPassword = false;
   String _errorMsg = '';
 
   @override
@@ -105,17 +106,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // App Hero Icon & Title
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppTheme.skyBlueAccent.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: AppTheme.skyBlueAccent.withOpacity(0.4)),
-                    ),
-                    child: const Center(
-                      child: Text('💰', style: TextStyle(fontSize: 36)),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -194,12 +191,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Password Input Field
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_showPassword,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: 'Mật khẩu',
                       prefixIcon: const Icon(Icons.lock_outline,
                           color: AppTheme.skyBlueAccent),
+                      suffixIcon: GestureDetector(
+                        onTapDown: (_) => setState(() => _showPassword = true),
+                        onTapUp: (_) => setState(() => _showPassword = false),
+                        onTapCancel: () => setState(() => _showPassword = false),
+                        child: IconButton(
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: _showPassword
+                                ? AppTheme.skyBlueAccent
+                                : AppTheme.textMuted,
+                          ),
+                          onPressed: () {
+                            setState(() => _showPassword = !_showPassword);
+                          },
+                        ),
+                      ),
                       filled: true,
                       fillColor: AppTheme.bgApp,
                       border: OutlineInputBorder(

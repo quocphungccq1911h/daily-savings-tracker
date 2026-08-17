@@ -15,6 +15,7 @@ class _AuthDialogState extends State<AuthDialog> {
   final _passwordController = TextEditingController();
   bool _isSignUpMode = false;
   bool _isLoading = false;
+  bool _showPassword = false;
   String _errorMsg = '';
 
   @override
@@ -141,10 +142,28 @@ class _AuthDialogState extends State<AuthDialog> {
             // Password Input
             TextField(
               controller: _passwordController,
-              obscureText: true,
+              obscureText: !_showPassword,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Mật khẩu',
+                suffixIcon: GestureDetector(
+                  onTapDown: (_) => setState(() => _showPassword = true),
+                  onTapUp: (_) => setState(() => _showPassword = false),
+                  onTapCancel: () => setState(() => _showPassword = false),
+                  child: IconButton(
+                    icon: Icon(
+                      _showPassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: _showPassword
+                          ? AppTheme.skyBlueAccent
+                          : AppTheme.textMuted,
+                    ),
+                    onPressed: () {
+                      setState(() => _showPassword = !_showPassword);
+                    },
+                  ),
+                ),
                 filled: true,
                 fillColor: AppTheme.bgApp,
                 border: OutlineInputBorder(
