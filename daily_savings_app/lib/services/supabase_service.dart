@@ -69,7 +69,7 @@ class SupabaseService {
       final payload = <String, dynamic>{
         'id': entry.id,
         'entry_date': entry.date,
-        'amount': entry.amount,
+        'amount': entry.amount.toInt(),
         'note': fullNote,
       };
 

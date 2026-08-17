@@ -16,7 +16,7 @@ class SavingsEntry {
   Map<String, dynamic> toMap() => {
         'id': id,
         'entry_date': date,
-        'amount': amount,
+        'amount': amount.toInt(),
         'category': category,
         'note': note,
       };
