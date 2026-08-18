@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
@@ -114,7 +115,10 @@ class AppMenuDrawer extends ConsumerWidget {
 
     final dailyGoal = savingsState.dailyGoal;
     final lifetimeTotal = savingsState.lifetimeTotal;
-    final estimatedTetFund = lifetimeTotal + (daysLeftToTet * dailyGoal);
+    final double realAvgRate = savingsState.entries.isEmpty
+        ? dailyGoal
+        : lifetimeTotal / max(1, savingsState.entries.length);
+    final estimatedTetFund = lifetimeTotal + (daysLeftToTet * realAvgRate);
 
     return Drawer(
       backgroundColor: isDark ? AppTheme.bgApp : AppTheme.bgAppLight,
@@ -460,7 +464,7 @@ class AppMenuDrawer extends ConsumerWidget {
                         const Divider(color: Colors.white24, height: 1),
                         const SizedBox(height: 8),
                         Text(
-                          '💰 Đã có ${Formatters.formatShortNumber(lifetimeTotal)} + tích lũy ${Formatters.formatShortNumber(dailyGoal)}/ngày trong $daysLeftToTet ngày tới để đón Tết $tetYearCanChi rực rỡ!',
+                          '💰 Đã có ${Formatters.formatShortNumber(lifetimeTotal)} + tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới để đón Tết $tetYearCanChi rực rỡ!',
                           style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.3),
                         ),
                       ],

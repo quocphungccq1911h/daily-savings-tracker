@@ -26,6 +26,7 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
   void _fetchAiAdvice() async {
     final savingsState = ref.read(savingsProvider);
     final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
 
     final double currentTotal = savingsState.lifetimeTotal;
     final double dailyRate = savingsState.entries.isEmpty
@@ -46,7 +47,7 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
 
     // Tính quỹ Tết Đinh Mùi (06/02/2027)
     final tetDate = DateTime(2027, 2, 6);
-    final daysToTet = max(0, tetDate.difference(now).inDays);
+    final daysToTet = max(0, tetDate.difference(todayMidnight).inDays);
     final estTetFund = currentTotal + (daysToTet * dailyRate);
 
     String strDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -72,6 +73,7 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
   Widget build(BuildContext context) {
     final savingsState = ref.watch(savingsProvider);
     final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dialogBg = Theme.of(context).cardColor;
@@ -98,16 +100,16 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
 
     // Tính dự báo Cuối Năm 2026 (31/12/2026)
     final endOfYear = DateTime(now.year, 12, 31);
-    final daysToEndOfYear = max(0, endOfYear.difference(now).inDays);
+    final daysToEndOfYear = max(0, endOfYear.difference(todayMidnight).inDays);
     final estYearFund = currentTotal + (daysToEndOfYear * dailyRate);
 
     // Tính quỹ Tết Đinh Mùi (06/02/2027)
     final tetDate = DateTime(2027, 2, 6);
-    final daysToTet = max(0, tetDate.difference(now).inDays);
+    final daysToTet = max(0, tetDate.difference(todayMidnight).inDays);
     final estTetFund = currentTotal + (daysToTet * dailyRate);
 
     String strDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-    int daysUntil(DateTime d) => max(0, d.difference(now).inDays);
+    int daysUntil(DateTime d) => max(0, d.difference(todayMidnight).inDays);
 
     return Dialog(
       backgroundColor: Colors.transparent,
