@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../models/expense_entry.dart';
 import '../../models/savings_entry.dart';
 
 class SupabaseService {
@@ -110,6 +112,47 @@ class SupabaseService {
     } catch (e) {
       print('❌ [Supabase Realtime] Subscription Error: $e');
       return null;
+    }
+  }
+
+  // Cloud Sync For Daily Expenses
+  static Future<List<ExpenseEntry>> fetchExpensesFromCloud() async {
+    try {
+      if (currentUser == null) return [];
+      final data = await client.from('expenses').select('*').eq('user_id', currentUser!.id).order('entry_date', ascending: false);
+      print('✅ [Supabase] Loaded ${(data as List).length} expenses from cloud database');
+      return (data as List).map((map) => ExpenseEntry.fromMap(map)).toList();
+    } catch (e) {
+      print('ℹ️ [Supabase] Cloud Fetch Expenses Notice: $e');
+      return [];
+    }
+  }
+
+  static Future<void> syncSaveExpense(ExpenseEntry entry) async {
+    try {
+      final payload = <String, dynamic>{
+        'id': entry.id,
+        'entry_date': entry.date,
+        'amount': entry.amount.toInt(),
+        'category': entry.category,
+        'note': entry.note,
+      };
+      if (currentUser != null) {
+        payload['user_id'] = currentUser!.id;
+      }
+      await client.from('expenses').upsert(payload);
+      print('✅ [Supabase] Synced expense ${entry.id} (${entry.amount}đ) to cloud!');
+    } catch (e) {
+      print('ℹ️ [Supabase] Cloud Sync Expense Notice: $e');
+    }
+  }
+
+  static Future<void> syncDeleteExpense(String id) async {
+    try {
+      await client.from('expenses').delete().eq('id', id);
+      print('✅ [Supabase] Deleted expense $id from cloud!');
+    } catch (e) {
+      print('ℹ️ [Supabase] Cloud Delete Expense Notice: $e');
     }
   }
 }

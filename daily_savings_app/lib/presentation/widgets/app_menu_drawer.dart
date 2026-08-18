@@ -12,6 +12,7 @@ import '../screens/login_screen.dart';
 import 'ai_chat_bottom_sheet.dart';
 import 'change_target_dialog.dart';
 import 'compound_interest_dialog.dart';
+import 'expense_tracker_dialog.dart';
 import 'perpetual_calendar_dialog.dart';
 import 'weekly_report_dialog.dart';
 
@@ -228,6 +229,15 @@ class AppMenuDrawer extends ConsumerWidget {
                       'BỘ CÔNG CỤ TIỆN ÍCH',
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
                     ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.receipt_long_rounded, color: Colors.redAccent),
+                    title: Text('Sổ Ghi Chi Tiêu Hằng Ngày', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: Text('Ghi lại các khoản tiền đã chi trong ngày', style: TextStyle(color: subtextColor, fontSize: 11)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(context: context, builder: (_) => const ExpenseTrackerDialog());
+                    },
                   ),
                   ListTile(
                     leading: const Icon(Icons.bar_chart_rounded, color: AppTheme.skyBlueAccent),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../models/expense_entry.dart';
 import '../../models/savings_entry.dart';
 import '../../models/wishlist_goal.dart';
 import '../core/constants/app_constants.dart';
@@ -8,12 +9,14 @@ class LocalStorageService {
   static const String _entriesBoxName = 'savings_entries_box_v1';
   static const String _wishlistBoxName = 'wishlist_goals_box_v1';
   static const String _settingsBoxName = 'settings_box_v1';
+  static const String _expensesBoxName = 'expenses_box_v1';
 
   static Future<void> init() async {
     await Hive.initFlutter();
     await Hive.openBox(_entriesBoxName);
     await Hive.openBox(_wishlistBoxName);
     await Hive.openBox(_settingsBoxName);
+    await Hive.openBox(_expensesBoxName);
   }
 
   // Savings Entries
@@ -146,6 +149,29 @@ class LocalStorageService {
   static Future<void> saveBiometricsEnabled(bool enabled) async {
     final box = Hive.box(_settingsBoxName);
     await box.put('biometrics_enabled', enabled);
+  }
+
+  // Expense Entries Persistence
+  static List<ExpenseEntry> getExpenses() {
+    final box = Hive.box(_expensesBoxName);
+    final List<ExpenseEntry> list = [];
+    for (var key in box.keys) {
+      final String? jsonStr = box.get(key);
+      if (jsonStr != null) {
+        list.add(ExpenseEntry.fromMap(jsonDecode(jsonStr)));
+      }
+    }
+    return list;
+  }
+
+  static Future<void> saveExpense(ExpenseEntry entry) async {
+    final box = Hive.box(_expensesBoxName);
+    await box.put(entry.id, jsonEncode(entry.toMap()));
+  }
+
+  static Future<void> deleteExpense(String id) async {
+    final box = Hive.box(_expensesBoxName);
+    await box.delete(id);
   }
 }
 

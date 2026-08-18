@@ -10,6 +10,17 @@ class AppConstants {
     'Khác',
   ];
 
+  // Expense Categories (Chi Tiêu Hằng Ngày)
+  static const List<String> expenseCategories = [
+    '🍲 Ăn Uống',
+    '⛽ Đi Lại & Xăng Xe',
+    '🛒 Đi Chợ & Siêu Thị',
+    '💡 Hóa Đơn & Điện Nước',
+    '☕ Cà Phê & Giải Trí',
+    '🛍️ Mua Sắm Cá Nhân',
+    '📦 Khác',
+  ];
+
   static const String defaultCategory = 'Grab / Chạy xe';
 
   // Default Wishlist Goals (Sắp xếp tăng dần từ mục tiêu dễ đạt -> lớn hơn)
