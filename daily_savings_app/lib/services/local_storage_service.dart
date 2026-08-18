@@ -125,5 +125,16 @@ class LocalStorageService {
     final box = Hive.box(_settingsBoxName);
     await box.put('theme_mode', mode);
   }
+
+  // Gemini API Key Persistence
+  static String getCustomGeminiKey() {
+    final box = Hive.box(_settingsBoxName);
+    return box.get('gemini_api_key', defaultValue: '') as String;
+  }
+
+  static Future<void> saveCustomGeminiKey(String key) async {
+    final box = Hive.box(_settingsBoxName);
+    await box.put('gemini_api_key', key);
+  }
 }
 

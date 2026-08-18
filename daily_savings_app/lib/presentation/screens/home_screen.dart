@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../widgets/ai_chat_bottom_sheet.dart';
 import '../widgets/app_menu_drawer.dart';
 import '../widgets/collapsible_form.dart';
 import '../widgets/overview_banner_card.dart';
@@ -37,6 +38,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: bgColor,
       resizeToAvoidBottomInset: false,
       endDrawer: const AppMenuDrawer(),
+      floatingActionButton: SizedBox(
+        width: 66,
+        height: 66,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.emeraldPrimary.withValues(alpha: 0.5),
+                blurRadius: 20,
+                spreadRadius: 3,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              FloatingActionButton.large(
+                onPressed: () => AiChatBottomSheet.show(context),
+                backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                shape: const CircleBorder(),
+                elevation: 6,
+                tooltip: 'Trợ Lý AI Tiết Kiệm',
+                child: Padding(
+                  padding: const EdgeInsets.all(3.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      width: 52,
+                      height: 52,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.emeraldPrimary,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: isDark ? const Color(0xFF0F172A) : Colors.white, width: 1.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'AI ✨',
+                    style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: bgColor,
         elevation: 0,

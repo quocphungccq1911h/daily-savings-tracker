@@ -7,6 +7,7 @@ import '../../providers/theme_provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/supabase_service.dart';
 import '../screens/login_screen.dart';
+import 'ai_chat_bottom_sheet.dart';
 import 'change_target_dialog.dart';
 import 'compound_interest_dialog.dart';
 import 'perpetual_calendar_dialog.dart';
@@ -241,6 +242,15 @@ class AppMenuDrawer extends ConsumerWidget {
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(context: context, builder: (_) => const CompoundInterestDialog());
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.auto_awesome_rounded, color: AppTheme.skyBlueAccent),
+                    title: Text('Trợ Lý AI Tiết Kiệm (Gemini)', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: Text('Hỏi đáp target, đếm ngược Tết & tư vấn AI', style: TextStyle(color: subtextColor, fontSize: 11)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      AiChatBottomSheet.show(context);
                     },
                   ),
 
