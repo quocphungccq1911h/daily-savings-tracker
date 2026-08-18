@@ -41,6 +41,12 @@ class LunarUtils {
   static List<int> convertSolarToLunar(int dd, int mm, int yy, [double timeZone = 7.0]) {
     int dayNumber = jdFromDate(dd, mm, yy);
     int k = ((dayNumber - 2415021.07699) / 29.53058868).floor();
+    
+    int nextMonthStart = (getNewMoonDay(k + 1, timeZone) + 0.5).floor();
+    if (nextMonthStart <= dayNumber) {
+      k = k + 1;
+    }
+    
     int lastMonthStart = (getNewMoonDay(k, timeZone) + 0.5).floor();
     if (lastMonthStart > dayNumber) {
       k = k - 1;
@@ -135,12 +141,22 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Theme Adaptive Color Definitions
+    final dialogBg = Theme.of(context).cardColor;
+    final cardBg = isDark ? AppTheme.bgApp : const Color(0xFFF8FAFC);
+    final cardBorder = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
+    final weekdayHeaderColor = isDark ? AppTheme.textMuted : const Color(0xFF475569);
+    final cellDefaultBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final cellBorderColor = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: dialogBg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.5), width: 1.5),
           boxShadow: [
@@ -205,10 +221,10 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppTheme.bgApp,
+                        color: cardBg,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isMung1OrRam ? AppTheme.amberGoldLight : (isToday ? AppTheme.skyBlueAccent : AppTheme.borderColor),
+                          color: isMung1OrRam ? AppTheme.amberGoldLight : (isToday ? AppTheme.skyBlueAccent : cardBorder),
                           width: (isMung1OrRam || isToday) ? 2 : 1,
                         ),
                       ),
@@ -221,7 +237,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                             decoration: BoxDecoration(
                               color: isMung1OrRam
                                   ? AppTheme.amberGold.withValues(alpha: 0.25)
-                                  : Colors.white10,
+                                  : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(14),
                                 topRight: Radius.circular(14),
@@ -233,7 +249,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: isMung1OrRam ? AppTheme.amberGoldLight : Colors.white70,
+                                color: isMung1OrRam ? AppTheme.amberGoldLight : (isDark ? Colors.white70 : const Color(0xFF334155)),
                                 letterSpacing: 1.5,
                               ),
                             ),
@@ -260,7 +276,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                               height: 1.0,
                               color: isMung1OrRam
                                   ? AppTheme.amberGoldLight
-                                  : Colors.white,
+                                  : primaryTextColor,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -271,7 +287,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: isMung1OrRam ? AppTheme.amberGoldLight : Colors.white70,
+                              color: isMung1OrRam ? AppTheme.amberGoldLight : secondaryTextColor,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -280,12 +296,12 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year} (Dương Lịch)',
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
+                              style: TextStyle(fontSize: 11, color: secondaryTextColor, fontWeight: FontWeight.w500),
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -301,10 +317,10 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                       decoration: BoxDecoration(
                         color: isMung1OrRam
                             ? AppTheme.amberGold.withValues(alpha: 0.15)
-                            : AppTheme.bgApp,
+                            : cardBg,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: isMung1OrRam ? AppTheme.amberGoldLight : AppTheme.borderColor,
+                          color: isMung1OrRam ? AppTheme.amberGoldLight : cardBorder,
                         ),
                       ),
                       child: Column(
@@ -338,11 +354,11 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                             ),
                           ],
                           const SizedBox(height: 6),
-                          const Divider(color: Colors.white10, height: 10),
-                          const Text(
+                          Divider(color: cardBorder, height: 10),
+                          Text(
                             '🌟 Giờ Hoàng Đạo: Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 10, color: AppTheme.textMuted, height: 1.3),
+                            style: TextStyle(fontSize: 10, color: secondaryTextColor, height: 1.3),
                           ),
                         ],
                       ),
@@ -353,9 +369,9 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppTheme.bgApp,
+                        color: cardBg,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.borderColor),
+                        border: Border.all(color: cardBorder),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -368,10 +384,10 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                           ),
                           Text(
                             'THÁNG ${_viewMonthDate.month}/${_viewMonthDate.year}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: primaryTextColor,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -398,7 +414,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: w == 'CN' ? Colors.redAccent : AppTheme.textMuted,
+                                color: w == 'CN' ? Colors.redAccent : weekdayHeaderColor,
                               ),
                             ),
                           ),
@@ -451,12 +467,12 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                                   ? AppTheme.skyBlueAccent
                                   : (isCellToday
                                       ? AppTheme.skyBlueAccent.withValues(alpha: 0.2)
-                                      : (isCellMung1OrRam ? AppTheme.amberGold.withValues(alpha: 0.15) : AppTheme.bgApp)),
+                                      : (isCellMung1OrRam ? AppTheme.amberGold.withValues(alpha: 0.15) : cellDefaultBg)),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: isCellSelected
                                     ? AppTheme.skyBlueAccent
-                                    : (isCellMung1OrRam ? AppTheme.amberGoldLight : AppTheme.borderColor),
+                                    : (isCellMung1OrRam ? AppTheme.amberGoldLight : cellBorderColor),
                                 width: isCellSelected ? 1.5 : 1,
                               ),
                             ),
@@ -471,7 +487,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                                     fontWeight: FontWeight.bold,
                                     color: isCellSelected
                                         ? Colors.black
-                                        : (cellDate.weekday == 7 ? Colors.redAccent : Colors.white),
+                                        : (cellDate.weekday == 7 ? Colors.redAccent : primaryTextColor),
                                   ),
                                 ),
                                 // Lunar Day Subtext (Âm)
@@ -482,7 +498,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                                     fontWeight: isCellMung1OrRam ? FontWeight.w900 : FontWeight.w500,
                                     color: isCellSelected
                                         ? Colors.black87
-                                        : (isCellMung1OrRam ? AppTheme.amberGoldLight : AppTheme.textMuted),
+                                        : (isCellMung1OrRam ? (isDark ? AppTheme.amberGoldLight : const Color(0xFFD97706)) : secondaryTextColor),
                                   ),
                                 ),
                               ],
