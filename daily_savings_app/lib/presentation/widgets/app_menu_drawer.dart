@@ -10,6 +10,7 @@ import '../../services/notification_service.dart';
 import '../../services/supabase_service.dart';
 import '../screens/login_screen.dart';
 import 'ai_chat_bottom_sheet.dart';
+import 'ai_wealth_predictor_dialog.dart';
 import 'change_target_dialog.dart';
 import 'compound_interest_dialog.dart';
 import 'darts_game_dialog.dart';
@@ -284,6 +285,15 @@ class AppMenuDrawer extends ConsumerWidget {
                           onTap: () {
                             Navigator.pop(context);
                             AiChatBottomSheet.show(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.psychology_rounded, color: Colors.purpleAccent),
+                          title: Text('AI Dự Báo Ngày Chạm Mốc 🔮', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text('Dự báo mốc 10M, 50M, 100M & Quỹ Tết', style: TextStyle(color: subtextColor, fontSize: 11)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            showDialog(context: context, builder: (_) => const AiWealthPredictorDialog());
                           },
                         ),
                       ],

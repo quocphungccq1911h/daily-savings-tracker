@@ -207,4 +207,61 @@ Nhiệm vụ của bạn là giải đáp câu hỏi của người dùng và đ
 
     return '🤖 Trợ Lý AI Tiết Kiệm đây ạ! Hôm nay bạn đã nạp ${todayAmount.toInt()}đ / target ${state.dailyGoal.toInt()}đ. Còn $daysLeftToTet ngày nữa là tới Tết rồi, cố lên nhé! ✨';
   }
+
+  /// AI Gemini Dự báo ngày chạm mốc tài chính tương lai
+  static Future<String> predictWealthInsight({
+    required double currentTotal,
+    required double dailyRate,
+    required String est10MDate,
+    required String est50MDate,
+    required String est100MDate,
+    required double estTetFund,
+  }) async {
+    final key = apiKey;
+    if (key.isEmpty) {
+      return '💡 Hãy duy trì thói quen nạp tiền đều đặn mỗi ngày! Bạn đang đi đúng hướng để đạt các cột mốc tài chính tuyệt vời.';
+    }
+
+    try {
+      final prompt = '''
+Bạn là "Trợ Lý AI Tiết Kiệm" thông minh. Dựa trên tốc độ tiết kiệm thực tế hằng ngày của người dùng:
+- Tổng tích lũy hiện tại: ${currentTotal.toInt()} VNĐ
+- Tốc độ tiết kiệm trung bình: ${dailyRate.toInt()} VNĐ/ngày
+- Ngày dự kiến chạm mốc 10 triệu: $est10MDate
+- Ngày dự kiến chạm mốc 50 triệu: $est50MDate
+- Ngày dự kiến chạm mốc 100 triệu: $est100MDate
+- Dự kiến tổng quỹ thưởng Tết Đinh Mùi 2027: ${estTetFund.toInt()} VNĐ
+
+Hãy viết 1 đoạn nhận xét ngắn (2-3 câu), truyền cảm hứng mạnh mẽ, khen ngợi và đưa ra lời khuyên cá nhân hóa cho người dùng. Dùng các emoji sinh động.
+''';
+
+      final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$key');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {'text': prompt}
+              ]
+            }
+          ]
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final candidates = data['candidates'] as List?;
+        if (candidates != null && candidates.isNotEmpty) {
+          final parts = candidates.first['content']?['parts'] as List?;
+          if (parts != null && parts.isNotEmpty) {
+            final resText = parts.first['text']?.toString().trim();
+            if (resText != null && resText.isNotEmpty) return resText;
+          }
+        }
+      }
+    } catch (_) {}
+    return '🚀 Tốc độ tiết kiệm của bạn rất ấn tượng! Tiếp tục giữ vững phong độ để sớm chạm mốc tự do tài chính nhé!';
+  }
 }
