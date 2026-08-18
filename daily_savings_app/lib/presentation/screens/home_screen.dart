@@ -94,9 +94,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
+        child: RefreshIndicator(
+          color: AppTheme.emeraldPrimary,
+          onRefresh: () async {
+            await ref.read(savingsProvider.notifier).refreshFromCloud();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            child: Column(
             children: [
               // Hero Overview Banner Card
               const OverviewBannerCard(),
@@ -143,8 +148,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTabPill(String title, int index, bool isDark) {
     final isSelected = _selectedIndex == index;

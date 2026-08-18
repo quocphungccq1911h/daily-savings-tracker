@@ -5,6 +5,8 @@ import 'core/observers/app_provider_observer.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'providers/savings_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/local_storage_service.dart';
 import 'services/notification_service.dart';
@@ -69,21 +71,35 @@ class DailySavingsApp extends ConsumerWidget {
   }
 }
 
-class RootGate extends StatefulWidget {
+
+class RootGate extends ConsumerStatefulWidget {
   const RootGate({super.key});
 
   @override
-  State<RootGate> createState() => _RootGateState();
+  ConsumerState<RootGate> createState() => _RootGateState();
 }
 
-class _RootGateState extends State<RootGate> {
+class _RootGateState extends ConsumerState<RootGate> {
+  StreamSubscription<AuthState>? _authSubscription;
+
   @override
   void initState() {
     super.initState();
-    // Stream auth state changes
-    SupabaseService.client.auth.onAuthStateChange.listen((data) {
+    _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      if (event == AuthChangeEvent.signedOut) {
+        ref.read(savingsProvider.notifier).clearOnLogout();
+      } else if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.tokenRefreshed) {
+        ref.read(savingsProvider.notifier).rebindRealtimeOnLogin();
+      }
       if (mounted) setState(() {});
     });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -92,7 +108,8 @@ class _RootGateState extends State<RootGate> {
     if (user == null) {
       return LoginScreen(
         onLoginSuccess: () {
-          setState(() {});
+          ref.read(savingsProvider.notifier).rebindRealtimeOnLogin();
+          if (mounted) setState(() {});
         },
       );
     }

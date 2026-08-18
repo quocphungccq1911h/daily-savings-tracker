@@ -14,7 +14,7 @@ import 'perpetual_calendar_dialog.dart';
 class AppMenuDrawer extends ConsumerWidget {
   const AppMenuDrawer({super.key});
 
-  void _handleLogout(BuildContext context) async {
+  void _handleLogout(BuildContext context, WidgetRef ref) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -44,11 +44,14 @@ class AppMenuDrawer extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
+      await ref.read(savingsProvider.notifier).clearOnLogout();
       await SupabaseService.signOut();
       if (context.mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => LoginScreen(onLoginSuccess: () {}),
+            builder: (_) => LoginScreen(onLoginSuccess: () {
+              ref.read(savingsProvider.notifier).rebindRealtimeOnLogin();
+            }),
           ),
           (route) => false,
         );
@@ -177,7 +180,7 @@ class AppMenuDrawer extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _handleLogout(context),
+                      onPressed: () => _handleLogout(context, ref),
                       icon: const Icon(Icons.logout, color: Colors.redAccent, size: 16),
                       label: const Text('Đăng xuất tài khoản', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(

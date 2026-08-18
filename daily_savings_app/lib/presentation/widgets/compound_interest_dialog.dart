@@ -53,9 +53,13 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
         children: [
           const Icon(Icons.calculate_outlined, color: AppTheme.amberGoldLight),
           const SizedBox(width: 8),
-          Text(
-            '🧮 Dự Báo Lãi Kép & Tích Lũy',
-            style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
+          Expanded(
+            child: Text(
+              '🧮 Dự Báo Lãi Kép & Tích Lũy',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -107,20 +111,31 @@ class _CompoundInterestDialogState extends ConsumerState<CompoundInterestDialog>
             Text('Thời gian tích lũy:', style: TextStyle(color: textColor, fontSize: 12)),
             const SizedBox(height: 6),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [1, 3, 5, 10].map((y) {
                 final isSelected = _selectedYears == y;
-                return ChoiceChip(
-                  label: Text('$y Năm'),
-                  selected: isSelected,
-                  selectedColor: AppTheme.skyBlueAccent,
-                  backgroundColor: innerBgColor,
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : textColor,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 12,
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: ChoiceChip(
+                      labelPadding: EdgeInsets.zero,
+                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      label: Center(
+                        child: Text(
+                          '$y Năm',
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : textColor,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: AppTheme.skyBlueAccent,
+                      backgroundColor: innerBgColor,
+                      onSelected: (_) => setState(() => _selectedYears = y),
+                    ),
                   ),
-                  onSelected: (_) => setState(() => _selectedYears = y),
                 );
               }).toList(),
             ),

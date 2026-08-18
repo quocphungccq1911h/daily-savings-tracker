@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/savings_entry.dart';
 import '../../models/wishlist_goal.dart';
 import '../core/constants/app_constants.dart';
@@ -87,27 +88,55 @@ class SavingsState {
 }
 
 class SavingsNotifier extends StateNotifier<SavingsState> {
+  RealtimeChannel? _realtimeChannel;
+
   SavingsNotifier() : super(SavingsState(entries: [], wishlistGoals: [])) {
     _loadInitialData();
+    _initRealtimeSubscription();
+  }
+
+  void _initRealtimeSubscription() {
+    _realtimeChannel?.unsubscribe();
+    _realtimeChannel = SupabaseService.subscribeToRealtimeChanges(() {
+      refreshFromCloud();
+    });
   }
 
   Future<void> _loadInitialData() async {
-    // 1. Load local Hive cache immediately for 0ms startup
     final localEntries = LocalStorageService.getEntries();
     final localGoals = LocalStorageService.getWishlistGoals();
     final savedGoal = LocalStorageService.getDailyGoal();
     state = state.copyWith(entries: localEntries, wishlistGoals: localGoals, dailyGoal: savedGoal);
 
-    // 2. Fetch live entries from Supabase CSDL Cloud
+    await refreshFromCloud();
+  }
+
+  /// Tải lại toàn bộ dữ liệu mới nhất từ Supabase Cloud API
+  Future<void> refreshFromCloud() async {
     try {
       final cloudEntries = await SupabaseService.fetchEntries();
-      if (cloudEntries.isNotEmpty) {
-        state = state.copyWith(entries: cloudEntries);
-        for (var e in cloudEntries) {
-          await LocalStorageService.saveEntry(e);
-        }
+      state = state.copyWith(entries: cloudEntries);
+      
+      // Xóa và ghi đè cache cũ bằng dữ liệu mới nhất từ cloud
+      await LocalStorageService.clearAllUserData();
+      for (var e in cloudEntries) {
+        await LocalStorageService.saveEntry(e);
       }
     } catch (_) {}
+  }
+
+  /// Xóa sạch dữ liệu trong bộ nhớ và cache khi Đăng xuất
+  Future<void> clearOnLogout() async {
+    _realtimeChannel?.unsubscribe();
+    _realtimeChannel = null;
+    await LocalStorageService.clearAllUserData();
+    state = SavingsState(entries: [], wishlistGoals: state.wishlistGoals, dailyGoal: state.dailyGoal);
+  }
+
+  /// Đăng ký lại Realtime khi Đăng nhập lại
+  void rebindRealtimeOnLogin() {
+    refreshFromCloud();
+    _initRealtimeSubscription();
   }
 
   void updateDailyGoal(double newGoal) {
@@ -165,6 +194,12 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     final updated = state.wishlistGoals.where((g) => g.id != id).toList();
     state = state.copyWith(wishlistGoals: updated);
     await LocalStorageService.deleteWishlistGoal(id);
+  }
+
+  @override
+  void dispose() {
+    _realtimeChannel?.unsubscribe();
+    super.dispose();
   }
 }
 

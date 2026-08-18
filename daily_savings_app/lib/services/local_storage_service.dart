@@ -39,6 +39,11 @@ class LocalStorageService {
     await box.delete(id);
   }
 
+  static Future<void> clearAllUserData() async {
+    final box = Hive.box(_entriesBoxName);
+    await box.clear();
+  }
+
   // Wishlist Goals
   static List<WishlistGoal> getWishlistGoals() {
     final box = Hive.box(_wishlistBoxName);

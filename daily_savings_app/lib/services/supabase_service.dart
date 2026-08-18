@@ -92,4 +92,24 @@ class SupabaseService {
       print('❌ [Supabase] Sync Delete Error: $e');
     }
   }
+
+  /// Lắng nghe Realtime tự động khi có dữ liệu được thêm/sửa/xóa từ nguồn khác (ví dụ từ Web App)
+  static RealtimeChannel? subscribeToRealtimeChanges(void Function() onChange) {
+    try {
+      final channel = client.channel('public:savings_entries_${DateTime.now().millisecondsSinceEpoch}');
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'savings_entries',
+        callback: (payload) {
+          print('⚡ [Supabase Realtime] Change detected in DB (${payload.eventType}) -> Reloading data!');
+          onChange();
+        },
+      ).subscribe();
+      return channel;
+    } catch (e) {
+      print('❌ [Supabase Realtime] Subscription Error: $e');
+      return null;
+    }
+  }
 }
