@@ -27,8 +27,10 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
     final state = ref.watch(savingsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = Theme.of(context).cardColor;
-    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
-    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final borderColor =
+        isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+    final textMutedColor =
+        isDark ? AppTheme.textMuted : const Color(0xFF334155);
     final textColor = isDark ? Colors.white : Colors.black87;
     final innerBgColor = isDark ? AppTheme.bgApp : const Color(0xFFF1F5F9);
 
@@ -87,12 +89,15 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
         monthKeySet.add(e.date.substring(0, 7));
       }
     }
-    final sortedMonthKeys = monthKeySet.toList()..sort((a, b) => b.compareTo(a));
+    final sortedMonthKeys = monthKeySet.toList()
+      ..sort((a, b) => b.compareTo(a));
 
     // Filter by selected month
     final filteredEntries = (_selectedMonth == 'ALL')
         ? sortedEntries
-        : sortedEntries.where((e) => e.date.startsWith(_selectedMonth)).toList();
+        : sortedEntries
+            .where((e) => e.date.startsWith(_selectedMonth))
+            .toList();
 
     // Group filtered entries by Month, then by Date
     final Map<String, List<SavingsEntry>> monthGroupMap = {};
@@ -114,11 +119,13 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
       for (var dKey in dateGroupMap.keys) {
         final dEntries = dateGroupMap[dKey]!;
         final dTotal = dEntries.fold(0.0, (sum, item) => sum + item.amount);
-        dateGroups.add(_DateGroupData(date: dKey, items: dEntries, totalAmount: dTotal));
+        dateGroups.add(
+            _DateGroupData(date: dKey, items: dEntries, totalAmount: dTotal));
       }
 
       final mTotal = mEntries.fold(0.0, (sum, item) => sum + item.amount);
-      monthGroups.add(_MonthGroupData(monthKey: mKey, dateGroups: dateGroups, totalAmount: mTotal));
+      monthGroups.add(_MonthGroupData(
+          monthKey: mKey, dateGroups: dateGroups, totalAmount: mTotal));
     }
 
     return Column(
@@ -128,7 +135,8 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: Row(
             children: [
-              const Icon(Icons.filter_list_rounded, size: 16, color: AppTheme.skyBlueAccent),
+              const Icon(Icons.filter_list_rounded,
+                  size: 16, color: AppTheme.skyBlueAccent),
               const SizedBox(width: 6),
               Text(
                 'Lọc theo tháng:',
@@ -140,7 +148,8 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                 decoration: BoxDecoration(
                   color: cardBg,
                   borderRadius: BorderRadius.circular(10),
@@ -148,7 +157,8 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: (sortedMonthKeys.contains(_selectedMonth) || _selectedMonth == 'ALL')
+                    value: (sortedMonthKeys.contains(_selectedMonth) ||
+                            _selectedMonth == 'ALL')
                         ? _selectedMonth
                         : 'ALL',
                     dropdownColor: cardBg,
@@ -207,15 +217,18 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                 // Month Section Header
                 Container(
                   margin: const EdgeInsets.only(top: 8, bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppTheme.skyBlueAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.skyBlueAccent.withValues(alpha: 0.25)),
+                    border: Border.all(
+                        color: AppTheme.skyBlueAccent.withValues(alpha: 0.25)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_month_rounded, size: 16, color: AppTheme.skyBlueAccent),
+                      const Icon(Icons.calendar_month_rounded,
+                          size: 16, color: AppTheme.skyBlueAccent),
                       const SizedBox(width: 8),
                       Text(
                         monthTitle,
@@ -242,7 +255,8 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                 // List of Date Cards in this Month
                 ...monthGroup.dateGroups.map((dateGroup) {
                   if (dateGroup.items.length == 1) {
-                    return _buildItemDetailCard(context, dateGroup.items.first, state.dailyGoal);
+                    return _buildItemDetailCard(
+                        context, dateGroup.items.first, state.dailyGoal);
                   }
 
                   final firstItem = dateGroup.items.first;
@@ -257,10 +271,13 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                       side: BorderSide(color: borderColor),
                     ),
                     child: Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      data: Theme.of(context)
+                          .copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
-                        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        childrenPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        tilePadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        childrenPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
                         title: Row(
                           children: [
                             Text(
@@ -272,9 +289,11 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                             ),
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 1.5),
                               decoration: BoxDecoration(
-                                color: AppTheme.skyBlueAccent.withValues(alpha: 0.2),
+                                color: AppTheme.skyBlueAccent
+                                    .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -291,11 +310,15 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                         subtitle: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppTheme.skyBlueAccent.withValues(alpha: 0.15),
+                                color: AppTheme.skyBlueAccent
+                                    .withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppTheme.skyBlueAccent.withValues(alpha: 0.3)),
+                                border: Border.all(
+                                    color: AppTheme.skyBlueAccent
+                                        .withValues(alpha: 0.3)),
                               ),
                               child: Text(
                                 firstItem.category,
@@ -312,7 +335,8 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                                 '(+$extraCount khoản khác)',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 11, color: textMutedColor),
+                                style: TextStyle(
+                                    fontSize: 11, color: textMutedColor),
                               ),
                             ),
                           ],
@@ -328,7 +352,8 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                         children: dateGroup.items.map((subItem) {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: innerBgColor,
                               borderRadius: BorderRadius.circular(8),
@@ -337,9 +362,11 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.skyBlueAccent.withValues(alpha: 0.1),
+                                    color: AppTheme.skyBlueAccent
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -354,7 +381,9 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    subItem.note.isNotEmpty ? subItem.note : 'Khoản tích lũy',
+                                    subItem.note.isNotEmpty
+                                        ? subItem.note
+                                        : 'Khoản tích lũy',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -374,10 +403,12 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                                 ),
                                 const SizedBox(width: 4),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                                  icon: const Icon(Icons.delete_outline,
+                                      size: 16, color: Colors.redAccent),
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
-                                  onPressed: () => _handleDelete(context, subItem.id),
+                                  onPressed: () =>
+                                      _handleDelete(context, subItem.id),
                                 ),
                               ],
                             ),
@@ -395,13 +426,17 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
     );
   }
 
-  Widget _buildItemDetailCard(BuildContext context, SavingsEntry item, double dailyGoal) {
+  Widget _buildItemDetailCard(
+      BuildContext context, SavingsEntry item, double dailyGoal) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = Theme.of(context).cardColor;
-    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
-    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final borderColor =
+        isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+    final textMutedColor =
+        isDark ? AppTheme.textMuted : const Color(0xFF334155);
     final textColor = isDark ? Colors.white : Colors.black87;
-    final emeraldTextColor = isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
+    final emeraldTextColor =
+        isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
 
     final double diff = item.amount - dailyGoal;
     final double pct = (diff / dailyGoal) * 100;
@@ -489,11 +524,13 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    border:
+                        Border.all(color: statusColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     statusText,
@@ -514,11 +551,13 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppTheme.skyBlueAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.skyBlueAccent.withValues(alpha: 0.25)),
+                    border: Border.all(
+                        color: AppTheme.skyBlueAccent.withValues(alpha: 0.25)),
                   ),
                   child: Text(
                     item.category,
@@ -532,19 +571,24 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    item.note.isNotEmpty ? item.note : 'Không có ghi chú',
+                    item.note.isNotEmpty ? item.note : '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
-                      color: item.note.isNotEmpty ? subtextColor(context) : textMutedColor,
-                      fontStyle: item.note.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                      color: item.note.isNotEmpty
+                          ? subtextColor(context)
+                          : textMutedColor,
+                      fontStyle: item.note.isNotEmpty
+                          ? FontStyle.normal
+                          : FontStyle.italic,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      size: 20, color: Colors.redAccent),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   tooltip: 'Xóa khoản tiết kiệm',
@@ -570,17 +614,30 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? AppTheme.bgCard : AppTheme.bgCardLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('🗑️ Xóa Khoản Tiết Kiệm', style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
-        content: Text('Bạn có chắc chắn muốn xóa nhật ký tiết kiệm này không?', style: TextStyle(color: isDark ? AppTheme.textMuted : const Color(0xFF334155), fontSize: 13)),
+        title: Text('🗑️ Xóa Khoản Tiết Kiệm',
+            style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
+        content: Text('Bạn có chắc chắn muốn xóa nhật ký tiết kiệm này không?',
+            style: TextStyle(
+                color: isDark ? AppTheme.textMuted : const Color(0xFF334155),
+                fontSize: 13)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Hủy', style: TextStyle(color: isDark ? AppTheme.textMuted : const Color(0xFF64748B), fontWeight: FontWeight.bold)),
+            child: Text('Hủy',
+                style: TextStyle(
+                    color:
+                        isDark ? AppTheme.textMuted : const Color(0xFF64748B),
+                    fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Xóa', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Xóa',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
