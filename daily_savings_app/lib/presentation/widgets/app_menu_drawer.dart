@@ -4,6 +4,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../services/biometric_service.dart';
+import '../../services/local_storage_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/supabase_service.dart';
 import '../screens/login_screen.dart';
@@ -11,6 +13,7 @@ import 'ai_chat_bottom_sheet.dart';
 import 'change_target_dialog.dart';
 import 'compound_interest_dialog.dart';
 import 'perpetual_calendar_dialog.dart';
+import 'weekly_report_dialog.dart';
 
 class AppMenuDrawer extends ConsumerWidget {
   const AppMenuDrawer({super.key});
@@ -225,6 +228,15 @@ class AppMenuDrawer extends ConsumerWidget {
                       'BỘ CÔNG CỤ TIỆN ÍCH',
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
                     ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.bar_chart_rounded, color: AppTheme.skyBlueAccent),
+                    title: Text('Báo Cáo Tổng Kết Tuần', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: Text('Đánh giá tiến độ 7 ngày & kết quả tích lũy', style: TextStyle(color: subtextColor, fontSize: 11)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(context: context, builder: (_) => const WeeklyReportDialog());
+                    },
                   ),
                   ListTile(
                     leading: const Icon(Icons.calendar_month_outlined, color: AppTheme.emeraldLight),
@@ -522,9 +534,39 @@ class AppMenuDrawer extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
-                      'GIAO DIỆN & THÔNG BÁO',
+                      'GIAO DIỆN & BẢO MẬT',
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: subtextColor, letterSpacing: 0.8),
                     ),
+                  ),
+                  StatefulBuilder(
+                    builder: (context, setDrawerState) {
+                      final isBioEnabled = LocalStorageService.getBiometricsEnabled();
+                      return SwitchListTile(
+                        value: isBioEnabled,
+                        onChanged: (val) async {
+                          await LocalStorageService.saveBiometricsEnabled(val);
+                          setDrawerState(() {});
+                          if (val) {
+                            final ok = await BiometricService.authenticate();
+                            if (!ok) {
+                              await LocalStorageService.saveBiometricsEnabled(false);
+                              setDrawerState(() {});
+                            }
+                          }
+                        },
+                        secondary: const Icon(Icons.fingerprint_rounded, color: AppTheme.skyBlueAccent),
+                        title: Text(
+                          'Khóa Vân Tay / FaceID',
+                          style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          isBioEnabled ? 'Đã bật bảo mật vân tay khi mở app' : 'Yêu cầu vân tay/FaceID khi mở app',
+                          style: TextStyle(color: subtextColor, fontSize: 11),
+                        ),
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: AppTheme.emeraldPrimary,
+                      );
+                    },
                   ),
                   SwitchListTile(
                     value: isDark,

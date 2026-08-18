@@ -8,6 +8,7 @@ import 'presentation/screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/savings_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/biometric_service.dart';
 import 'services/local_storage_service.dart';
 import 'services/notification_service.dart';
 import 'services/supabase_service.dart';
@@ -28,7 +29,7 @@ void main() async {
 
     await LocalStorageService.init();
     await SupabaseService.init();
-    
+
     // Tự động khởi tạo & đặt lịch nhắc nhở nạp tiền tiết kiệm lúc 20:00 tối hàng ngày
     try {
       final notifService = NotificationService();
@@ -71,7 +72,6 @@ class DailySavingsApp extends ConsumerWidget {
   }
 }
 
-
 class RootGate extends ConsumerStatefulWidget {
   const RootGate({super.key});
 
@@ -79,12 +79,20 @@ class RootGate extends ConsumerStatefulWidget {
   ConsumerState<RootGate> createState() => _RootGateState();
 }
 
-class _RootGateState extends ConsumerState<RootGate> {
+class _RootGateState extends ConsumerState<RootGate> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSubscription;
+  bool _isBiometricLocked = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    _isBiometricLocked = LocalStorageService.getBiometricsEnabled();
+    if (_isBiometricLocked) {
+      _checkBiometrics();
+    }
+
     _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
       if (event == AuthChangeEvent.signedOut) {
@@ -97,7 +105,27 @@ class _RootGateState extends ConsumerState<RootGate> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && LocalStorageService.getBiometricsEnabled()) {
+      setState(() {
+        _isBiometricLocked = true;
+      });
+      _checkBiometrics();
+    }
+  }
+
+  void _checkBiometrics() async {
+    final ok = await BiometricService.authenticate();
+    if (ok && mounted) {
+      setState(() {
+        _isBiometricLocked = false;
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authSubscription?.cancel();
     super.dispose();
   }
@@ -113,6 +141,67 @@ class _RootGateState extends ConsumerState<RootGate> {
         },
       );
     }
+
+    if (_isBiometricLocked) {
+      return BiometricLockScreen(onUnlock: _checkBiometrics);
+    }
+
     return const HomeScreen();
+  }
+}
+
+class BiometricLockScreen extends StatelessWidget {
+  final VoidCallback onUnlock;
+  const BiometricLockScreen({super.key, required this.onUnlock});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
+    return Scaffold(
+      backgroundColor: isDark ? AppTheme.bgApp : AppTheme.bgAppLight,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.emeraldPrimary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.fingerprint_rounded, size: 72, color: AppTheme.emeraldPrimary),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Ứng Dụng Đang Được Khóa',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Vui lòng quét Vân Tay / FaceID để truy cập sổ tiết kiệm',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              ),
+              const SizedBox(height: 28),
+              ElevatedButton.icon(
+                onPressed: onUnlock,
+                icon: const Icon(Icons.lock_open_rounded, color: Colors.white, size: 18),
+                label: const Text('Mở Khóa Ngay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.emeraldPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  elevation: 4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

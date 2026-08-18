@@ -1,3 +1,4 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/savings_entry.dart';
 import '../../providers/savings_provider.dart';
+import '../../services/sound_service.dart';
 import 'package:uuid/uuid.dart';
 
 class CollapsibleFormWidget extends ConsumerStatefulWidget {
@@ -21,9 +23,17 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
   final _noteController = TextEditingController();
   String _selectedCategory = AppConstants.incomeCategories.first;
   DateTime _selectedDate = DateTime.now();
+  late ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
+  }
 
   @override
   void dispose() {
+    _confettiController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -55,6 +65,12 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
 
     ref.read(savingsProvider.notifier).addOrUpdateEntry(entry);
 
+    // Kích hoạt Âm thanh "Keng Keng" & Phản hồi rung Haptic
+    SoundService.playCoinSound();
+
+    // Kích hoạt Hiệu ứng Pháo Hoa Mưa Tiền Xu Vàng Confetti
+    _confettiController.play();
+
     _amountController.text = '150.000';
     _noteController.clear();
     setState(() {
@@ -64,7 +80,7 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('🎉 Đã thêm ${Formatters.formatShortNumber(amount)} vào sổ tiết kiệm!'),
+        content: Text('🎉 Đã thêm ${Formatters.formatShortNumber(amount)} vào sổ tiết kiệm! 🪙'),
         backgroundColor: AppTheme.emeraldLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -85,24 +101,27 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
     final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
     final inputBg = isDark ? AppTheme.bgApp : const Color(0xFFF1F5F9);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cardBorder),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: Column(
-        children: [
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cardBorder),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Column(
+            children: [
           // Header Toggle Bar
           InkWell(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
@@ -265,7 +284,28 @@ class _CollapsibleFormWidgetState extends ConsumerState<CollapsibleFormWidget> {
           ),
         ],
       ),
-    );
+    ),
+    Align(
+      alignment: Alignment.topCenter,
+      child: ConfettiWidget(
+        confettiController: _confettiController,
+        blastDirectionality: BlastDirectionality.explosive,
+        shouldLoop: false,
+        maxBlastForce: 25,
+        minBlastForce: 8,
+        emissionFrequency: 0.05,
+        numberOfParticles: 35,
+        gravity: 0.3,
+        colors: const [
+          Color(0xFFFFD700), // Gold
+          Color(0xFFFFA500), // Orange Gold
+          Color(0xFF10B981), // Emerald Green
+          Color(0xFF38BDF8), // Sky Blue
+        ],
+      ),
+    ),
+  ],
+);
   }
 }
 

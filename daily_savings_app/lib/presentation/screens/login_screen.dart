@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/biometric_service.dart';
 import '../../services/local_storage_service.dart';
 import '../../services/supabase_service.dart';
 
@@ -73,6 +74,20 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() =>
             _errorMsg = 'Đăng nhập thất bại. Kiểm tra lại Email / Mật khẩu!');
       }
+    }
+  }
+
+  void _handleBiometricLogin() async {
+    final ok = await BiometricService.authenticate();
+    if (ok && mounted) {
+      final creds = LocalStorageService.getSavedCredentials();
+      final savedEmail = creds['email'] as String? ?? '';
+      final savedPassword = creds['password'] as String? ?? '';
+      if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
+        _emailController.text = savedEmail;
+        _passwordController.text = savedPassword;
+      }
+      _handleSubmit();
     }
   }
 
@@ -308,6 +323,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                   ),
+
+                  // Quick Biometrics Fingerprint Login Button
+                  if (!_isSignUpMode && LocalStorageService.getBiometricsEnabled()) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoading ? null : _handleBiometricLogin,
+                        icon: const Icon(Icons.fingerprint_rounded, color: AppTheme.emeraldPrimary, size: 22),
+                        label: const Text(
+                          'Đăng Nhập Vân Tay / FaceID',
+                          style: TextStyle(color: AppTheme.emeraldPrimary, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppTheme.emeraldPrimary, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
 
                   // Toggle Sign In / Sign Up Mode

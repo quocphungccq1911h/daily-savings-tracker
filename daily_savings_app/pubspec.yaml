@@ -25,6 +25,7 @@ dependencies:
   fl_chart: ^0.68.0
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
+  confetti: ^0.8.0
   
   # Security
   local_auth: ^2.2.0

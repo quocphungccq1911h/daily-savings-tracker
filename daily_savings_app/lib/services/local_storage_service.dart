@@ -136,5 +136,16 @@ class LocalStorageService {
     final box = Hive.box(_settingsBoxName);
     await box.put('gemini_api_key', key);
   }
+
+  // Biometrics Lock Persistence
+  static bool getBiometricsEnabled() {
+    final box = Hive.box(_settingsBoxName);
+    return box.get('biometrics_enabled', defaultValue: false) as bool;
+  }
+
+  static Future<void> saveBiometricsEnabled(bool enabled) async {
+    final box = Hive.box(_settingsBoxName);
+    await box.put('biometrics_enabled', enabled);
+  }
 }
 
