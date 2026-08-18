@@ -12,8 +12,11 @@ import '../screens/login_screen.dart';
 import 'ai_chat_bottom_sheet.dart';
 import 'change_target_dialog.dart';
 import 'compound_interest_dialog.dart';
+import 'darts_game_dialog.dart';
 import 'expense_tracker_dialog.dart';
+import 'flappy_piggy_dialog.dart';
 import 'perpetual_calendar_dialog.dart';
+import 'tetris_game_dialog.dart';
 import 'weekly_report_dialog.dart';
 
 class AppMenuDrawer extends ConsumerWidget {
@@ -248,32 +251,81 @@ class AppMenuDrawer extends ConsumerWidget {
                       showDialog(context: context, builder: (_) => const WeeklyReportDialog());
                     },
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.calendar_month_outlined, color: AppTheme.emeraldLight),
-                    title: Text('Lịch Vạn Niên & Âm Lịch', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Tra cứu ngày âm, Mùng 1 & Ngày Rằm', style: TextStyle(color: subtextColor, fontSize: 11)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      showDialog(context: context, builder: (_) => const PerpetualCalendarDialog());
-                    },
+                  Theme(
+                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      leading: const Icon(Icons.build_circle_outlined, color: AppTheme.skyBlueAccent),
+                      title: Text('Bộ Công Cụ Tiện Ích 🧰', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                      subtitle: Text('Lịch âm, Máy tính lãi kép & AI Gemini', style: TextStyle(color: subtextColor, fontSize: 11)),
+                      childrenPadding: const EdgeInsets.only(left: 12),
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.calendar_month_outlined, color: AppTheme.emeraldLight),
+                          title: Text('Lịch Vạn Niên & Âm Lịch', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text('Tra cứu ngày âm, Mùng 1 & Ngày Rằm', style: TextStyle(color: subtextColor, fontSize: 11)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            showDialog(context: context, builder: (_) => const PerpetualCalendarDialog());
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.calculate_outlined, color: AppTheme.amberGoldLight),
+                          title: Text('Máy Tính Lãi Kép & Dự Báo', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text('Dự tính số tiền tích lũy sau 1, 3, 5 năm', style: TextStyle(color: subtextColor, fontSize: 11)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            showDialog(context: context, builder: (_) => const CompoundInterestDialog());
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.auto_awesome_rounded, color: AppTheme.skyBlueAccent),
+                          title: Text('Trợ Lý AI Tiết Kiệm (Gemini)', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text('Hỏi đáp target, đếm ngược Tết & tư vấn AI', style: TextStyle(color: subtextColor, fontSize: 11)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            AiChatBottomSheet.show(context);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.calculate_outlined, color: AppTheme.amberGoldLight),
-                    title: Text('Máy Tính Lãi Kép & Dự Báo', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Dự tính số tiền tích lũy sau 1, 3, 5 năm', style: TextStyle(color: subtextColor, fontSize: 11)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      showDialog(context: context, builder: (_) => const CompoundInterestDialog());
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.auto_awesome_rounded, color: AppTheme.skyBlueAccent),
-                    title: Text('Trợ Lý AI Tiết Kiệm (Gemini)', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Hỏi đáp target, đếm ngược Tết & tư vấn AI', style: TextStyle(color: subtextColor, fontSize: 11)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      AiChatBottomSheet.show(context);
-                    },
+                  Theme(
+                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      leading: const Icon(Icons.sports_esports_rounded, color: AppTheme.amberGoldLight),
+                      title: Text('Góc Game Giải Trí 🎮', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                      subtitle: Text('Các tựa game nhỏ xả stress 60 FPS', style: TextStyle(color: subtextColor, fontSize: 11)),
+                      childrenPadding: const EdgeInsets.only(left: 12),
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.grid_view_rounded, color: AppTheme.amberGoldLight),
+                          title: Text('Game Xếp Gạch Tetris Cổ Điển', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text('Xếp gạch giải trí cổ điển 🎮', style: TextStyle(color: subtextColor, fontSize: 11)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            showDialog(context: context, builder: (_) => const TetrisGameDialog());
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.flutter_dash_rounded, color: Colors.pinkAccent),
+                          title: Text('Game Chú Lợn Bay (Flappy Piggy)', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text('Vỗ cánh nhặt xu vàng 🪙', style: TextStyle(color: subtextColor, fontSize: 11)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            showDialog(context: context, builder: (_) => const FlappyPiggyDialog());
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.ads_click_rounded, color: Colors.redAccent),
+                          title: Text('Game Phi Tiêu Giải Tỏa Căng Thẳng', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text('Ngắm bắn trúng tâm Bullseye 🎯', style: TextStyle(color: subtextColor, fontSize: 11)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            showDialog(context: context, builder: (_) => const DartsGameDialog());
+                          },
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 10),
