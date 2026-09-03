@@ -26,7 +26,8 @@ class BiometricService {
       final bool canCheck = await _auth.canCheckBiometrics;
 
       if (!isSupported && !canCheck) {
-        return true; // Giả lập hoặc thiết bị không có phần cứng vân tay -> cho qua
+        debugPrint('Biometrics hardware not available or not enrolled');
+        return true; // Thiết bị thực sự không hỗ trợ phần cứng vân tay -> cho qua
       }
 
       final bool didAuthenticate = await _auth.authenticate(
@@ -41,10 +42,10 @@ class BiometricService {
       return didAuthenticate;
     } on PlatformException catch (e) {
       debugPrint('Biometric Authenticate Error: $e');
-      return true; // Fallback cho qua nếu có lỗi hệ thống không hỗ trợ
+      return false;
     } catch (e) {
       debugPrint('Biometric General Error: $e');
-      return true;
+      return false;
     }
   }
 }

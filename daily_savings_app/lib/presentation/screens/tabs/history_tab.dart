@@ -438,20 +438,24 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
     final emeraldTextColor =
         isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
 
+    final bool isGrab = item.category.toLowerCase().contains('grab');
+
     final double diff = item.amount - dailyGoal;
     final double pct = (diff / dailyGoal) * 100;
 
-    String statusText;
-    Color statusColor;
-    if (diff > 0) {
-      statusText = 'Thừa';
-      statusColor = emeraldTextColor;
-    } else if (diff == 0) {
-      statusText = 'Đạt';
-      statusColor = isDark ? AppTheme.skyBlueAccent : const Color(0xFF0284C7);
-    } else {
-      statusText = 'Thiếu';
-      statusColor = Colors.redAccent;
+    String statusText = '';
+    Color statusColor = emeraldTextColor;
+    if (isGrab) {
+      if (diff > 0) {
+        statusText = 'Thừa';
+        statusColor = emeraldTextColor;
+      } else if (diff == 0) {
+        statusText = 'Đạt';
+        statusColor = isDark ? AppTheme.skyBlueAccent : const Color(0xFF0284C7);
+      } else {
+        statusText = 'Thiếu';
+        statusColor = Colors.redAccent;
+      }
     }
 
     final String diffStr = diff >= 0
@@ -491,61 +495,63 @@ class _HistoryTabState extends ConsumerState<HistoryTab> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: statusColor,
+                    color: isGrab ? statusColor : emeraldTextColor,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 6),
 
-            // Row 2: Analytics vs Target & Status Badge
-            Row(
-              children: [
-                Text(
-                  diffStr,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: diff >= 0 ? emeraldTextColor : Colors.redAccent,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '% Kỳ vọng: ',
-                  style: TextStyle(fontSize: 11, color: textMutedColor),
-                ),
-                Text(
-                  pctStr,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: diff >= 0 ? emeraldTextColor : Colors.redAccent,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                    border:
-                        Border.all(color: statusColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    statusText,
+            // Row 2: Analytics vs Target & Status Badge (Only for Grab driving income)
+            if (isGrab) ...[
+              Row(
+                children: [
+                  Text(
+                    diffStr,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: statusColor,
+                      color: diff >= 0 ? emeraldTextColor : Colors.redAccent,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            const Divider(color: Colors.white10, height: 1),
-            const SizedBox(height: 8),
+                  const SizedBox(width: 12),
+                  Text(
+                    '% Kỳ vọng: ',
+                    style: TextStyle(fontSize: 11, color: textMutedColor),
+                  ),
+                  Text(
+                    pctStr,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: diff >= 0 ? emeraldTextColor : Colors.redAccent,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border:
+                          Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Divider(color: Colors.white10, height: 1),
+              const SizedBox(height: 8),
+            ],
 
             // Row 3: Category Badge, Note & Action Button
             Row(

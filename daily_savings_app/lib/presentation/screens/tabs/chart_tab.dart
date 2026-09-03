@@ -53,16 +53,18 @@ class _ChartTabState extends ConsumerState<ChartTab> {
     final month = int.tryParse(parts[1]) ?? now.month;
     final daysInMonth = DateUtils.getDaysInMonth(year, month);
 
-    // Map amounts per day for selected month
+    // Map amounts per day for selected month (Grab driving entries)
     final Map<int, double> dayAmountMap = {};
     final List<SavingsEntry> monthEntries = [];
 
     for (var entry in state.entries) {
       if (entry.date.startsWith(_selectedMonth)) {
         monthEntries.add(entry);
-        final day = int.tryParse(entry.date.split('-').last) ?? 0;
-        if (day >= 1 && day <= daysInMonth) {
-          dayAmountMap[day] = (dayAmountMap[day] ?? 0.0) + entry.amount;
+        if (SavingsState.isGrabCategory(entry.category)) {
+          final day = int.tryParse(entry.date.split('-').last) ?? 0;
+          if (day >= 1 && day <= daysInMonth) {
+            dayAmountMap[day] = (dayAmountMap[day] ?? 0.0) + entry.amount;
+          }
         }
       }
     }
@@ -71,9 +73,9 @@ class _ChartTabState extends ConsumerState<ChartTab> {
         monthEntries.fold(0.0, (sum, item) => sum + item.amount);
     final targetAchievedDaysCount =
         dayAmountMap.values.where((v) => v >= state.dailyGoal).length;
-    final avgDailySpeed = state.entries.isEmpty
+    final avgDailySpeed = state.grabEntries.isEmpty
         ? 0.0
-        : state.lifetimeTotal / max(1, state.entries.length);
+        : state.grabLifetimeTotal / max(1, state.grabEntries.length);
 
     // Category Totals for Doughnut Chart
     final Map<String, double> catTotals = {
@@ -165,7 +167,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
           ),
           const SizedBox(height: 16),
 
-          // CHART 1: XU HƯỚNG TÍCH LŨY THEO NGÀY (BAR CHART)
+          // CHART 1: XU HƯỚNG TÍCH LŨY GRAB THEO NGÀY (BAR CHART)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -186,7 +188,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '📈 XU HƯỚNG TÍCH LŨY THEO NGÀY',
+                  '📈 XU HƯỚNG TÍCH LŨY GRAB THEO NGÀY',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -209,7 +211,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Đã tiết kiệm',
+                      'Đã tiết kiệm (Grab)',
                       style: TextStyle(fontSize: 11, color: textMutedColor),
                     ),
                     const SizedBox(width: 16),
@@ -363,7 +365,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'TỐC ĐỘ THỰC TẾ',
+                        'TỐC ĐỘ GRAB THỰC TẾ',
                         style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -395,7 +397,7 @@ class _ChartTabState extends ConsumerState<ChartTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ĐẠT TARGET THÁNG',
+                        'ĐẠT TARGET GRAB THÁNG',
                         style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,

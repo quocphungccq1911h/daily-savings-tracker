@@ -65,6 +65,7 @@ class NotificationService {
     String body = 'Hôm nay bạn đã hoàn thành mục tiêu tiết kiệm 150.000 đ chưa? Hãy chốt sổ ngay nhé! ✨',
   }) async {
     await init();
+    await requestPermissions();
     await cancelAll(); // Hủy các lịch cũ để tránh trùng lặp
 
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
@@ -95,19 +96,34 @@ class NotificationService {
       iOS: DarwinNotificationDetails(),
     );
 
-    await _notificationsPlugin.zonedSchedule(
-      888, // Unique ID cho Lịch Nhắc Nhở Hàng Ngày
-      title,
-      body,
-      scheduledDate,
-      notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time, // Lặp lại cùng giờ mỗi ngày
-    );
-
-    debugPrint('Successfully scheduled daily reminder for $hour:$minute');
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        888, // Unique ID cho Lịch Nhắc Nhở Hàng Ngày
+        title,
+        body,
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time, // Lặp lại cùng giờ mỗi ngày
+      );
+      debugPrint('Successfully scheduled exact daily reminder for $hour:$minute');
+    } catch (e) {
+      debugPrint('Exact alarm scheduling failed, falling back to inexact: $e');
+      await _notificationsPlugin.zonedSchedule(
+        888,
+        title,
+        body,
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+      debugPrint('Successfully scheduled inexact daily reminder for $hour:$minute');
+    }
   }
 
   /// Phát thông báo thử nghiệm ngay lập tức để kiểm tra

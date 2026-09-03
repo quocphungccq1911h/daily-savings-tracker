@@ -33,6 +33,11 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
         ? savingsState.dailyGoal
         : currentTotal / max(1, savingsState.entries.length);
 
+    final double grabTotal = savingsState.grabLifetimeTotal;
+    final double grabDailyRate = savingsState.grabEntries.isEmpty
+        ? savingsState.dailyGoal
+        : grabTotal / max(1, savingsState.grabEntries.length);
+
     // Helper tính ngày dự kiến chạm mốc
     DateTime calcEstDate(double targetAmount) {
       if (currentTotal >= targetAmount) return now;
@@ -45,10 +50,10 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
     final date50M = calcEstDate(50000000.0);
     final date100M = calcEstDate(100000000.0);
 
-    // Tính quỹ Tết Đinh Mùi (06/02/2027)
+    // Tính quỹ Tết Đinh Mùi (06/02/2027) từ nguồn Grab chạy xe
     final tetDate = DateTime(2027, 2, 6);
     final daysToTet = max(0, tetDate.difference(todayMidnight).inDays);
-    final estTetFund = currentTotal + (daysToTet * dailyRate);
+    final estTetFund = grabTotal + (daysToTet * grabDailyRate);
 
     String strDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
@@ -103,10 +108,14 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
     final daysToEndOfYear = max(0, endOfYear.difference(todayMidnight).inDays);
     final estYearFund = currentTotal + (daysToEndOfYear * dailyRate);
 
-    // Tính quỹ Tết Đinh Mùi (06/02/2027)
+    // Tính quỹ Tết Đinh Mùi (06/02/2027) từ nguồn Grab chạy xe
+    final grabTotal = savingsState.grabLifetimeTotal;
+    final grabDailyRate = savingsState.grabEntries.isEmpty
+        ? savingsState.dailyGoal
+        : grabTotal / max(1, savingsState.grabEntries.length);
     final tetDate = DateTime(2027, 2, 6);
     final daysToTet = max(0, tetDate.difference(todayMidnight).inDays);
-    final estTetFund = currentTotal + (daysToTet * dailyRate);
+    final estTetFund = grabTotal + (daysToTet * grabDailyRate);
 
     String strDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
     int daysUntil(DateTime d) => max(0, d.difference(todayMidnight).inDays);

@@ -82,6 +82,8 @@ class RootGate extends ConsumerStatefulWidget {
 class _RootGateState extends ConsumerState<RootGate> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSubscription;
   bool _isBiometricLocked = false;
+  bool _isAuthenticating = false;
+  bool _shouldLockOnResume = false;
 
   @override
   void initState() {
@@ -106,20 +108,38 @@ class _RootGateState extends ConsumerState<RootGate> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && LocalStorageService.getBiometricsEnabled()) {
-      setState(() {
-        _isBiometricLocked = true;
-      });
-      _checkBiometrics();
+    if (state == AppLifecycleState.paused) {
+      if (LocalStorageService.getBiometricsEnabled()) {
+        _shouldLockOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldLockOnResume && !_isAuthenticating) {
+        _shouldLockOnResume = false;
+        if (mounted) {
+          setState(() {
+            _isBiometricLocked = true;
+          });
+          _checkBiometrics();
+        }
+      }
     }
   }
 
   void _checkBiometrics() async {
-    final ok = await BiometricService.authenticate();
-    if (ok && mounted) {
-      setState(() {
-        _isBiometricLocked = false;
-      });
+    if (_isAuthenticating) return;
+    _isAuthenticating = true;
+
+    try {
+      final ok = await BiometricService.authenticate();
+      if (ok && mounted) {
+        setState(() {
+          _isBiometricLocked = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Biometric check error: $e');
+    } finally {
+      _isAuthenticating = false;
     }
   }
 

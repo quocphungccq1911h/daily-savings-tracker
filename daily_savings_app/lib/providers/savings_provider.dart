@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/savings_entry.dart';
@@ -36,22 +35,34 @@ class SavingsState {
 
   // --- CORE COMPUTED PROPERTIES ---
 
-  /// Calculates current streak count (consecutive days meeting target)
-  int get streakCount {
-    if (entries.isEmpty) return 0;
+  static bool isGrabCategory(String cat) {
+    final lower = cat.toLowerCase();
+    return lower.contains('grab') || lower.contains('chạy xe');
+  }
+
+  /// Filter entries belonging to Grab
+  List<SavingsEntry> get grabEntries =>
+      entries.where((e) => isGrabCategory(e.category)).toList();
+
+  /// Filter entries belonging to Other sources (Salary, Bonus, etc.)
+  List<SavingsEntry> get otherEntries =>
+      entries.where((e) => !isGrabCategory(e.category)).toList();
+
+  /// Calculates Grab streak count (consecutive days meeting target via Grab)
+  int get grabStreakCount => _calculateStreakForEntries(grabEntries);
+
+  /// Calculates total streak count (all entries)
+  int get streakCount => _calculateStreakForEntries(entries);
+
+  int _calculateStreakForEntries(List<SavingsEntry> listEntries) {
+    if (listEntries.isEmpty) return 0;
     final Map<String, double> dayTotals = {};
-    for (var e in entries) {
+    for (var e in listEntries) {
       dayTotals[e.date] = (dayTotals[e.date] ?? 0.0) + e.amount;
     }
 
     int streak = 0;
     DateTime checkDate = DateTime.now();
-
-    String formatDateKey(DateTime d) => '${d.year}-${String.fromCharCodes([
-              d.month
-            ]).padLeft(2, '0')}-${String.fromCharCodes([
-              d.day
-            ]).padLeft(2, '0')}';
 
     final String todayKey =
         '${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
@@ -73,9 +84,35 @@ class SavingsState {
     return streak;
   }
 
-  /// Calculates total lifetime savings
+  /// Calculates total lifetime savings for Grab
+  double get grabLifetimeTotal =>
+      grabEntries.fold(0.0, (sum, item) => sum + item.amount);
+
+  /// Calculates total lifetime savings for Other sources
+  double get otherLifetimeTotal =>
+      otherEntries.fold(0.0, (sum, item) => sum + item.amount);
+
+  /// Calculates total lifetime savings for All sources
   double get lifetimeTotal =>
       entries.fold(0.0, (sum, item) => sum + item.amount);
+
+  /// Calculates current month Grab savings
+  double get currentMonthGrabTotal {
+    final now = DateTime.now();
+    final monthPrefix = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    return grabEntries
+        .where((e) => e.date.startsWith(monthPrefix))
+        .fold(0.0, (sum, e) => sum + e.amount);
+  }
+
+  /// Calculates current month Other savings
+  double get currentMonthOtherTotal {
+    final now = DateTime.now();
+    final monthPrefix = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    return otherEntries
+        .where((e) => e.date.startsWith(monthPrefix))
+        .fold(0.0, (sum, e) => sum + e.amount);
+  }
 
   /// Calculates current month total savings
   double get currentMonthTotal {

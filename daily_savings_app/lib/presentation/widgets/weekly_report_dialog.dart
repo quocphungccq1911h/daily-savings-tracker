@@ -25,7 +25,7 @@ class WeeklyReportDialog extends ConsumerWidget {
       final dayDate = monday.add(Duration(days: i));
       final dateKey = '${dayDate.year}-${dayDate.month.toString().padLeft(2, '0')}-${dayDate.day.toString().padLeft(2, '0')}';
       
-      final entriesForDay = savingsState.entries.where((e) => e.date == dateKey).toList();
+      final entriesForDay = savingsState.grabEntries.where((e) => e.date == dateKey).toList();
       double dayAmount = 0;
       for (var entry in entriesForDay) {
         dayAmount += entry.amount;
@@ -35,7 +35,7 @@ class WeeklyReportDialog extends ConsumerWidget {
       }
 
       weeklyTotal += dayAmount;
-      if (dayAmount > 0) savedDaysCount++;
+      if (dayAmount >= dailyGoal) savedDaysCount++;
 
       // Chuẩn hóa tên thứ theo tiếng Việt: T2, T3, T4, T5, T6, T7, CN
       String dayLabel;
@@ -60,15 +60,9 @@ class WeeklyReportDialog extends ConsumerWidget {
 
     final double completionPercent = weeklyGoal > 0 ? (weeklyTotal / weeklyGoal * 100).clamp(0, 999) : 0;
 
-    // Tìm danh mục tích lũy cao nhất
-    String topCategory = 'Tích lũy chung';
-    double maxCatAmount = 0;
-    categoryTotals.forEach((cat, amt) {
-      if (amt > maxCatAmount) {
-        maxCatAmount = amt;
-        topCategory = cat;
-      }
-    });
+    // Danh mục chính
+    String topCategory = 'Grab / Chạy xe';
+    double maxCatAmount = weeklyTotal;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dialogBg = Theme.of(context).cardColor;
@@ -149,7 +143,7 @@ class WeeklyReportDialog extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'BÁO CÁO TỔNG KẾT TUẦN',
+                                'BÁO CÁO TỔNG KẾT TUẦN (GRAB)',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -159,7 +153,7 @@ class WeeklyReportDialog extends ConsumerWidget {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'Đánh giá tiến độ 7 ngày 📊',
+                                'Đánh giá tiến độ 7 ngày chạy xe 📊',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 11,

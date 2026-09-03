@@ -8,7 +8,6 @@ import '../widgets/ai_chat_bottom_sheet.dart';
 import '../widgets/app_menu_drawer.dart';
 import '../widgets/collapsible_form.dart';
 import '../widgets/overview_banner_card.dart';
-import '../widgets/toast_notification.dart';
 import 'tabs/badges_tab.dart';
 import 'tabs/chart_tab.dart';
 import 'tabs/history_tab.dart';
