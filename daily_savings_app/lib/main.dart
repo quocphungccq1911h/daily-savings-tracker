@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/network/http_overrides.dart';
 import 'core/observers/app_provider_observer.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/home_screen.dart';
@@ -16,6 +18,7 @@ import 'services/supabase_service.dart';
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    setupHttpOverrides();
 
     // Triệt tiêu lỗi assertion ViewInsets của Flutter Web engine khi resize trình duyệt
     FlutterError.onError = (FlutterErrorDetails details) {
@@ -30,13 +33,14 @@ void main() async {
     await LocalStorageService.init();
     await SupabaseService.init();
 
-    // Tự động khởi tạo & đặt lịch nhắc nhở nạp tiền tiết kiệm lúc 20:00 tối hàng ngày
-    try {
-      final notifService = NotificationService();
-      await notifService.init();
-      await notifService.scheduleDailyReminder(hour: 20, minute: 0);
-    } catch (e) {
-      debugPrint('Notification init warning: $e');
+    // Tự động khởi tạo dịch vụ thông báo trên mobile
+    if (!kIsWeb) {
+      try {
+        final notifService = NotificationService();
+        await notifService.init();
+      } catch (e) {
+        debugPrint('Notification init warning: $e');
+      }
     }
 
     runApp(

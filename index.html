@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.1.4">
+  <link rel="stylesheet" href="styles.css?v=1.2.2">
 </head>
 <body>
   <div class="app-container">
@@ -19,6 +19,7 @@
     <!-- Minimalist Header -->
     <header class="app-header">
       <div class="header-main-row">
+        <button id="openMenuDrawerBtn" class="hamburger-btn" title="Mở danh mục tiện ích">☰</button>
         <div class="header-brand">
           <img src="assets/images/app_logo.png" alt="App Logo" style="width: 36px; height: 36px; border-radius: 9px; vertical-align: middle; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
           <div>
@@ -112,8 +113,15 @@
 
         <!-- Today / Selected Month Status Banner -->
         <div class="status-banner" id="statusBanner">
+          <!-- 3-Filter Pill Selector -->
+          <div class="banner-filter-pills" id="bannerFilterPills">
+            <button type="button" class="banner-filter-pill active" data-filter="GRAB">🛵 Grab / Chạy xe</button>
+            <button type="button" class="banner-filter-pill" data-filter="OTHER">💼 Nguồn Khác</button>
+            <button type="button" class="banner-filter-pill" data-filter="ALL">🌐 Tất Cả</button>
+          </div>
+
           <div class="banner-header">
-            <span class="banner-title" id="bannerTitleText">LŨY KẾ ĐẾN HÔM NAY (<span id="currentDateBadge">--/--</span>)</span>
+            <span class="banner-title" id="bannerTitleText">LŨY KẾ GRAB HÔM NAY (<span id="currentDateBadge">--/--</span>)</span>
             <div class="banner-controls">
               <span id="streakBadgeBox" class="streak-badge" title="Số ngày liên tiếp đạt mốc 150k">🔥 Chuỗi 0 ngày</span>
               <div class="month-select-wrapper">
@@ -128,6 +136,24 @@
           <div class="banner-meta">
             <span id="bannerMetaText">Mục tiêu lũy kế đến nay: <strong id="cumulativeTargetDisplay">0 đ</strong></span>
           </div>
+
+          <!-- Total Breakdown Banner (Chia Rõ Grab / Khác / Tất Cả) -->
+          <div class="banner-breakdown-card" id="bannerBreakdownCard">
+            <div class="breakdown-header">
+              <span class="breakdown-title">👛 TỔNG TÍCH LŨY TOÀN BỘ:</span>
+              <strong class="breakdown-total" id="bannerLifetimeDisplay">0 đ</strong>
+            </div>
+            <div class="breakdown-pills">
+              <div class="breakdown-pill">
+                <span class="pill-label">🛵 Grab:</span>
+                <span class="pill-val">Tháng: <strong id="grabMonthDisplay" class="text-success">0 đ</strong> | Tổng: <strong id="grabLifetimeDisplay" class="text-success">0 đ</strong></span>
+              </div>
+              <div class="breakdown-pill">
+                <span class="pill-label">💼 Khác:</span>
+                <span class="pill-val">Tháng: <strong id="otherMonthDisplay" class="text-info">0 đ</strong> | Tổng: <strong id="otherLifetimeDisplay" class="text-info">0 đ</strong></span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Month & Year Progress Cards Row -->
@@ -135,7 +161,7 @@
           <!-- Month Card -->
           <div class="mini-card">
             <div class="mini-card-head">
-              <span>TIẾN ĐỘ THÁNG</span>
+              <span id="monthCardTitle">TIẾN ĐỘ THÁNG</span>
               <strong id="monthSavedTotal" class="text-success">0 đ</strong>
             </div>
             <div class="progress-track">
@@ -153,7 +179,7 @@
           <!-- Year Card -->
           <div class="mini-card">
             <div class="mini-card-head">
-              <span>TIẾN ĐỘ CẢ NĂM</span>
+              <span id="yearCardTitle">TIẾN ĐỘ CẢ NĂM</span>
               <strong id="yearSavedTotal" class="text-gold">0 đ</strong>
             </div>
             <div class="progress-track">
@@ -383,6 +409,9 @@ create policy "Users access own entries"
       <div class="modal-footer" style="justify-content: center;">
         <button id="submitPinBtn" class="btn btn-primary" style="width: 100%;">🔓 Mở Khóa Kết Nối</button>
       </div>
+    </div>
+  </div>
+
   <!-- Wishlist Goal Modal -->
   <div class="modal-overlay" id="wishlistModal" style="display: none; z-index: 10000;">
     <div class="modal-card" style="max-width: 400px;">
@@ -431,6 +460,379 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.1.4"></script>
+  <!-- NAVIGATION MENU DRAWER (SLIDE-OVER PANEL) -->
+  <div class="drawer-overlay" id="drawerOverlay" style="display: none;">
+    <div class="drawer-content" id="drawerContent">
+      <div class="drawer-header">
+        <div class="drawer-profile-row">
+          <div class="drawer-avatar">👤</div>
+          <div class="drawer-user-info">
+            <strong id="drawerUserEmail" class="drawer-email-text">user@gmail.com</strong>
+            <span class="drawer-cloud-pill">🟢 Supabase Cloud Online</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button id="drawerSignOutBtn" class="btn-signout-compact" title="Đăng xuất">🚪 Đăng xuất</button>
+          <button id="closeDrawerBtn" class="drawer-close-btn" title="Đóng Menu">✕</button>
+        </div>
+      </div>
+
+      <!-- 🧧 TET COUNTDOWN & SAVINGS MOTIVATION WIDGET -->
+      <div class="drawer-tet-widget" id="drawerTetWidget">
+        <div class="tet-widget-header">
+          <span class="tet-widget-tag">🧧 ĐẾM NGƯỢC TẾT <span id="tetCanChiYearDisplay">...</span></span>
+          <span class="tet-widget-date" id="tetMung1DateDisplay">Mùng 1: ...</span>
+        </div>
+        <div class="tet-widget-body">
+          <div class="tet-col">
+            <span class="tet-label">Thời gian đếm ngược:</span>
+            <div class="tet-countdown-val">
+              <span class="tet-days-num" id="tetDaysLeftDisplay">0</span>
+              <span class="tet-days-unit">ngày</span>
+            </div>
+          </div>
+          <div class="tet-divider"></div>
+          <div class="tet-col">
+            <span class="tet-label">Dự kiến quỹ ăn Tết:</span>
+            <div class="tet-fund-val" id="tetEstimatedFundDisplay">0 đ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🌙 TODAY'S LUNAR INFO CARD -->
+      <div class="drawer-lunar-card" id="drawerLunarCard">
+        <div class="lunar-card-header">
+          <span>🌙 HÔM NAY (<span id="lunarSolarToday">--/--</span>)</span>
+          <span class="lunar-canchi" id="lunarCanChiDayDisplay">Ngày ...</span>
+        </div>
+        <div class="lunar-card-body">
+          <div class="lunar-big-day">
+            <span class="lunar-day-num" id="lunarDayNumDisplay">1</span>
+            <span class="lunar-month-name" id="lunarMonthNameDisplay">Tháng ...</span>
+          </div>
+          <div class="lunar-details">
+            <div>Năm: <strong id="lunarYearCanChiDisplay">...</strong></div>
+            <div id="lunarSpecialBadge" class="lunar-special-tag" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MENU ITEMS LIST -->
+      <div class="drawer-menu-list">
+        <div class="menu-section-title">MỤC TIÊU TÍCH LŨY</div>
+        <button class="drawer-item" id="drawerChangeGoalBtn">
+          <span class="item-icon">🎯</span>
+          <div class="item-text">
+            <div class="item-title">Đổi Mục Tiêu Ngày</div>
+            <div class="item-sub" id="drawerGoalSub">Thay đổi số tiền mục tiêu 150k/ngày</div>
+          </div>
+        </button>
+
+        <div class="menu-section-title">BỘ CÔNG CỤ TIỆN ÍCH 🧰</div>
+        <button class="drawer-item" id="drawerExpenseBtn">
+          <span class="item-icon">🧾</span>
+          <div class="item-text">
+            <div class="item-title">Sổ Ghi Chi Tiêu Hằng Ngày</div>
+            <div class="item-sub">Ghi lại các khoản chi tiêu trong ngày</div>
+          </div>
+        </button>
+        <button class="drawer-item" id="drawerWeeklyReportBtn">
+          <span class="item-icon">📊</span>
+          <div class="item-text">
+            <div class="item-title">Báo Cáo Tổng Kết Tuần</div>
+            <div class="item-sub">Đánh giá tiến độ 7 ngày & tích lũy</div>
+          </div>
+        </button>
+        <button class="drawer-item" id="drawerCalendarBtn">
+          <span class="item-icon">📅</span>
+          <div class="item-text">
+            <div class="item-title">Lịch Vạn Niên & Âm Lịch</div>
+            <div class="item-sub">Tra cứu ngày âm, Mùng 1 & Rằm</div>
+          </div>
+        </button>
+        <button class="drawer-item" id="drawerCompoundInterestBtn">
+          <span class="item-icon">🧮</span>
+          <div class="item-text">
+            <div class="item-title">Máy Tính Lãi Kép & Dự Báo</div>
+            <div class="item-sub">Dự tính số tiền sau 1, 3, 5 năm</div>
+          </div>
+        </button>
+        <button class="drawer-item" id="drawerAiPredictorBtn">
+          <span class="item-icon">🔮</span>
+          <div class="item-text">
+            <div class="item-title">AI Dự Báo Chạm Mốc Tài Chính</div>
+            <div class="item-sub">Dự báo 10M, 50M, 100M & Quỹ Tết</div>
+          </div>
+        </button>
+        <button class="drawer-item" id="drawerAiChatBtn">
+          <span class="item-icon">🤖</span>
+          <div class="item-text">
+            <div class="item-title">Trợ Lý AI Tiết Kiệm (Gemini)</div>
+            <div class="item-sub">Hỏi đáp target, đếm ngược Tết & tư vấn AI</div>
+          </div>
+        </button>
+
+        <div class="menu-section-title">GÓC GAME GIẢI TRÍ 🎮</div>
+        <button class="drawer-item" id="drawerTetrisBtn">
+          <span class="item-icon">🕹️</span>
+          <div class="item-text">
+            <div class="item-title">Xếp Gạch Tetris Cổ Điển</div>
+            <div class="item-sub">Xếp gạch giải trí cổ điển 60 FPS</div>
+          </div>
+        </button>
+        <button class="drawer-item" id="drawerFlappyBtn">
+          <span class="item-icon">🐷</span>
+          <div class="item-text">
+            <div class="item-title">Chú Lợn Bay (Flappy Piggy)</div>
+            <div class="item-sub">Vỗ cánh nhặt xu vàng tiết kiệm</div>
+          </div>
+        </button>
+        <button class="drawer-item" id="drawerDartsBtn">
+          <span class="item-icon">🎯</span>
+          <div class="item-text">
+            <div class="item-title">Phi Tiêu Xả Stress</div>
+            <div class="item-sub">Ngắm bắn trúng tâm Bullseye 100 điểm</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SỔ GHI CHI TIÊU HẰNG NGÀY -->
+  <div class="modal-overlay" id="expenseModal" style="display: none; z-index: 10001;">
+    <div class="modal-card modal-wide">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0;">🧾 Sổ Ghi Chi Tiêu Hằng Ngày</h3>
+        <button type="button" class="btn-ghost" id="closeExpenseModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <form id="expenseForm" style="margin-bottom: 14px;">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="expenseDate">Ngày chi</label>
+            <input type="date" id="expenseDate" class="input-field" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="expenseCategory">Hạng mục</label>
+            <select id="expenseCategory" class="select-field" style="width: 100%;">
+              <option value="🍲 Ăn Uống">🍲 Ăn Uống</option>
+              <option value="⛽ Đi Lại & Xăng Xe">⛽ Đi Lại & Xăng Xe</option>
+              <option value="🛒 Đi Chợ & Siêu Thị">🛒 Đi Chợ & Siêu Thị</option>
+              <option value="💡 Hóa Đơn & Điện Nước">💡 Hóa Đơn & Điện Nước</option>
+              <option value="☕ Cà Phê & Giải Trí">☕ Cà Phê & Giải Trí</option>
+              <option value="🛍️ Mua Sắm Cá Nhân">🛍️ Mua Sắm Cá Nhân</option>
+              <option value="📦 Khác">📦 Khác</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="expenseAmount">Số tiền (VNĐ)</label>
+            <input type="text" id="expenseAmount" class="input-field money-input" placeholder="50.000" inputmode="numeric" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="expenseNote">Ghi chú chi tiết</label>
+            <input type="text" id="expenseNote" class="input-field" placeholder="Ví dụ: Đổ xăng, ăn trưa...">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">➕ Thêm Khoản Chi</button>
+      </form>
+      <div style="font-size: 0.8rem; font-weight: 700; color: #f87171; margin-bottom: 6px;">DANH SÁCH CHI TIÊU THÁNG: <span id="expenseMonthTotalText" style="color: #fef08a;">0 đ</span></div>
+      <div class="table-wrap" style="max-height: 240px; overflow-y: auto;">
+        <table class="minimal-table">
+          <thead>
+            <tr><th>Ngày</th><th>Hạng mục</th><th>Số tiền</th><th>Ghi chú</th><th class="text-right">Xóa</th></tr>
+          </thead>
+          <tbody id="expenseTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BÁO CÁO TỔNG KẾT TUẦN -->
+  <div class="modal-overlay" id="weeklyReportModal" style="display: none; z-index: 10001;">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0;">📊 Báo Cáo Tổng Kết Tuần</h3>
+        <button type="button" class="btn-ghost" id="closeWeeklyReportModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div id="weeklyReportContent"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: LỊCH VẠN NIÊN & ÂM LỊCH -->
+  <div class="modal-overlay" id="calendarModal" style="display: none; z-index: 10001;">
+    <div class="modal-card modal-wide">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0;">📅 Lịch Vạn Niên & Âm Lịch</h3>
+        <button type="button" class="btn-ghost" id="closeCalendarModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div id="calendarModalContent"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: MÁY TÍNH LÃI KÉP & DỰ BÁO -->
+  <div class="modal-overlay" id="compoundInterestModal" style="display: none; z-index: 10001;">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0;">🧮 Máy Tính Lãi Kép</h3>
+        <button type="button" class="btn-ghost" id="closeCompoundInterestModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div class="form-group">
+        <label for="ciDailyDeposit">Số tiền tích lũy mỗi ngày (VNĐ)</label>
+        <input type="number" id="ciDailyDeposit" class="input-field" value="150000" step="10000">
+      </div>
+      <div class="form-group">
+        <label for="ciRate">Lãi suất gửi ngân hàng (% / năm)</label>
+        <input type="number" id="ciRate" class="input-field" value="6.0" step="0.5" min="1" max="20">
+      </div>
+      <div class="form-group">
+        <label for="ciYears">Kỳ hạn tích lũy (Năm)</label>
+        <select id="ciYears" class="select-field" style="width: 100%;">
+          <option value="1">1 Năm</option>
+          <option value="3" selected>3 Năm</option>
+          <option value="5">5 Năm</option>
+          <option value="10">10 Năm</option>
+        </select>
+      </div>
+      <div id="ciResultBox" style="margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: AI DỰ BÁO CHẠM MỐC TÀI CHÍNH -->
+  <div class="modal-overlay" id="aiPredictorModal" style="display: none; z-index: 10001;">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0;">🔮 AI Dự Báo Chạm Mốc Tài Chính</h3>
+        <button type="button" class="btn-ghost" id="closeAiPredictorModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div id="aiPredictorContent"></div>
+    </div>
+  </div>
+
+  <!-- FLOATING ACTION BUTTON (AI GEMINI ASSISTANT) -->
+  <div id="fabAiChatBtn" class="floating-ai-fab" title="Trò chuyện cùng Trợ Lý AI Tiết Kiệm">
+    <div class="fab-ai-icon">🐷</div>
+    <span class="fab-ai-badge">AI ✨</span>
+  </div>
+
+  <!-- MODAL: TRỢ LÝ AI TIẾT KIỆM (GEMINI CHAT) -->
+  <div class="modal-overlay" id="aiChatModal" style="display: none; z-index: 10002;">
+    <div class="modal-card" style="max-width: 480px; height: 85vh; max-height: 700px; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px;">
+      <!-- Header -->
+      <div style="padding: 14px 16px; background: linear-gradient(135deg, #0284c7, #06b6d4); color: #fff; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">🐷</div>
+          <div>
+            <div style="font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 6px;">Trợ Lý AI Tiết Kiệm <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span></div>
+            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.85);">Gemini 3.6 Flash • Trực tuyến 24/7</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button id="aiConfigKeyBtn" class="btn-ghost" title="Cấu hình Gemini API Key" style="color: #fff; padding: 4px 8px; font-size: 1rem;">🔑</button>
+          <button id="closeAiChatModalBtn" class="btn-ghost" style="color: #fff; padding: 4px 8px; font-size: 1.1rem;">✕</button>
+        </div>
+      </div>
+
+      <!-- Quick Suggestion Chips -->
+      <div class="ai-chips-container" style="display: flex; gap: 8px; padding: 10px 14px; overflow-x: auto; background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
+        <button type="button" class="ai-quick-chip" data-prompt="Còn bao nhiêu nữa đủ target hôm nay?">💡 Còn bao nhiêu nữa đủ target?</button>
+        <button type="button" class="ai-quick-chip" data-prompt="Còn bao nhiêu ngày nữa đến Tết?">🧧 Đếm ngược đến Tết?</button>
+        <button type="button" class="ai-quick-chip" data-prompt="Hôm nay ngày bao nhiêu?">📅 Hôm nay ngày mấy?</button>
+        <button type="button" class="ai-quick-chip" data-prompt="Cho tôi một lời khuyên tiết kiệm hôm nay">📈 Lời khuyên tiết kiệm</button>
+      </div>
+
+      <!-- Chat Body -->
+      <div id="aiChatMessages" style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="ai-msg ai-msg-bot">
+          👋 Chào bạn! Tôi là Trợ Lý AI Tiết Kiệm. Bạn muốn hỏi về target hôm nay, đếm ngược Tết hay cần lời khuyên tài chính cá nhân nào? 🐷✨
+        </div>
+      </div>
+
+      <!-- Chat Footer Input -->
+      <form id="aiChatForm" style="padding: 10px 14px; background: rgba(15, 23, 42, 0.7); border-top: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center;">
+        <input type="text" id="aiChatInput" class="input-field" placeholder="Hỏi AI bất kỳ điều gì..." style="border-radius: 20px; font-size: 0.85rem;" autocomplete="off" required>
+        <button type="submit" id="aiChatSendBtn" class="btn btn-primary" style="border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">➔</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CẤU HÌNH GEMINI API KEY -->
+  <div class="modal-overlay" id="geminiKeyModal" style="display: none; z-index: 10003;">
+    <div class="modal-card" style="max-width: 400px;">
+      <h3 style="margin-bottom: 8px;">🔑 Cấu Hình Gemini API Key</h3>
+      <p class="modal-sub">Nhập Google Gemini API Key của bạn (miễn phí từ Google AI Studio) để kích hoạt toàn diện AI thông minh:</p>
+      <input type="text" id="geminiApiKeyInput" class="input-field" placeholder="Dán API Key (AIzaSy...) vào đây" style="margin-bottom: 14px;">
+      <div style="display: flex; gap: 8px;">
+        <button type="button" id="saveGeminiKeyBtn" class="btn btn-primary" style="flex: 1;">💾 Lưu Key</button>
+        <button type="button" id="closeGeminiKeyModalBtn" class="btn btn-secondary">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GAME XẾP GẠCH TETRIS -->
+  <div class="modal-overlay" id="tetrisModal" style="display: none; z-index: 10002;">
+    <div class="modal-card" style="max-width: 360px; text-align: center; padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 1.1rem; color: #fbbf24;">🕹️ Xếp Gạch Tetris Cổ Điển</h3>
+        <button type="button" class="btn-ghost" id="closeTetrisModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div style="display: flex; justify-content: space-around; font-size: 0.85rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main);">
+        <div>ĐIỂM: <span id="tetrisScore" style="color: #10b981;">0</span></div>
+        <div>HÀNG: <span id="tetrisLines" style="color: #38bdf8;">0</span></div>
+      </div>
+      <canvas id="tetrisCanvas" width="200" height="400" style="background: #020617; border: 2px solid #334155; border-radius: 8px; display: block; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></canvas>
+      <!-- Controls -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px;">
+        <button type="button" id="tetrisLeftBtn" class="btn btn-secondary">◀</button>
+        <button type="button" id="tetrisRotateBtn" class="btn btn-primary">🔄</button>
+        <button type="button" id="tetrisRightBtn" class="btn btn-secondary">▶</button>
+        <button type="button" id="tetrisDownBtn" class="btn btn-secondary">▼</button>
+      </div>
+      <div style="margin-top: 8px; display: flex; gap: 8px;">
+        <button type="button" id="tetrisDropBtn" class="btn btn-primary" style="flex: 1; background: #e11d48; border-color: #e11d48;">⚡ Thả Nhanh (Drop)</button>
+        <button type="button" id="tetrisRestartBtn" class="btn btn-secondary" style="flex: 1;">Chơi Lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GAME CHÚ LỢN BAY (FLAPPY PIGGY) -->
+  <div class="modal-overlay" id="flappyModal" style="display: none; z-index: 10002;">
+    <div class="modal-card" style="max-width: 360px; text-align: center; padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 1.1rem; color: #f472b6;">🐷 Chú Lợn Bay (Flappy Piggy)</h3>
+        <button type="button" class="btn-ghost" id="closeFlappyModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div style="display: flex; justify-content: space-around; font-size: 0.85rem; font-weight: 800; margin-bottom: 10px;">
+        <div>ĐIỂM: <span id="flappyScore" style="color: #fbbf24;">0</span></div>
+        <div>KỶ LỤC: <span id="flappyHighScore" style="color: var(--text-muted);">0</span></div>
+      </div>
+      <canvas id="flappyCanvas" width="280" height="380" style="background: #0f172a; border: 2px solid #fbbf24; border-radius: 12px; display: block; margin: 0 auto; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></canvas>
+      <div style="margin-top: 10px; font-size: 0.75rem; color: var(--text-muted);">
+        Chạm màn hình canvas hoặc bấm <strong>SPACE</strong> để vỗ cánh nhảy!
+      </div>
+      <button type="button" id="flappyRestartBtn" class="btn btn-primary" style="margin-top: 8px; width: 100%; display: none;">Chơi Lại</button>
+    </div>
+  </div>
+
+  <!-- MODAL: GAME PHI TIÊU (DARTS) -->
+  <div class="modal-overlay" id="dartsModal" style="display: none; z-index: 10002;">
+    <div class="modal-card" style="max-width: 360px; text-align: center; padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 1.1rem; color: #ef4444;">🎯 Phi Tiêu Xả Stress</h3>
+        <button type="button" class="btn-ghost" id="closeDartsModalBtn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div style="display: flex; justify-content: space-around; font-size: 0.85rem; font-weight: 800; margin-bottom: 10px;">
+        <div>ĐIỂM: <span id="dartsScore" style="color: #ef4444;">0</span></div>
+        <div>TIÊU: <span id="dartsLeft" style="color: #fbbf24;">🎯 x 5</span></div>
+        <div>KỶ LỤC: <span id="dartsHighScore" style="color: var(--text-muted);">0</span></div>
+      </div>
+      <div id="dartsHitFeedback" style="height: 20px; font-size: 0.8rem; font-weight: 800; color: #fbbf24; margin-bottom: 4px;"></div>
+      <canvas id="dartsCanvas" width="280" height="320" style="background: #0f172a; border: 2px solid #ef4444; border-radius: 12px; display: block; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></canvas>
+      <button type="button" id="dartsThrowBtn" class="btn btn-primary" style="margin-top: 10px; width: 100%; padding: 10px; font-weight: 800; font-size: 0.95rem; background: #ef4444; border-color: #ef4444;">🎯 PHÓNG PHI TIÊU!</button>
+      <button type="button" id="dartsRestartBtn" class="btn btn-secondary" style="margin-top: 6px; width: 100%; display: none;">Chơi Ván Mới</button>
+    </div>
+  </div>
+
+  <script src="app.js?v=1.2.2"></script>
 </body>
 </html>

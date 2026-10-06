@@ -27,7 +27,7 @@ class SupabaseService {
       return response;
     } catch (e) {
       print('❌ [Supabase Auth] Login Error: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -38,7 +38,7 @@ class SupabaseService {
       return response;
     } catch (e) {
       print('❌ [Supabase Auth] Register Error: $e');
-      return null;
+      rethrow;
     }
   }
 

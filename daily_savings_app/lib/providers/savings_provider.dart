@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/savings_entry.dart';
 import '../../models/wishlist_goal.dart';
 import '../core/constants/app_constants.dart';
 import '../services/local_storage_service.dart';
+import '../services/notification_service.dart';
 import '../services/supabase_service.dart';
 
 class SavingsState {
@@ -148,6 +151,17 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     await refreshFromCloud();
   }
 
+  void _syncNotificationReminder() {
+    if (kIsWeb) return;
+    try {
+      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final hasSavedToday = state.entries.any((e) => e.date == todayStr && e.amount > 0);
+      NotificationService().syncDailyReminderWithSavedStatus(hasSavedToday: hasSavedToday);
+    } catch (e) {
+      debugPrint('Sync notification error: $e');
+    }
+  }
+
   /// Tải lại toàn bộ dữ liệu mới nhất từ Supabase Cloud API
   Future<void> refreshFromCloud() async {
     try {
@@ -159,6 +173,7 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
       for (var e in cloudEntries) {
         await LocalStorageService.saveEntry(e);
       }
+      _syncNotificationReminder();
     } catch (_) {}
   }
 
@@ -194,11 +209,13 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
 
     await LocalStorageService.saveEntry(entry);
     await SupabaseService.syncSaveEntry(entry);
+    _syncNotificationReminder();
 
     try {
       final cloudEntries = await SupabaseService.fetchEntries();
       if (cloudEntries.isNotEmpty) {
         state = state.copyWith(entries: cloudEntries);
+        _syncNotificationReminder();
       }
     } catch (_) {}
   }
@@ -208,10 +225,12 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     state = state.copyWith(entries: updated);
     await LocalStorageService.deleteEntry(id);
     await SupabaseService.syncDeleteEntry(id);
+    _syncNotificationReminder();
 
     try {
       final cloudEntries = await SupabaseService.fetchEntries();
       state = state.copyWith(entries: cloudEntries);
+      _syncNotificationReminder();
     } catch (_) {}
   }
 

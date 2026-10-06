@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
@@ -667,28 +668,48 @@ class AppMenuDrawer extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.notifications_active_rounded, color: AppTheme.amberGoldLight),
                     title: Text('Nhắc Nhở Tối (20:00)', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Tự động phát lúc 20:00 mỗi tối (Bấm để thử ngay 🔔)', style: TextStyle(color: subtextColor, fontSize: 11)),
+                    subtitle: Text('Tự động phát lúc 20:00 mỗi tối nếu chưa lưu tiền (Bấm để kích hoạt 🔔)', style: TextStyle(color: subtextColor, fontSize: 11)),
                     onTap: () async {
                       final notif = NotificationService();
                       final granted = await notif.requestPermissions();
-                      if (context.mounted) {
-                        if (granted) {
-                          await notif.showTestNotification();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('🔔 Đã phát thông báo thử nghiệm! Đã bật nhắc nhở 20:00 hàng ngày.'),
-                              backgroundColor: AppTheme.emeraldPrimary,
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('⚠️ Vui lòng cấp quyền thông báo cho ứng dụng trong Cài Đặt máy!'),
-                              backgroundColor: Colors.orangeAccent,
-                            ),
-                          );
+                      if (!context.mounted) return;
+
+                      if (granted) {
+                        final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                        final hasSavedToday = ref.read(savingsProvider).entries.any((e) => e.date == todayStr && e.amount > 0);
+
+                        await notif.syncDailyReminderWithSavedStatus(hasSavedToday: hasSavedToday);
+                        final canExact = await notif.canScheduleExact();
+                        await notif.showTestNotification();
+
+                        if (context.mounted) {
+                          if (!canExact) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('🔔 Đã kích hoạt lịch 20:00! Mẹo: Hãy bật quyền "Báo thức và lời nhắc" trong Cài Đặt điện thoại để chuông nổ chuẩn xác từng phút.'),
+                                backgroundColor: Colors.amber,
+                                duration: Duration(seconds: 5),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(hasSavedToday
+                                    ? '🔔 Đã kích hoạt lịch nhắc 20:00! Hôm nay bạn đã chốt sổ nên chuông sẽ nhắc từ tối mai.'
+                                    : '🔔 Đã kích hoạt nhắc nhở 20:00 tối nay và phát thông báo thử nghiệm!'),
+                                backgroundColor: AppTheme.emeraldPrimary,
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                          }
                         }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('⚠️ Vui lòng cấp quyền thông báo cho ứng dụng trong Cài Đặt máy!'),
+                            backgroundColor: Colors.orangeAccent,
+                          ),
+                        );
                       }
                     },
                   ),

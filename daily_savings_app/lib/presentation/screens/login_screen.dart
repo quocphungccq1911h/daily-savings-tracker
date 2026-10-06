@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/biometric_service.dart';
 import '../../services/local_storage_service.dart';
@@ -52,27 +53,51 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMsg = '';
     });
 
-    if (_isSignUpMode) {
-      final res = await SupabaseService.signUpWithEmail(email, password);
-      setState(() => _isLoading = false);
-      if (res?.user != null) {
-        await LocalStorageService.saveSavedCredentials(
-            email, password, _rememberMe);
-        widget.onLoginSuccess();
+    try {
+      if (_isSignUpMode) {
+        final res = await SupabaseService.signUpWithEmail(email, password);
+        if (res?.user != null) {
+          await LocalStorageService.saveSavedCredentials(
+              email, password, _rememberMe);
+          widget.onLoginSuccess();
+        } else {
+          setState(
+              () => _errorMsg = 'Đăng ký không thành công. Kiểm tra thông tin!');
+        }
       } else {
-        setState(
-            () => _errorMsg = 'Đăng ký không thành công. Kiểm tra thông tin!');
+        final res = await SupabaseService.signInWithEmail(email, password);
+        if (res?.user != null) {
+          await LocalStorageService.saveSavedCredentials(
+              email, password, _rememberMe);
+          widget.onLoginSuccess();
+        } else {
+          setState(() =>
+              _errorMsg = 'Đăng nhập thất bại. Kiểm tra lại Email / Mật khẩu!');
+        }
       }
-    } else {
-      final res = await SupabaseService.signInWithEmail(email, password);
-      setState(() => _isLoading = false);
-      if (res?.user != null) {
-        await LocalStorageService.saveSavedCredentials(
-            email, password, _rememberMe);
-        widget.onLoginSuccess();
+    } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid login credentials')) {
+        setState(() => _errorMsg = 'Sai Email hoặc Mật khẩu! Vui lòng thử lại.');
+      } else if (msg.contains('email not confirmed')) {
+        setState(() => _errorMsg = 'Email chưa được xác nhận kích hoạt trong hệ thống.');
+      } else if (msg.contains('user already registered')) {
+        setState(() => _errorMsg = 'Email này đã được đăng ký tài khoản trước đó.');
       } else {
-        setState(() =>
-            _errorMsg = 'Đăng nhập thất bại. Kiểm tra lại Email / Mật khẩu!');
+        setState(() => _errorMsg = 'Lỗi xác thực: ${e.message}');
+      }
+    } catch (e) {
+      final str = e.toString();
+      if (str.contains('CERTIFICATE_VERIFY_FAILED') || str.contains('HandshakeException')) {
+        setState(() => _errorMsg = 'Lỗi bảo mật mạng (SSL Proxy). Đã tự động cấu hình lại, vui lòng thử lại.');
+      } else if (str.contains('SocketException') || str.contains('ClientException')) {
+        setState(() => _errorMsg = 'Không thể kết nối tới server. Vui lòng kiểm tra Internet!');
+      } else {
+        setState(() => _errorMsg = 'Lỗi: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
