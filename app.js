@@ -490,15 +490,59 @@
     return lower.includes('grab') || lower.includes('chạy xe');
   }
 
+  function setBannerFilter(filter) {
+    if (!filter) return;
+    currentBannerFilter = filter;
+    document.querySelectorAll('.banner-filter-pill').forEach(b => {
+      b.classList.toggle('active', b.dataset.filter === filter);
+    });
+
+    const tableTargetSubtitle = document.getElementById('tableTargetSubtitle');
+    if (tableTargetSubtitle) {
+      if (filter === 'GRAB') {
+        tableTargetSubtitle.innerHTML = '🎯 Chỉ tiêu Grab: <strong>150.000 đ/ngày</strong>';
+        tableTargetSubtitle.style.color = 'var(--primary)';
+        tableTargetSubtitle.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+        tableTargetSubtitle.style.background = 'rgba(16, 185, 129, 0.1)';
+      } else if (filter === 'OTHER') {
+        tableTargetSubtitle.innerHTML = '💼 Nguồn Khác: <strong>Không áp target 150k</strong>';
+        tableTargetSubtitle.style.color = '#c084fc';
+        tableTargetSubtitle.style.borderColor = 'rgba(168, 85, 247, 0.25)';
+        tableTargetSubtitle.style.background = 'rgba(168, 85, 247, 0.1)';
+      } else {
+        tableTargetSubtitle.innerHTML = '🌐 Tất Cả: <strong>Toàn bộ nguồn thu nhập</strong>';
+        tableTargetSubtitle.style.color = '#38bdf8';
+        tableTargetSubtitle.style.borderColor = 'rgba(56, 189, 248, 0.25)';
+        tableTargetSubtitle.style.background = 'rgba(56, 189, 248, 0.1)';
+      }
+    }
+
+    renderDashboard();
+    renderTable();
+    if (typeof tabChartContent !== 'undefined' && tabChartContent && tabChartContent.style.display !== 'none') {
+      renderChart();
+    }
+  }
+
   if (bannerFilterPills) {
     bannerFilterPills.addEventListener('click', (e) => {
       const btn = e.target.closest('.banner-filter-pill');
       if (!btn) return;
       const filter = btn.dataset.filter;
       if (filter && filter !== currentBannerFilter) {
-        currentBannerFilter = filter;
-        document.querySelectorAll('.banner-filter-pill').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
-        renderDashboard();
+        setBannerFilter(filter);
+      }
+    });
+  }
+
+  const tableFilterPills = document.getElementById('tableFilterPills');
+  if (tableFilterPills) {
+    tableFilterPills.addEventListener('click', (e) => {
+      const btn = e.target.closest('.banner-filter-pill');
+      if (!btn) return;
+      const filter = btn.dataset.filter;
+      if (filter && filter !== currentBannerFilter) {
+        setBannerFilter(filter);
       }
     });
   }
@@ -818,17 +862,40 @@
     }
   }
 
+  function cleanUserNote(noteStr) {
+    if (!noteStr) return '';
+    let s = noteStr.replace(/^\[.*?\]\s*/, '').trim();
+    if (s === 'Thu nhập' || s === 'Thu nhập chạy app' || s === 'Thu nhập app') {
+      return '';
+    }
+    return s.replace(/^Thu nhập chạy app\s*/i, '').replace(/^Thu nhập\s*/i, '').trim();
+  }
+
   function renderTable() {
     const selectedMonth = filterMonthSelect.value;
     savingsTableBody.innerHTML = '';
 
-    const filtered = entries.filter(e => e.date && e.date.startsWith(selectedMonth));
+    // Filter source entries by currentBannerFilter
+    let sourceEntries = entries;
+    if (currentBannerFilter === 'GRAB') {
+      sourceEntries = entries.filter(e => isGrabCategory(e.category || parseEntryCategory(e)));
+    } else if (currentBannerFilter === 'OTHER') {
+      sourceEntries = entries.filter(e => !isGrabCategory(e.category || parseEntryCategory(e)));
+    }
+
+    const filtered = sourceEntries.filter(e => e.date && e.date.startsWith(selectedMonth));
 
     if (filtered.length === 0) {
+      let emptyMsg = `Chưa có ghi nhận tiết kiệm cho ${selectedMonth.replace('-', '/')}.`;
+      if (currentBannerFilter === 'GRAB') {
+        emptyMsg = `Chưa có khoản chạy xe Grab nào trong ${selectedMonth.replace('-', '/')}.`;
+      } else if (currentBannerFilter === 'OTHER') {
+        emptyMsg = `Chưa có khoản thu nhập nguồn khác trong ${selectedMonth.replace('-', '/')}.`;
+      }
       savingsTableBody.innerHTML = `
         <tr>
           <td colspan="7" class="text-center" style="padding: 18px; color: var(--text-muted);">
-            Chưa có ghi nhận tiết kiệm cho ${selectedMonth.replace('-', '/')}.
+            ${emptyMsg}
           </td>
         </tr>
       `;
@@ -839,9 +906,12 @@
     const dailyMap = {};
     filtered.forEach(item => {
       if (!dailyMap[item.date]) {
-        dailyMap[item.date] = { date: item.date, total: 0, items: [] };
+        dailyMap[item.date] = { date: item.date, total: 0, grabTotal: 0, items: [] };
       }
       dailyMap[item.date].total += item.amount;
+      if (isGrabCategory(item.category || parseEntryCategory(item))) {
+        dailyMap[item.date].grabTotal += item.amount;
+      }
       dailyMap[item.date].items.push(item);
     });
 
@@ -850,38 +920,36 @@
     sortedDates.forEach(dateKey => {
       const group = dailyMap[dateKey];
       const totalAmount = group.total;
-      const diff = totalAmount - dailyGoal;
-      const percent = ((diff / dailyGoal) * 100).toFixed(1);
 
-      let diffCell = '';
-      let statusCell = '';
-      let pctCell = '';
+      const hasGrab = group.items.some(it => isGrabCategory(it.category || parseEntryCategory(it)));
 
-      if (diff === 0) {
-        diffCell = `<span class="text-info">0 đ</span>`;
-        statusCell = `<span class="badge-pill pill-info">Đạt target</span>`;
-        pctCell = `<span class="text-info">0%</span>`;
-      } else if (diff > 0) {
-        diffCell = `<span class="text-success">+${formatShortNumber(diff)}</span>`;
-        statusCell = `<span class="badge-pill pill-success">Thừa</span>`;
-        pctCell = `<span class="text-success">+${percent}%</span>`;
-      } else {
-        diffCell = `<span class="text-danger">-${formatShortNumber(Math.abs(diff))}</span>`;
-        statusCell = `<span class="badge-pill pill-danger">Thiếu</span>`;
-        pctCell = `<span class="text-danger">${percent}%</span>`;
+      let diffCell = `<span style="color: var(--text-muted); font-size: 0.85rem;">-</span>`;
+      let statusCell = `<span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">Nguồn khác</span>`;
+      let pctCell = `<span style="color: var(--text-muted); font-size: 0.85rem;">-</span>`;
+
+      // Chỉ so sánh với mục tiêu 150k cho thu nhập Grab / Chạy xe
+      if (hasGrab && currentBannerFilter !== 'OTHER') {
+        const grabAmt = (currentBannerFilter === 'GRAB') ? totalAmount : group.grabTotal;
+        const diff = grabAmt - dailyGoal;
+        const percent = ((diff / dailyGoal) * 100).toFixed(1);
+
+        if (diff === 0) {
+          diffCell = `<span class="text-info">0 đ</span>`;
+          statusCell = `<span class="badge-pill pill-info">Đạt target</span>`;
+          pctCell = `<span class="text-info">0%</span>`;
+        } else if (diff > 0) {
+          diffCell = `<span class="text-success">+${formatShortNumber(diff)}</span>`;
+          statusCell = `<span class="badge-pill pill-success">Thừa</span>`;
+          pctCell = `<span class="text-success">+${percent}%</span>`;
+        } else {
+          diffCell = `<span class="text-danger">-${formatShortNumber(Math.abs(diff))}</span>`;
+          statusCell = `<span class="badge-pill pill-danger">Thiếu</span>`;
+          pctCell = `<span class="text-danger">${percent}%</span>`;
+        }
       }
 
       const dateParts = dateKey.split('-');
       const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-
-  function cleanUserNote(noteStr) {
-    if (!noteStr) return '';
-    let s = noteStr.replace(/^\[.*?\]\s*/, '').trim();
-    if (s === 'Thu nhập' || s === 'Thu nhập chạy app' || s === 'Thu nhập app') {
-      return '';
-    }
-    return s.replace(/^Thu nhập chạy app\s*/i, '').replace(/^Thu nhập\s*/i, '').trim();
-  }
 
       // Notes formatting (Chỉ hiển thị Tag Nguồn Thu + Ghi chú nếu có)
       let notesHtml = '';
@@ -1007,15 +1075,28 @@
     const dayMap = {};
     entries.forEach(e => {
       if (e.date && e.date.startsWith(selectedMonth)) {
-        const day = parseInt(e.date.split('-')[2]);
-        dayMap[day] = (dayMap[day] || 0) + e.amount;
+        let match = false;
+        if (currentBannerFilter === 'OTHER') {
+          match = !isGrabCategory(e.category || parseEntryCategory(e));
+        } else if (currentBannerFilter === 'ALL') {
+          match = true;
+        } else {
+          // Default: GRAB
+          match = isGrabCategory(e.category || parseEntryCategory(e));
+        }
+
+        if (match) {
+          const day = parseInt(e.date.split('-')[2]);
+          dayMap[day] = (dayMap[day] || 0) + e.amount;
+        }
       }
     });
 
+    const isOtherMode = (currentBannerFilter === 'OTHER');
     for (let d = 1; d <= daysInMonth; d++) {
       labels.push(`${d}`);
       actualData.push(dayMap[d] || 0);
-      targetData.push(dailyGoal);
+      targetData.push(isOtherMode ? 0 : dailyGoal);
     }
 
     const ctx = document.getElementById('savingsChart').getContext('2d');
@@ -1024,28 +1105,37 @@
       savingsChartInstance.destroy();
     }
 
+    const chartDatasetLabel = currentBannerFilter === 'GRAB'
+      ? 'Đã tiết kiệm (Grab)'
+      : (currentBannerFilter === 'OTHER' ? 'Đã tiết kiệm (Nguồn khác)' : 'Đã tiết kiệm (Tất cả)');
+
+    const datasets = [
+      {
+        label: chartDatasetLabel,
+        data: actualData,
+        backgroundColor: actualData.map(v => (!isOtherMode && v >= dailyGoal) ? 'rgba(16, 185, 129, 0.8)' : (v > 0 ? (isOtherMode ? 'rgba(168, 85, 247, 0.8)' : 'rgba(239, 68, 68, 0.8)') : 'rgba(148, 163, 184, 0.15)')),
+        borderRadius: 4
+      }
+    ];
+
+    if (!isOtherMode) {
+      datasets.push({
+        label: `Mục tiêu (${formatShortNumber(dailyGoal)})`,
+        data: targetData,
+        type: 'line',
+        borderColor: '#f59e0b',
+        borderWidth: 2,
+        borderDash: [4, 4],
+        pointRadius: 0,
+        fill: false
+      });
+    }
+
     savingsChartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: labels,
-        datasets: [
-          {
-            label: 'Đã tiết kiệm',
-            data: actualData,
-            backgroundColor: actualData.map(v => v >= dailyGoal ? 'rgba(16, 185, 129, 0.8)' : (v > 0 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(148, 163, 184, 0.15)')),
-            borderRadius: 4
-          },
-          {
-            label: `Mục tiêu (${formatShortNumber(dailyGoal)})`,
-            data: targetData,
-            type: 'line',
-            borderColor: '#f59e0b',
-            borderWidth: 2,
-            borderDash: [4, 4],
-            pointRadius: 0,
-            fill: false
-          }
-        ]
+        datasets: datasets
       },
       options: {
         responsive: true,

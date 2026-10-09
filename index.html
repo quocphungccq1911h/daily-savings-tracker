@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.2.2">
+  <link rel="stylesheet" href="styles.css?v=1.2.3">
 </head>
 <body>
   <div class="app-container">
@@ -211,6 +211,17 @@
 
       <!-- Tab Content 1: History Table -->
       <div id="tabHistoryContent" class="tab-content active">
+        <!-- Table Filter Pills synced with Dashboard Filter -->
+        <div class="table-filter-bar">
+          <div class="banner-filter-pills" id="tableFilterPills">
+            <button type="button" class="banner-filter-pill active" data-filter="GRAB">🛵 Grab / Chạy xe</button>
+            <button type="button" class="banner-filter-pill" data-filter="OTHER">💼 Nguồn Khác</button>
+            <button type="button" class="banner-filter-pill" data-filter="ALL">🌐 Tất Cả</button>
+          </div>
+          <div id="tableTargetSubtitle" class="table-target-subtitle">
+            🎯 Chỉ tiêu Grab: <strong>150.000 đ/ngày</strong>
+          </div>
+        </div>
         <div class="table-wrap">
           <table class="minimal-table">
             <thead>
@@ -833,6 +844,6 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.2.2"></script>
+  <script src="app.js?v=1.2.3"></script>
 </body>
 </html>
