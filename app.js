@@ -483,6 +483,7 @@
   const yearCardTitle = document.getElementById('yearCardTitle');
 
   let currentBannerFilter = 'GRAB';
+  let currentTableFilter = 'ALL';
 
   function isGrabCategory(cat) {
     if (!cat) return false;
@@ -493,35 +494,24 @@
   function setBannerFilter(filter) {
     if (!filter) return;
     currentBannerFilter = filter;
-    document.querySelectorAll('.banner-filter-pill').forEach(b => {
-      b.classList.toggle('active', b.dataset.filter === filter);
-    });
-
-    const tableTargetSubtitle = document.getElementById('tableTargetSubtitle');
-    if (tableTargetSubtitle) {
-      if (filter === 'GRAB') {
-        tableTargetSubtitle.innerHTML = '🎯 Chỉ tiêu Grab: <strong>150.000 đ/ngày</strong>';
-        tableTargetSubtitle.style.color = 'var(--primary)';
-        tableTargetSubtitle.style.borderColor = 'rgba(16, 185, 129, 0.25)';
-        tableTargetSubtitle.style.background = 'rgba(16, 185, 129, 0.1)';
-      } else if (filter === 'OTHER') {
-        tableTargetSubtitle.innerHTML = '💼 Nguồn Khác: <strong>Không áp target 150k</strong>';
-        tableTargetSubtitle.style.color = '#c084fc';
-        tableTargetSubtitle.style.borderColor = 'rgba(168, 85, 247, 0.25)';
-        tableTargetSubtitle.style.background = 'rgba(168, 85, 247, 0.1)';
-      } else {
-        tableTargetSubtitle.innerHTML = '🌐 Tất Cả: <strong>Toàn bộ nguồn thu nhập</strong>';
-        tableTargetSubtitle.style.color = '#38bdf8';
-        tableTargetSubtitle.style.borderColor = 'rgba(56, 189, 248, 0.25)';
-        tableTargetSubtitle.style.background = 'rgba(56, 189, 248, 0.1)';
-      }
+    if (bannerFilterPills) {
+      bannerFilterPills.querySelectorAll('.banner-filter-pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === filter);
+      });
     }
-
     renderDashboard();
-    renderTable();
-    if (typeof tabChartContent !== 'undefined' && tabChartContent && tabChartContent.style.display !== 'none') {
-      renderChart();
+  }
+
+  function setTableFilter(filter) {
+    if (!filter) return;
+    currentTableFilter = filter;
+    const tableFilterPillsEl = document.getElementById('tableFilterPills');
+    if (tableFilterPillsEl) {
+      tableFilterPillsEl.querySelectorAll('.table-filter-pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === filter);
+      });
     }
+    renderTable();
   }
 
   if (bannerFilterPills) {
@@ -538,11 +528,11 @@
   const tableFilterPills = document.getElementById('tableFilterPills');
   if (tableFilterPills) {
     tableFilterPills.addEventListener('click', (e) => {
-      const btn = e.target.closest('.banner-filter-pill');
+      const btn = e.target.closest('.table-filter-pill') || e.target.closest('.banner-filter-pill');
       if (!btn) return;
       const filter = btn.dataset.filter;
-      if (filter && filter !== currentBannerFilter) {
-        setBannerFilter(filter);
+      if (filter && filter !== currentTableFilter) {
+        setTableFilter(filter);
       }
     });
   }
@@ -698,53 +688,32 @@
     } else if (currentBannerFilter === 'OTHER') {
       statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
       statusPaceAmount.className = 'banner-val text-info';
-      statusPacePill.textContent = 'Thu nhập từ Lương, Thưởng và Nguồn khác tháng này';
+      statusPacePill.textContent = 'Tổng tiết kiệm từ Lương, Thưởng và Nguồn khác tháng này';
       if (bannerMetaText) bannerMetaText.innerHTML = `Tổng thu nhập nguồn khác toàn thời gian: <strong>${formatShortNumber(otherLifetimeTotal)}</strong>`;
     } else {
-      // ALL
-      if (isCurrentMonth) {
-        if (bannerMetaText) bannerMetaText.innerHTML = `Mục tiêu lũy kế đến nay: <strong>${formatShortNumber(cumulativeTargetToToday)}</strong>`;
-        const paceDiff = savedUpToToday - cumulativeTargetToToday;
-        if (paceDiff >= 0) {
-          statusPaceAmount.textContent = paceDiff === 0 ? 'Đúng Kế Hoạch' : `+${formatShortNumber(paceDiff)}`;
-          statusPaceAmount.className = 'banner-val text-success';
-          statusPacePill.textContent = paceDiff === 0 ? 'Vừa đủ mục tiêu đến nay' : `Dư +${formatShortNumber(paceDiff)} so với lũy kế`;
-        } else {
-          const diffAbs = Math.abs(paceDiff);
-          statusPaceAmount.textContent = `-${formatShortNumber(diffAbs)}`;
-          statusPaceAmount.className = 'banner-val text-danger';
-          statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với lũy kế`;
-        }
-      } else {
-        if (bannerMetaText) bannerMetaText.innerHTML = `Tổng mục tiêu tháng: <strong>${formatShortNumber(monthTarget)}</strong>`;
-        const monthDiff = monthTotalSaved - monthTarget;
-        if (monthDiff >= 0) {
-          statusPaceAmount.textContent = monthDiff === 0 ? 'Đạt 100% Target' : `+${formatShortNumber(monthDiff)}`;
-          statusPaceAmount.className = 'banner-val text-success';
-          statusPacePill.textContent = `🎉 Hoàn thành tháng! Dư +${formatShortNumber(monthDiff)}`;
-        } else {
-          const diffAbs = Math.abs(monthDiff);
-          statusPaceAmount.textContent = `-${formatShortNumber(diffAbs)}`;
-          statusPaceAmount.className = 'banner-val text-danger';
-          statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với mục tiêu tháng`;
-        }
+      // ALL (Matches Flutter OverviewBannerCard: displays total of all sources without comparing Other income against Grab 150k target)
+      statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
+      statusPaceAmount.className = 'banner-val text-success';
+      statusPacePill.textContent = 'Tổng tiết kiệm tất cả các nguồn tháng này';
+      if (bannerMetaText) {
+        bannerMetaText.innerHTML = `Trong tháng: <strong>🛵 Grab (${formatShortNumber(grabMonthTotal)})</strong> + <strong>💼 Khác (${formatShortNumber(otherMonthTotal)})</strong>`;
       }
     }
 
-    // 5. Cập nhật 2 Mini Cards (Tiến độ tháng & Năm)
+    // 5. Cập nhật 2 Mini Cards (Tiến độ tháng & Năm - CHỈ thống kê thu nhập chạy xe Grab, không cộng nguồn Khác)
     if (monthCardTitle) {
-      monthCardTitle.textContent = currentBannerFilter === 'GRAB' ? 'TIẾN ĐỘ THÁNG (GRAB)' : (currentBannerFilter === 'OTHER' ? 'TIẾN ĐỘ THÁNG (KHÁC)' : 'TIẾN ĐỘ THÁNG (TẤT CẢ)');
+      monthCardTitle.textContent = 'TIẾN ĐỘ THÁNG (GRAB)';
     }
     if (yearCardTitle) {
-      yearCardTitle.textContent = currentBannerFilter === 'GRAB' ? 'TIẾN ĐỘ CẢ NĂM (GRAB)' : (currentBannerFilter === 'OTHER' ? 'TIẾN ĐỘ CẢ NĂM (KHÁC)' : 'TIẾN ĐỘ CẢ NĂM (TẤT CẢ)');
+      yearCardTitle.textContent = 'TIẾN ĐỘ CẢ NĂM (GRAB)';
     }
 
-    monthSavedTotal.textContent = formatShortNumber(monthTotalSaved);
-    const monthPct = Math.min(100, Math.round((monthTotalSaved / monthTarget) * 100));
+    monthSavedTotal.textContent = formatShortNumber(grabMonthTotal);
+    const monthPct = Math.min(100, Math.round((grabMonthTotal / monthTarget) * 100));
     monthProgressBar.style.width = `${monthPct}%`;
     monthPercentText.textContent = `${monthPct}% mục tiêu`;
 
-    const remainingNeed = monthTarget - monthTotalSaved;
+    const remainingNeed = monthTarget - grabMonthTotal;
     if (remainingNeed <= 0) {
       monthRemainingNeed.textContent = 'Hoàn thành 100%! 🎉';
       monthDailyAdvice.innerHTML = 'Chúc mừng! Đã đạt mục tiêu tháng!';
@@ -763,14 +732,14 @@
       }
     }
 
-    // 6. Tính toán tiến độ cả năm
-    const activeYearEntries = activeEntries.filter(e => e.date && e.date.startsWith(`${currentYear}`));
+    // 6. Tính toán tiến độ cả năm (Chỉ tính thu nhập chạy xe Grab theo chuẩn App)
+    const grabYearEntries = grabEntries.filter(e => e.date && e.date.startsWith(`${currentYear}`));
     let yearTotalSaved = 0;
-    activeYearEntries.forEach(e => yearTotalSaved += (Number(e.amount) || 0));
+    grabYearEntries.forEach(e => yearTotalSaved += (Number(e.amount) || 0));
 
     let earliestDateInYear = new Date(currentYear, 0, 1);
-    if (activeYearEntries.length > 0) {
-      const dates = activeYearEntries.map(e => {
+    if (grabYearEntries.length > 0) {
+      const dates = grabYearEntries.map(e => {
         if (!e.date) return null;
         const parts = e.date.split('-');
         if (parts.length === 3) {
@@ -791,8 +760,7 @@
     const activeYearDays = Math.max(1, Math.round((endOfYear - earliestDateInYear) / (1000 * 60 * 60 * 24)) + 1);
     const yearTarget = activeYearDays * dailyGoal;
 
-    const activeLifetimeTotal = activeEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const realAvgRate = activeEntries.length === 0 ? dailyGoal : (activeLifetimeTotal / Math.max(1, activeEntries.length));
+    const realAvgRate = grabEntries.length === 0 ? dailyGoal : (grabLifetimeTotal / Math.max(1, grabEntries.length));
     const yearForecast = Math.round(realAvgRate * activeYearDays);
 
     yearSavedTotal.textContent = formatShortNumber(yearTotalSaved);
@@ -875,11 +843,28 @@
     const selectedMonth = filterMonthSelect.value;
     savingsTableBody.innerHTML = '';
 
-    // Filter source entries by currentBannerFilter
+    // 1. Lấy tất cả khoản thu trong tháng để tính tổng quan tháng trên thanh tiêu đề bảng
+    const allMonthEntries = entries.filter(e => e.date && e.date.startsWith(selectedMonth));
+    const monthGrabSum = allMonthEntries
+      .filter(e => isGrabCategory(e.category || parseEntryCategory(e)))
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const monthOtherSum = allMonthEntries
+      .filter(e => !isGrabCategory(e.category || parseEntryCategory(e)))
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const monthAllSum = monthGrabSum + monthOtherSum;
+
+    const tableTargetSubtitle = document.getElementById('tableTargetSubtitle');
+    if (tableTargetSubtitle) {
+      const [yStr, mStr] = (selectedMonth || '').split('-');
+      const mLabel = (yStr && mStr) ? `T${parseInt(mStr, 10)}/${yStr}` : selectedMonth;
+      tableTargetSubtitle.innerHTML = `📅 <strong>${mLabel}:</strong> 🛵 Grab: <strong>${formatShortNumber(monthGrabSum)}</strong> • 💼 Khác: <strong style="color:#c084fc;">${formatShortNumber(monthOtherSum)}</strong> • 💰 Tổng: <strong style="color:#fbbf24;">${formatShortNumber(monthAllSum)}</strong>`;
+    }
+
+    // 2. Lọc theo bộ lọc riêng của bảng (Mặc định currentTableFilter = 'ALL' để hiển thị đầy đủ cả các khoản Khác giống bản App)
     let sourceEntries = entries;
-    if (currentBannerFilter === 'GRAB') {
+    if (currentTableFilter === 'GRAB') {
       sourceEntries = entries.filter(e => isGrabCategory(e.category || parseEntryCategory(e)));
-    } else if (currentBannerFilter === 'OTHER') {
+    } else if (currentTableFilter === 'OTHER') {
       sourceEntries = entries.filter(e => !isGrabCategory(e.category || parseEntryCategory(e)));
     }
 
@@ -887,9 +872,9 @@
 
     if (filtered.length === 0) {
       let emptyMsg = `Chưa có ghi nhận tiết kiệm cho ${selectedMonth.replace('-', '/')}.`;
-      if (currentBannerFilter === 'GRAB') {
+      if (currentTableFilter === 'GRAB') {
         emptyMsg = `Chưa có khoản chạy xe Grab nào trong ${selectedMonth.replace('-', '/')}.`;
-      } else if (currentBannerFilter === 'OTHER') {
+      } else if (currentTableFilter === 'OTHER') {
         emptyMsg = `Chưa có khoản thu nhập nguồn khác trong ${selectedMonth.replace('-', '/')}.`;
       }
       savingsTableBody.innerHTML = `
@@ -902,15 +887,18 @@
       return;
     }
 
-    // Group by Date YYYY-MM-DD
+    // 3. Gom nhóm theo ngày YYYY-MM-DD (Giống HistoryTab trên Mobile App)
     const dailyMap = {};
     filtered.forEach(item => {
       if (!dailyMap[item.date]) {
-        dailyMap[item.date] = { date: item.date, total: 0, grabTotal: 0, items: [] };
+        dailyMap[item.date] = { date: item.date, total: 0, grabTotal: 0, otherTotal: 0, items: [] };
       }
-      dailyMap[item.date].total += item.amount;
+      const amt = Number(item.amount) || 0;
+      dailyMap[item.date].total += amt;
       if (isGrabCategory(item.category || parseEntryCategory(item))) {
-        dailyMap[item.date].grabTotal += item.amount;
+        dailyMap[item.date].grabTotal += amt;
+      } else {
+        dailyMap[item.date].otherTotal += amt;
       }
       dailyMap[item.date].items.push(item);
     });
@@ -919,17 +907,24 @@
 
     sortedDates.forEach(dateKey => {
       const group = dailyMap[dateKey];
-      const totalAmount = group.total;
+      // Sắp xếp để khoản Grab / Chạy xe luôn đứng đầu danh sách trong ngày
+      group.items.sort((a, b) => {
+        const aGrab = isGrabCategory(a.category || parseEntryCategory(a)) ? 1 : 0;
+        const bGrab = isGrabCategory(b.category || parseEntryCategory(b)) ? 1 : 0;
+        return bGrab - aGrab;
+      });
 
-      const hasGrab = group.items.some(it => isGrabCategory(it.category || parseEntryCategory(it)));
+      const totalAmount = group.total;
+      const hasGrab = group.grabTotal > 0;
+      const hasOther = group.otherTotal > 0;
 
       let diffCell = `<span style="color: var(--text-muted); font-size: 0.85rem;">-</span>`;
       let statusCell = `<span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">Nguồn khác</span>`;
       let pctCell = `<span style="color: var(--text-muted); font-size: 0.85rem;">-</span>`;
 
-      // Chỉ so sánh với mục tiêu 150k cho thu nhập Grab / Chạy xe
-      if (hasGrab && currentBannerFilter !== 'OTHER') {
-        const grabAmt = (currentBannerFilter === 'GRAB') ? totalAmount : group.grabTotal;
+      // Chỉ so sánh với mục tiêu 150k cho phần thu nhập Grab / Chạy xe (Không cộng thu nhập Khác vào target chạy xe)
+      if (hasGrab) {
+        const grabAmt = group.grabTotal;
         const diff = grabAmt - dailyGoal;
         const percent = ((diff / dailyGoal) * 100).toFixed(1);
 
@@ -951,7 +946,13 @@
       const dateParts = dateKey.split('-');
       const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
-      // Notes formatting (Chỉ hiển thị Tag Nguồn Thu + Ghi chú nếu có)
+      // Cột Số tiền: Hiển thị tổng ngày giống App, kèm chú thích tách bạch nếu ngày đó có cả Grab + Khác
+      let amountCellHtml = `<strong>${formatShortNumber(totalAmount)}</strong>`;
+      if (hasGrab && hasOther) {
+        amountCellHtml += `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500; margin-top: 2px;">🛵 Grab: <span style="color: #34d399;">${formatShortNumber(group.grabTotal)}</span> • 💼 Khác: <span style="color: #c084fc;">${formatShortNumber(group.otherTotal)}</span></div>`;
+      }
+
+      // Cột Ghi chú: Hiển thị Tag Nguồn Thu + Ghi chú (Ưu tiên Grab đứng trước, giống hệt bản App)
       let notesHtml = '';
       if (group.items.length === 1) {
         const itemCat = group.items[0].category || parseEntryCategory(group.items[0]);
@@ -960,7 +961,7 @@
       } else {
         const firstCat = group.items[0].category || parseEntryCategory(group.items[0]);
         const firstNote = cleanUserNote(group.items[0].note);
-        notesHtml = `<span class="badge-category-tag">${firstCat}</span>${firstNote ? `<span style="color: #38bdf8; font-size: 0.8rem; font-weight: 500; margin-left: 4px;">${firstNote}</span> ` : ''}<span style="color: var(--text-muted); font-size: 0.775rem;">(+${group.items.length - 1} khoản khác)</span>`;
+        notesHtml = `<span class="badge-category-tag">${firstCat}</span>${firstNote ? `<span style="color: #38bdf8; font-size: 0.8rem; font-weight: 500; margin-left: 4px;">${firstNote}</span> ` : ''}<span style="color: var(--text-muted); font-size: 0.775rem; margin-left: 4px;">(+${group.items.length - 1} khoản khác)</span>`;
       }
 
       // Action buttons
@@ -981,7 +982,7 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td data-label="Ngày"><strong>${formattedDate}</strong> ${group.items.length > 1 ? `<span class="badge-pill pill-info" style="font-size: 0.68rem; padding: 1px 5px; margin-left: 4px;">${group.items.length} khoản</span>` : ''}</td>
-        <td data-label="Số tiền" class="text-success"><strong>${formatShortNumber(totalAmount)}</strong></td>
+        <td data-label="Số tiền" class="text-success">${amountCellHtml}</td>
         <td data-label="So với 150k">${diffCell}</td>
         <td data-label="% Kỳ vọng">${pctCell}</td>
         <td data-label="Trạng thái">${statusCell}</td>
@@ -991,7 +992,7 @@
 
       savingsTableBody.appendChild(tr);
 
-      // Detail sub-row for multiple entries
+      // Detail sub-row for multiple entries (Hiển thị đầy đủ cả khoản Grab và khoản Khác trong ngày)
       if (group.items.length > 1) {
         const detailTr = document.createElement('tr');
         detailTr.id = `detail-${dateKey}`;
@@ -1000,7 +1001,11 @@
 
         const subItemsHtml = group.items.map((sub, idx) => {
           const cat = sub.category || parseEntryCategory(sub);
+          const isSubGrab = isGrabCategory(cat);
           const cleanNote = cleanUserNote(sub.note);
+          const scopeBadge = isSubGrab
+            ? `<span style="font-size: 0.68rem; color: #34d399; margin-left: 6px;">(Tính vào thống kê chạy xe)</span>`
+            : `<span style="font-size: 0.68rem; color: #c084fc; margin-left: 6px;">(Nguồn ngoài - Không tính vào chạy xe)</span>`;
           return `
           <div class="sub-entry-item">
             <div class="sub-entry-top">
@@ -1008,6 +1013,7 @@
                 <span class="sub-idx">#${idx + 1}</span>
                 <span class="badge-category-tag">${cat}</span>
                 <span class="sub-amount">${formatShortNumber(sub.amount)}</span>
+                ${scopeBadge}
               </div>
               <div class="sub-actions">
                 <button class="action-icon edit-btn" data-id="${sub.id}">✏️ Sửa</button>
@@ -1022,9 +1028,9 @@
         detailTr.innerHTML = `
           <td colspan="7" style="padding: 0; border-top: none;">
             <div class="sub-entries-container">
-              <div style="font-size: 0.775rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 0.775rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                 <span>📋 CHI TIẾT ${group.items.length} KHOẢN THU NHẬP NGÀY ${formattedDate}:</span>
-                <span style="font-size: 0.75rem; color: #34d399;">Tổng: ${formatShortNumber(totalAmount)}</span>
+                <span style="font-size: 0.75rem; color: #34d399;">Tổng ngày: ${formatShortNumber(totalAmount)} ${hasGrab && hasOther ? `(🛵 Grab: ${formatShortNumber(group.grabTotal)} | 💼 Khác: ${formatShortNumber(group.otherTotal)})` : ''}</span>
               </div>
               <div class="sub-entries-list">
                 ${subItemsHtml}
@@ -1072,31 +1078,21 @@
     const actualData = [];
     const targetData = [];
 
+    // Biểu đồ xu hướng ngày chỉ thống kê thu nhập chạy xe Grab (giống hệt ChartTab trên Mobile App)
     const dayMap = {};
     entries.forEach(e => {
       if (e.date && e.date.startsWith(selectedMonth)) {
-        let match = false;
-        if (currentBannerFilter === 'OTHER') {
-          match = !isGrabCategory(e.category || parseEntryCategory(e));
-        } else if (currentBannerFilter === 'ALL') {
-          match = true;
-        } else {
-          // Default: GRAB
-          match = isGrabCategory(e.category || parseEntryCategory(e));
-        }
-
-        if (match) {
+        if (isGrabCategory(e.category || parseEntryCategory(e))) {
           const day = parseInt(e.date.split('-')[2]);
           dayMap[day] = (dayMap[day] || 0) + e.amount;
         }
       }
     });
 
-    const isOtherMode = (currentBannerFilter === 'OTHER');
     for (let d = 1; d <= daysInMonth; d++) {
       labels.push(`${d}`);
       actualData.push(dayMap[d] || 0);
-      targetData.push(isOtherMode ? 0 : dailyGoal);
+      targetData.push(dailyGoal);
     }
 
     const ctx = document.getElementById('savingsChart').getContext('2d');
@@ -1105,21 +1101,14 @@
       savingsChartInstance.destroy();
     }
 
-    const chartDatasetLabel = currentBannerFilter === 'GRAB'
-      ? 'Đã tiết kiệm (Grab)'
-      : (currentBannerFilter === 'OTHER' ? 'Đã tiết kiệm (Nguồn khác)' : 'Đã tiết kiệm (Tất cả)');
-
     const datasets = [
       {
-        label: chartDatasetLabel,
+        label: 'Đã tiết kiệm (Grab)',
         data: actualData,
-        backgroundColor: actualData.map(v => (!isOtherMode && v >= dailyGoal) ? 'rgba(16, 185, 129, 0.8)' : (v > 0 ? (isOtherMode ? 'rgba(168, 85, 247, 0.8)' : 'rgba(239, 68, 68, 0.8)') : 'rgba(148, 163, 184, 0.15)')),
+        backgroundColor: actualData.map(v => v >= dailyGoal ? 'rgba(16, 185, 129, 0.8)' : (v > 0 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(148, 163, 184, 0.15)')),
         borderRadius: 4
-      }
-    ];
-
-    if (!isOtherMode) {
-      datasets.push({
+      },
+      {
         label: `Mục tiêu (${formatShortNumber(dailyGoal)})`,
         data: targetData,
         type: 'line',
@@ -1128,8 +1117,8 @@
         borderDash: [4, 4],
         pointRadius: 0,
         fill: false
-      });
-    }
+      }
+    ];
 
     savingsChartInstance = new Chart(ctx, {
       type: 'bar',
