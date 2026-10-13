@@ -264,7 +264,6 @@ class _TetrisGameDialogState extends State<TetrisGameDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dialogBg = Theme.of(context).cardColor;
-    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final secondaryTextColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
     final cardBorder = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
 

@@ -1,7 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/formatters.dart';
 
 /// 100% Exact Ho Ngoc Duc Astronomical Vietnamese Lunar Calendar Algorithm (UTC+7)
 class LunarUtils {
@@ -225,6 +223,55 @@ class LunarUtils {
     return list.contains(chiIdx);
   }
 
+  static const _zodiacEmojis = {
+    'Tý': '🐭', 'Sửu': '🐮', 'Dần': '🐯', 'Mão': '🐱',
+    'Thìn': '🐲', 'Tỵ': '🐍', 'Ngọ': '🐴', 'Mùi': '🐐',
+    'Thân': '🐵', 'Dậu': '🐔', 'Tuất': '🐶', 'Hợi': '🐷'
+  };
+
+  static String getZodiacEmoji(String chi) => _zodiacEmojis[chi] ?? '✨';
+
+  static List<Map<String, String>> getAuspiciousHoursDetailed(DateTime date) {
+    int jd = jdFromDate(date.day, date.month, date.year);
+    int chiIdx = (jd + 1) % 12;
+    const map = {
+      0: [{'c': 'Tý', 'r': '23h-01h'}, {'c': 'Sửu', 'r': '01h-03h'}, {'c': 'Mão', 'r': '05h-07h'}, {'c': 'Ngọ', 'r': '11h-13h'}, {'c': 'Thân', 'r': '15h-17h'}, {'c': 'Dậu', 'r': '17h-19h'}],
+      6: [{'c': 'Tý', 'r': '23h-01h'}, {'c': 'Sửu', 'r': '01h-03h'}, {'c': 'Mão', 'r': '05h-07h'}, {'c': 'Ngọ', 'r': '11h-13h'}, {'c': 'Thân', 'r': '15h-17h'}, {'c': 'Dậu', 'r': '17h-19h'}],
+      1: [{'c': 'Dần', 'r': '03h-05h'}, {'c': 'Mão', 'r': '05h-07h'}, {'c': 'Tỵ', 'r': '09h-11h'}, {'c': 'Thân', 'r': '15h-17h'}, {'c': 'Tuất', 'r': '19h-21h'}, {'c': 'Hợi', 'r': '21h-23h'}],
+      7: [{'c': 'Dần', 'r': '03h-05h'}, {'c': 'Mão', 'r': '05h-07h'}, {'c': 'Tỵ', 'r': '09h-11h'}, {'c': 'Thân', 'r': '15h-17h'}, {'c': 'Tuất', 'r': '19h-21h'}, {'c': 'Hợi', 'r': '21h-23h'}],
+      2: [{'c': 'Tý', 'r': '23h-01h'}, {'c': 'Sửu', 'r': '01h-03h'}, {'c': 'Thìn', 'r': '07h-09h'}, {'c': 'Tỵ', 'r': '09h-11h'}, {'c': 'Mùi', 'r': '13h-15h'}, {'c': 'Tuất', 'r': '19h-21h'}],
+      8: [{'c': 'Tý', 'r': '23h-01h'}, {'c': 'Sửu', 'r': '01h-03h'}, {'c': 'Thìn', 'r': '07h-09h'}, {'c': 'Tỵ', 'r': '09h-11h'}, {'c': 'Mùi', 'r': '13h-15h'}, {'c': 'Tuất', 'r': '19h-21h'}],
+      3: [{'c': 'Tý', 'r': '23h-01h'}, {'c': 'Dần', 'r': '03h-05h'}, {'c': 'Mão', 'r': '05h-07h'}, {'c': 'Ngọ', 'r': '11h-13h'}, {'c': 'Mùi', 'r': '13h-15h'}, {'c': 'Dậu', 'r': '17h-19h'}],
+      9: [{'c': 'Tý', 'r': '23h-01h'}, {'c': 'Dần', 'r': '03h-05h'}, {'c': 'Mão', 'r': '05h-07h'}, {'c': 'Ngọ', 'r': '11h-13h'}, {'c': 'Mùi', 'r': '13h-15h'}, {'c': 'Dậu', 'r': '17h-19h'}],
+      4: [{'c': 'Dần', 'r': '03h-05h'}, {'c': 'Thìn', 'r': '07h-09h'}, {'c': 'Tỵ', 'r': '09h-11h'}, {'c': 'Thân', 'r': '15h-17h'}, {'c': 'Dậu', 'r': '17h-19h'}, {'c': 'Hợi', 'r': '21h-23h'}],
+      10: [{'c': 'Dần', 'r': '03h-05h'}, {'c': 'Thìn', 'r': '07h-09h'}, {'c': 'Tỵ', 'r': '09h-11h'}, {'c': 'Thân', 'r': '15h-17h'}, {'c': 'Dậu', 'r': '17h-19h'}, {'c': 'Hợi', 'r': '21h-23h'}],
+      5: [{'c': 'Sửu', 'r': '01h-03h'}, {'c': 'Thìn', 'r': '07h-09h'}, {'c': 'Ngọ', 'r': '11h-13h'}, {'c': 'Mùi', 'r': '13h-15h'}, {'c': 'Tuất', 'r': '19h-21h'}, {'c': 'Hợi', 'r': '21h-23h'}],
+      11: [{'c': 'Sửu', 'r': '01h-03h'}, {'c': 'Thìn', 'r': '07h-09h'}, {'c': 'Ngọ', 'r': '11h-13h'}, {'c': 'Mùi', 'r': '13h-15h'}, {'c': 'Tuất', 'r': '19h-21h'}, {'c': 'Hợi', 'r': '21h-23h'}]
+    };
+    final hours = map[chiIdx] ?? map[0]!;
+    return hours.map((h) => {
+      'emoji': getZodiacEmoji(h['c']!),
+      'name': h['c']!,
+      'range': h['r']!
+    }).toList();
+  }
+
+  static String getDailyQuote(int dayNumber) {
+    const quotes = [
+      'Vạn sự khởi đầu nan, kiên tâm ắt thành đại nghiệp.',
+      'Có công mài sắt, có ngày nên kim.',
+      'Thuận vợ thuận chồng, tát biển Đông cũng cạn.',
+      'Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao.',
+      'Đi một ngày đàng, học một sàng khôn.',
+      'Ở hiền gặp lành, gieo nhân lành gặt quả ngọt.',
+      'Tâm an vạn sự an, trí sáng tương lai rạng.',
+      'Ăn quả nhớ kẻ trồng cây, uống nước nhớ nguồn.',
+      'Lời nói chẳng mất tiền mua, lựa lời mà nói cho vừa lòng nhau.',
+      'Trời không phụ lòng người có chí.'
+    ];
+    return quotes[(dayNumber - 1) % quotes.length];
+  }
+
   static Map<String, String> getTrucNgay(DateTime date, int lunarMonth) {
     int jd = jdFromDate(date.day, date.month, date.year);
     int chiIdx = (jd + 1) % 12;
@@ -277,6 +324,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
     final isToday = _selectedDate.year == now.year &&
         _selectedDate.month == now.month &&
         _selectedDate.day == now.day;
+    final isViewingCurrentMonth = _viewMonthDate.year == now.year && _viewMonthDate.month == now.month;
 
     final lunarList = LunarUtils.convertSolarToLunar(_selectedDate.day, _selectedDate.month, _selectedDate.year);
     final lunarDay = lunarList[0];
@@ -286,63 +334,72 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
     final canChiDayStr = LunarUtils.getCanChiDay(_selectedDate);
     final canChiMonthStr = LunarUtils.getCanChiMonth(lunarMonth, lunarYear);
     final canChiYearStr = LunarUtils.getCanChiYear(lunarYear);
-    final gioHoangDao = LunarUtils.getGioHoangDao(_selectedDate);
     final hyTai = LunarUtils.getHyThanTaiThan(_selectedDate);
-    final tietKhi = LunarUtils.getTietKhi(_selectedDate);
+    final tietKhiStr = LunarUtils.getTietKhi(_selectedDate);
+    final isHoangDaoDay = LunarUtils.isNgayHoangDao(_selectedDate, lunarMonth);
     final truc = LunarUtils.getTrucNgay(_selectedDate, lunarMonth);
+    final auspiciousHours = LunarUtils.getAuspiciousHoursDetailed(_selectedDate);
+    final dailyQuote = LunarUtils.getDailyQuote(_selectedDate.day);
 
-    final isMung1OrRam = lunarDay == 1 || lunarDay == 15;
-    final dayOfWeekStr = _selectedDate.weekday == 7 ? 'CHỦ NHẬT' : 'THỨ ${Formatters.formatDayOfWeek(_selectedDate).toUpperCase()}';
+    final isMung1 = (lunarDay == 1);
+    final isRam = (lunarDay == 15);
+    final isSpecialAuspicious = isMung1 || isRam;
+    final isSunday = _selectedDate.weekday == DateTime.sunday;
+    final dayNames = ['CHỦ NHẬT', 'THỨ HAI', 'THỨ BA', 'THỨ TƯ', 'THỨ NĂM', 'THỨ SÁU', 'THỨ BẢY'];
+    final dayOfWeekStr = _selectedDate.weekday == 7 ? 'CHỦ NHẬT' : dayNames[_selectedDate.weekday];
 
-    String lunarSpecialBadge = '';
-    if (lunarDay == 1) {
-      lunarSpecialBadge = '🌙 MÙNG 1 ÂM LỊCH • KHỞI ĐẦU MAY MẮN';
-    } else if (lunarDay == 15) {
-      lunarSpecialBadge = '🌕 NGÀY RẰM 15 ÂM LỊCH • NĂNG LƯỢNG AN LẠC';
+    String specialBadge = '';
+    if (isMung1) {
+      specialBadge = '🌙 MÙNG 1 ĐẦU THÁNG • KHỞI ĐẦU ĐẠI CÁT';
+    } else if (isRam) {
+      specialBadge = '🌕 NGÀY RẰM THÁNG $lunarMonth • VIÊN MÃN AN LẠC';
     }
 
-    // Grid calculation
     final daysInViewMonth = DateTime(_viewMonthDate.year, _viewMonthDate.month + 1, 0).day;
     final firstWeekday = DateTime(_viewMonthDate.year, _viewMonthDate.month, 1).weekday;
     final leadingPadding = (firstWeekday == 7) ? 6 : (firstWeekday - 1);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Premium Theme Color Palette
-    final dialogBg = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final cardBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
-    final cardBorder = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    // Luxury Theme Colors matching Web
+    final dialogBg = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final blocBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final blocBorder = isSpecialAuspicious
+        ? const Color(0xFFF59E0B)
+        : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0));
     final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final secondaryTextColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
-    final weekdayHeaderColor = isDark ? AppTheme.textMuted : const Color(0xFF475569);
-    final cellDefaultBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
-    final cellBorderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final secondaryTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final weekdayHeaderColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final cellBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final cellBorder = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
         decoration: BoxDecoration(
           color: dialogBg,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.6), width: 1.5),
+          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.6), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.2),
-              blurRadius: 28,
-              offset: const Offset(0, 12),
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 30,
+              offset: const Offset(0, 14),
             ),
           ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Premium Royal Header Banner
+                // 🏮 TOP ROYAL HEADER BANNER
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF7F1D1D), Color(0xFFB45309), Color(0xFFD97706)],
@@ -351,214 +408,423 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                     ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
-                        children: [
-                          Text('🗓️', style: TextStyle(fontSize: 20)),
-                          SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'LỊCH VẠN NIÊN ÂM - DƯƠNG',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.8,
-                                ),
+                      const Text('🗓️', style: TextStyle(fontSize: 22)),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'LỊCH VẠN NIÊN HOÀNG GIA',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
                               ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Tra cứu âm lịch & ngày hoàng đạo 🔮',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 10,
-                                ),
+                            ),
+                            SizedBox(height: 1),
+                            Text(
+                              'Tra cứu Âm - Dương lịch & Giờ Hoàng Đạo 🔮',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => Navigator.pop(context),
+                      InkWell(
+                        onTap: () => Navigator.pop(context),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.black26,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
                 Padding(
-                  padding: const EdgeInsets.all(14.0),
+                  padding: const EdgeInsets.all(12.0),
                   child: Column(
                     children: [
-                      // LUXURY TRADITIONAL DESK CALENDAR BLOCK (LỊCH LỐC CAO CẤP)
+                      // 🏮 TỜ LỊCH LỐC HOÀNG GIA (3D TEAR-OFF BLOC SHEET)
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: isMung1OrRam ? AppTheme.amberGoldLight : (isToday ? AppTheme.skyBlueAccent : cardBorder),
-                            width: (isMung1OrRam || isToday) ? 2 : 1.2,
-                          ),
+                          color: blocBg,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: blocBorder, width: isSpecialAuspicious ? 2 : 1.2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              color: isSpecialAuspicious
+                                  ? const Color(0xFFF59E0B).withValues(alpha: 0.25)
+                                  : Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
                         child: Column(
                           children: [
-                            // Metallic Binder Pins Decorative Top Bar
+                            // 🔩 Metallic Binder Mount with Gold Screws & Title
                             Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+                                gradient: LinearGradient(
+                                  colors: isDark
+                                      ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                                      : [const Color(0xFFE2E8F0), const Color(0xFFCBD5E1)],
+                                ),
                                 borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(16),
-                                  topRight: Radius.circular(16),
+                                  topLeft: Radius.circular(18),
+                                  topRight: Radius.circular(18),
+                                ),
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
                                 ),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
+                                  // Screw Left
                                   Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: const BoxDecoration(
-                                      color: AppTheme.amberGoldLight,
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
                                       shape: BoxShape.circle,
+                                      gradient: const RadialGradient(
+                                        colors: [Color(0xFFFDE68A), Color(0xFFB45309)],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.4),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Center(
+                                      child: Text('+', style: TextStyle(fontSize: 8, color: Colors.black87, fontWeight: FontWeight.bold, height: 1.0)),
                                     ),
                                   ),
+                                  // Mount Title
                                   Text(
                                     'THÁNG $lunarMonth ÂM LỊCH • NĂM $canChiYearStr',
                                     style: const TextStyle(
-                                      fontSize: 11.5,
+                                      fontSize: 11,
                                       fontWeight: FontWeight.w900,
-                                      color: AppTheme.amberGoldLight,
-                                      letterSpacing: 1.0,
+                                      color: Color(0xFFF59E0B),
+                                      letterSpacing: 1.1,
                                     ),
                                   ),
+                                  // Screw Right
                                   Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: const BoxDecoration(
-                                      color: AppTheme.amberGoldLight,
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
                                       shape: BoxShape.circle,
+                                      gradient: const RadialGradient(
+                                        colors: [Color(0xFFFDE68A), Color(0xFFB45309)],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.4),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Center(
+                                      child: Text('+', style: TextStyle(fontSize: 8, color: Colors.black87, fontWeight: FontWeight.bold, height: 1.0)),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
 
-                            // Dual Side-by-Side Calendar Card Content (Solar Left vs Lunar Right)
+                            // ☀️ HERO SOLAR DATE SECTION
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-                              child: Row(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Column(
                                 children: [
-                                  // LEFT SIDE: SOLAR DATE (DƯƠNG LỊCH)
-                                  Expanded(
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.skyBlueAccent.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Text(
-                                            '☀️ DƯƠNG LỊCH',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.skyBlueAccent,
-                                            ),
-                                          ),
+                                  // Status Row: Month Pill & Hoang Dao Pill
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          '${_selectedDate.day}',
+                                        child: Text(
+                                          'Tháng ${_selectedDate.month}/${_selectedDate.year}',
                                           style: TextStyle(
-                                            fontSize: 52,
-                                            fontWeight: FontWeight.w900,
-                                            height: 1.0,
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
                                             color: primaryTextColor,
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          dayOfWeekStr,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: _selectedDate.weekday == 7 ? Colors.redAccent : AppTheme.skyBlueAccent,
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isHoangDaoDay
+                                              ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                                              : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: isHoangDaoDay ? const Color(0xFFF59E0B) : Colors.transparent,
                                           ),
                                         ),
-                                        Text(
-                                          'Tháng ${_selectedDate.month}/${_selectedDate.year}',
-                                          style: TextStyle(fontSize: 10.5, color: secondaryTextColor),
+                                        child: Text(
+                                          isHoangDaoDay ? '✨ Ngày Hoàng Đạo' : 'Ngày Hắc Đạo',
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: isHoangDaoDay ? const Color(0xFFF59E0B) : secondaryTextColor,
+                                          ),
                                         ),
-                                      ],
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 4),
+
+                                  // HUGE SOLAR DAY NUMBER
+                                  Text(
+                                    '${_selectedDate.day}',
+                                    style: TextStyle(
+                                      fontSize: 68,
+                                      fontWeight: FontWeight.w900,
+                                      height: 1.0,
+                                      letterSpacing: -2,
+                                      color: isSunday ? const Color(0xFFEF4444) : primaryTextColor,
                                     ),
                                   ),
 
-                                  // Center Divider Line
+                                  const SizedBox(height: 6),
+
+                                  // Weekday Badge
                                   Container(
-                                    height: 90,
-                                    width: 1.2,
-                                    color: cardBorder,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isSunday
+                                          ? const Color(0xFFEF4444)
+                                          : (isDark ? const Color(0xFF38BDF8).withValues(alpha: 0.18) : const Color(0xFFE0F2FE)),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Text(
+                                      dayOfWeekStr,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.0,
+                                        color: isSunday ? Colors.white : const Color(0xFF0284C7),
+                                      ),
+                                    ),
                                   ),
 
-                                  // RIGHT SIDE: LUNAR DATE (ÂM LỊCH)
+                                  const SizedBox(height: 8),
+
+                                  // Daily Wisdom Quote
+                                  Text(
+                                    '"$dailyQuote"',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontStyle: FontStyle.italic,
+                                      color: secondaryTextColor,
+                                      height: 1.3,
+                                    ),
+                                  ),
+
+                                  if (specialBadge.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFFF59E0B)),
+                                      ),
+                                      child: Text(
+                                        specialBadge,
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFF59E0B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+
+                            // 🔮 3-COLUMN BÁT TỰ & GOLDEN LUNAR MEDALLION
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.8) : const Color(0xFFF1F5F9),
+                                border: Border.symmetric(
+                                  horizontal: BorderSide(color: cellBorder, width: 1),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  // Left: Tiết Khí & Hướng Thần
                                   Expanded(
                                     child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.amberGold.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Text(
-                                            '🌙 ÂM LỊCH',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.amberGoldLight,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          '$lunarDay',
-                                          style: TextStyle(
-                                            fontSize: 52,
-                                            fontWeight: FontWeight.w900,
-                                            height: 1.0,
-                                            color: AppTheme.amberGoldLight,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Ngày $canChiDayStr',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.amberGoldLight,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Tháng $canChiMonthStr ($lunarMonth Âm)',
-                                          style: TextStyle(fontSize: 10.5, color: secondaryTextColor),
+                                        Text('🌤️ Tiết: $tietKhiStr', style: TextStyle(fontSize: 10, color: secondaryTextColor)),
+                                        const SizedBox(height: 2),
+                                        Text('🧭 Hỷ: ${hyTai['hy']}', style: TextStyle(fontSize: 10, color: secondaryTextColor)),
+                                        const SizedBox(height: 2),
+                                        Text('💰 Tài: ${hyTai['tai']}', style: TextStyle(fontSize: 10, color: secondaryTextColor)),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Center: Golden Lunar Medallion
+                                  Container(
+                                    width: 72,
+                                    height: 72,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: const RadialGradient(
+                                        colors: [Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFB45309)],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
                                         ),
                                       ],
                                     ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '$lunarDay',
+                                          style: const TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w900,
+                                            color: Color(0xFF451A03),
+                                            height: 1.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 1),
+                                        Text(
+                                          'Tháng $lunarMonth Âm',
+                                          style: const TextStyle(
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF78350F),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Right: Can Chi Bát Tự
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text('Ngày: $canChiDayStr', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFF59E0B))),
+                                        const SizedBox(height: 2),
+                                        Text('Tháng: $canChiMonthStr', style: TextStyle(fontSize: 10, color: secondaryTextColor)),
+                                        const SizedBox(height: 2),
+                                        Text('Năm: $canChiYearStr', style: TextStyle(fontSize: 10, color: secondaryTextColor)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // 🌟 6 KHUNG GIỜ HOÀNG ĐẠO MINI-CARDS
+                            Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Center(
+                                    child: Text(
+                                      '🌟 6 KHUNG GIỜ HOÀNG ĐẠO KHỞI SỰ CÁT TƯỜNG',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFFF59E0B),
+                                        letterSpacing: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: auspiciousHours.length,
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      childAspectRatio: 2.2,
+                                      crossAxisSpacing: 6,
+                                      mainAxisSpacing: 6,
+                                    ),
+                                    itemBuilder: (ctx, idx) {
+                                      final h = auspiciousHours[idx];
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: cellBorder),
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(h['emoji']!, style: const TextStyle(fontSize: 10)),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  h['name']!,
+                                                  style: TextStyle(
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: primaryTextColor,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Text(
+                                              h['range']!,
+                                              style: TextStyle(
+                                                fontSize: 8.5,
+                                                fontWeight: FontWeight.w600,
+                                                color: secondaryTextColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -566,272 +832,295 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
 
-                      // Fengshui & Auspicious Details Card
+                      const SizedBox(height: 14),
+
+                      // 📅 INTERACTIVE MONTH CALENDAR PANEL (LỊCH THÁNG TƯƠNG TÁC)
                       Container(
-                        width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isMung1OrRam
-                              ? AppTheme.amberGold.withValues(alpha: 0.12)
-                              : cardBg,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isMung1OrRam ? AppTheme.amberGoldLight : cardBorder,
-                          ),
+                          color: blocBg,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: cellBorder),
                         ),
                         child: Column(
                           children: [
+                            // Month Nav Row
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Icon(Icons.auto_awesome, size: 14, color: AppTheme.amberGoldLight),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isMung1OrRam ? 'NGÀY ÂM LỊCH ĐẶC BIỆT' : 'CHI TIẾT PHONG THỦY & HOÀNG ĐẠO',
-                                  style: const TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.amberGoldLight,
-                                    letterSpacing: 0.8,
+                                InkWell(
+                                  onTap: () => _changeMonth(-1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.chevron_left_rounded, color: Color(0xFF38BDF8), size: 18),
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'THÁNG ${_viewMonthDate.month} - ${_viewMonthDate.year}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900,
+                                        color: primaryTextColor,
+                                        letterSpacing: 0.6,
+                                      ),
+                                    ),
+                                    if (!isToday || !isViewingCurrentMonth) ...[
+                                      const SizedBox(width: 8),
+                                      InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedDate = DateTime.now();
+                                            _viewMonthDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: const Color(0xFF0284C7)),
+                                          ),
+                                          child: const Text(
+                                            '📍 Hôm nay',
+                                            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                InkWell(
+                                  onTap: () => _changeMonth(1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.chevron_right_rounded, color: Color(0xFF38BDF8), size: 18),
                                   ),
                                 ),
                               ],
                             ),
-                            if (lunarSpecialBadge.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                lunarSpecialBadge,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.amberGoldLight,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 6),
-                            Divider(color: cardBorder, height: 10),
-                            Text(
-                              '🌟 Giờ Hoàng Đạo: $gioHoangDao',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 10.5, color: secondaryTextColor, height: 1.3),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '☯️ Trực ${truc['name']}: Nên ${truc['nghii']} • Kiêng: ${truc['ky']}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 10, color: AppTheme.amberGoldLight, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '🌤️ Tiết: $tietKhi • Hướng Hỷ Thần: ${hyTai['hy']} • Tài Thần: ${hyTai['tai']}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 9.5, color: secondaryTextColor),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
 
-                      // DUAL MONTH GRID SECTION (LỊCH THÁNG)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: cardBorder),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            InkWell(
-                              onTap: () => _changeMonth(-1),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.chevron_left_rounded, color: AppTheme.skyBlueAccent, size: 20),
-                              ),
-                            ),
-                            Text(
-                              'THÁNG ${_viewMonthDate.month}/${_viewMonthDate.year}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                                color: primaryTextColor,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () => _changeMonth(1),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.chevron_right_rounded, color: AppTheme.skyBlueAccent, size: 20),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
+                            const SizedBox(height: 10),
 
-                      // Weekday Titles Row (T2 -> CN format)
-                      Row(
-                        children: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((w) {
-                          return Expanded(
-                            child: Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Text(
-                                w,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w900,
-                                  color: w == 'CN' ? Colors.redAccent : weekdayHeaderColor,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Full Month Dual Calendar Grid (Solar Top + Lunar Bottom)
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: leadingPadding + daysInViewMonth,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          childAspectRatio: 1.05,
-                          crossAxisSpacing: 5,
-                          mainAxisSpacing: 5,
-                        ),
-                        itemBuilder: (ctx, index) {
-                          if (index < leadingPadding) {
-                            return const SizedBox();
-                          }
-                          final dayNum = index - leadingPadding + 1;
-                          final cellDate = DateTime(_viewMonthDate.year, _viewMonthDate.month, dayNum);
-
-                          final isCellSelected = cellDate.year == _selectedDate.year &&
-                              cellDate.month == _selectedDate.month &&
-                              cellDate.day == _selectedDate.day;
-
-                          final isCellToday = cellDate.year == now.year &&
-                              cellDate.month == now.month &&
-                              cellDate.day == now.day;
-
-                          final cellLunarList = LunarUtils.convertSolarToLunar(cellDate.day, cellDate.month, cellDate.year);
-                          final cellLunarDay = cellLunarList[0];
-                          final cellLunarMonth = cellLunarList[1];
-                          final isCellMung1OrRam = cellLunarDay == 1 || cellLunarDay == 15;
-                          final isCellHD = LunarUtils.isNgayHoangDao(cellDate, cellLunarMonth);
-
-                          return InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedDate = cellDate;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isCellSelected
-                                    ? AppTheme.skyBlueAccent
-                                    : (isCellToday
-                                        ? AppTheme.skyBlueAccent.withValues(alpha: 0.25)
-                                        : (isCellMung1OrRam ? AppTheme.amberGold.withValues(alpha: 0.15) : cellDefaultBg)),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isCellSelected
-                                      ? AppTheme.skyBlueAccent
-                                      : (isCellToday
-                                          ? AppTheme.skyBlueAccent
-                                          : (isCellMung1OrRam ? AppTheme.amberGoldLight : cellBorderColor)),
-                                  width: (isCellSelected || isCellToday) ? 1.5 : 1,
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Solar Day Number & Hoang Dao dot
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        '$dayNum',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: isCellSelected
-                                              ? Colors.black
-                                              : (cellDate.weekday == 7 ? Colors.redAccent : primaryTextColor),
-                                        ),
+                            // Weekday Titles (T2 -> CN)
+                            Row(
+                              children: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((w) {
+                                return Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      w,
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: w == 'CN' ? const Color(0xFFEF4444) : weekdayHeaderColor,
                                       ),
-                                      if (isCellHD) ...[
-                                        const SizedBox(width: 2),
-                                        Container(
-                                          width: 4,
-                                          height: 4,
-                                          decoration: BoxDecoration(
-                                            color: isCellSelected ? Colors.black87 : AppTheme.amberGoldLight,
-                                            shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            // Month Grid Cells
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: leadingPadding + daysInViewMonth,
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 7,
+                                childAspectRatio: 1.05,
+                                crossAxisSpacing: 4,
+                                mainAxisSpacing: 4,
+                              ),
+                              itemBuilder: (ctx, index) {
+                                if (index < leadingPadding) {
+                                  return const SizedBox();
+                                }
+                                final dayNum = index - leadingPadding + 1;
+                                final cellDate = DateTime(_viewMonthDate.year, _viewMonthDate.month, dayNum);
+
+                                final isCellSelected = cellDate.year == _selectedDate.year &&
+                                    cellDate.month == _selectedDate.month &&
+                                    cellDate.day == _selectedDate.day;
+
+                                final isCellToday = cellDate.year == now.year &&
+                                    cellDate.month == now.month &&
+                                    cellDate.day == now.day;
+
+                                final cellLunarList = LunarUtils.convertSolarToLunar(cellDate.day, cellDate.month, cellDate.year);
+                                final cellLunarDay = cellLunarList[0];
+                                final cellLunarMonth = cellLunarList[1];
+                                final isCellMung1OrRam = cellLunarDay == 1 || cellLunarDay == 15;
+                                final isCellHD = LunarUtils.isNgayHoangDao(cellDate, cellLunarMonth);
+
+                                final cellBgColor = isCellSelected
+                                    ? const Color(0xFF0284C7)
+                                    : (isCellToday
+                                        ? const Color(0xFF0284C7).withValues(alpha: 0.22)
+                                        : (isCellMung1OrRam ? const Color(0xFFF59E0B).withValues(alpha: 0.15) : cellBg));
+
+                                final cellBorderFinal = isCellSelected
+                                    ? const Color(0xFF38BDF8)
+                                    : (isCellToday
+                                        ? const Color(0xFF0284C7)
+                                        : (isCellMung1OrRam ? const Color(0xFFF59E0B) : cellBorder));
+
+                                return InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedDate = cellDate;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: cellBgColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: cellBorderFinal,
+                                        width: (isCellSelected || isCellToday) ? 1.5 : 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        // Solar number & Hoang Dao dot
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              '$dayNum',
+                                              style: TextStyle(
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: isCellSelected
+                                                    ? Colors.white
+                                                    : (cellDate.weekday == 7 ? const Color(0xFFEF4444) : primaryTextColor),
+                                              ),
+                                            ),
+                                            if (isCellHD) ...[
+                                              const SizedBox(width: 2),
+                                              Container(
+                                                width: 4,
+                                                height: 4,
+                                                decoration: BoxDecoration(
+                                                  color: isCellSelected ? const Color(0xFFFDE68A) : const Color(0xFFF59E0B),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 1),
+                                        // Lunar day
+                                        Text(
+                                          cellLunarDay == 1 ? '1/$cellLunarMonth' : (cellLunarDay == 15 ? '15🌕' : '$cellLunarDay'),
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: isCellMung1OrRam ? FontWeight.w900 : FontWeight.w500,
+                                            color: isCellSelected
+                                                ? Colors.white70
+                                                : (isCellMung1OrRam ? const Color(0xFFF59E0B) : secondaryTextColor),
                                           ),
                                         ),
                                       ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            // ☯️ FENGSHUI ADVISOR CARD (BẢNG TRA CỨU TRỰC NGÀY NÊN / KIÊNG)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: cellBorder),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '☯️ Trực ${truc['name']}:',
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFF59E0B),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Nên: ${truc['nghii']}',
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: primaryTextColor,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                  const SizedBox(height: 1),
-                                  // Lunar Day Subtext (Âm Lịch)
+                                  const SizedBox(height: 4),
+                                  Divider(color: cellBorder, height: 6),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        '🚫 Kiêng: ',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFFEF4444),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          '${truc['ky']}',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: secondaryTextColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
                                   Text(
-                                    cellLunarDay == 1 ? '1/$cellLunarMonth' : '$cellLunarDay',
-                                    style: TextStyle(
+                                    '🧭 Hướng Hỷ Thần: ${hyTai['hy']} • Tài Thần: ${hyTai['tai']}',
+                                    style: const TextStyle(
                                       fontSize: 9.5,
-                                      fontWeight: isCellMung1OrRam ? FontWeight.w900 : FontWeight.w500,
-                                      color: isCellSelected
-                                          ? Colors.black87
-                                          : (isCellMung1OrRam ? (isDark ? AppTheme.amberGoldLight : const Color(0xFFD97706)) : secondaryTextColor),
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0284C7),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Reset to Today Button
-                      if (!isToday)
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _selectedDate = DateTime.now();
-                                _viewMonthDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
-                              });
-                            },
-                            icon: const Icon(Icons.today_rounded, size: 16, color: AppTheme.skyBlueAccent),
-                            label: const Text('Quay Về Hôm Nay', style: TextStyle(color: AppTheme.skyBlueAccent, fontSize: 13, fontWeight: FontWeight.bold)),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppTheme.skyBlueAccent),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
+                          ],
                         ),
+                      ),
                     ],
                   ),
                 ),
