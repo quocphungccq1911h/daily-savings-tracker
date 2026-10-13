@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.2.4">
+  <link rel="stylesheet" href="styles.css?v=1.2.6">
 </head>
 <body>
   <div class="app-container">
@@ -204,7 +204,7 @@
         <div class="tab-buttons">
           <button class="tab-btn active" id="tabHistoryBtn">📋 Nhật ký tiết kiệm</button>
           <button class="tab-btn" id="tabChartBtn">📈 Biểu đồ xu hướng</button>
-          <button class="tab-btn" id="tabBadgesBtn">🏆 Huy hiệu thành tích <span id="badgesUnlockedBadge" class="badge-pill pill-info" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 3px;">0/8</span></button>
+          <button class="tab-btn" id="tabBadgesBtn">🏆 Huy hiệu thành tích <span id="badgesUnlockedBadge" class="badge-pill pill-info" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 3px;">0/20</span></button>
           <button class="tab-btn" id="tabWishlistBtn">🎯 Mục tiêu Wishlist <span id="wishlistCountBadge" class="badge-pill pill-info" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 3px;">0</span></button>
         </div>
       </div>
@@ -276,9 +276,21 @@
       <!-- Tab Content 4: Wishlist Target Goals -->
       <div id="tabWishlistContent" class="tab-content" style="display: none;">
         <div class="wishlist-tab-wrap" style="padding: 12px 4px;">
-          <div style="font-size: 0.825rem; font-weight: 700; color: #fbbf24; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="font-size: 0.825rem; font-weight: 700; color: #fbbf24; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span>🎯 MỤC TIÊU TÍCH LŨY & DỰ BÁO HOÀN THÀNH:</span>
-            <button id="openWishlistModalBtn" class="btn btn-primary" style="font-size: 0.75rem; padding: 6px 14px; border-radius: 20px;">➕ Thêm Mục Tiêu Mới</button>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" id="resetWishlistDefaultsBtn" class="btn btn-ghost" style="font-size: 0.72rem; padding: 5px 10px; border-radius: 18px;" title="Đặt lại 6 mục tiêu chuẩn">🔄 Bộ 6 mục tiêu chuẩn</button>
+              <button type="button" id="openWishlistModalBtn" class="btn btn-primary" style="font-size: 0.75rem; padding: 6px 14px; border-radius: 20px;">➕ Thêm Mục Tiêu Mới</button>
+            </div>
+          </div>
+          <div class="table-filter-bar" style="margin-bottom: 12px;">
+            <div class="banner-filter-pills" id="wishlistModePills">
+              <button type="button" class="banner-filter-pill wishlist-mode-pill active" data-mode="MILESTONE" title="So sánh tổng tích lũy hiện có với từng mục tiêu">📊 Theo tổng tài sản</button>
+              <button type="button" class="banner-filter-pill wishlist-mode-pill" data-mode="WATERFALL" title="Lấp đầy mục tiêu nhỏ trước, phần dư mới rót sang mục tiêu tiếp theo">🪣 Rót đầy từng hũ (Tuần tự)</button>
+            </div>
+            <div id="wishlistModeSubtitle" class="table-target-subtitle">
+              💡 So sánh trực tiếp tổng tích lũy với từng mục tiêu
+            </div>
           </div>
           <div class="wishlist-grid-tab" id="wishlistGridContainer">
             <!-- Rendered by JS -->
@@ -451,11 +463,14 @@ create policy "Users access own entries"
         <div class="form-group" style="margin-bottom: 14px;">
           <label style="margin-bottom: 6px; display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Biểu tượng đại diện</label>
           <div class="emoji-picker-wrap" id="emojiPickerWrap">
-            <button type="button" class="emoji-btn active" data-emoji="🏠">🏠 Xây nhà</button>
-            <button type="button" class="emoji-btn" data-emoji="🏞️">🏞️ Mua đất</button>
-            <button type="button" class="emoji-btn" data-emoji="🛡️">🛡️ Dự phòng</button>
+            <button type="button" class="emoji-btn active" data-emoji="🛡️">🛡️ Dự phòng</button>
+            <button type="button" class="emoji-btn" data-emoji="🪙">🪙 Mua vàng</button>
             <button type="button" class="emoji-btn" data-emoji="🛵">🛵 Xe máy</button>
+            <button type="button" class="emoji-btn" data-emoji="📜">📜 Sổ tiết kiệm</button>
+            <button type="button" class="emoji-btn" data-emoji="🏞️">🏞️ Mua đất</button>
+            <button type="button" class="emoji-btn" data-emoji="🏠">🏠 Xây nhà</button>
             <button type="button" class="emoji-btn" data-emoji="📱">📱 Điện thoại</button>
+            <button type="button" class="emoji-btn" data-emoji="💻">💻 Đồ nghề</button>
             <button type="button" class="emoji-btn" data-emoji="🚗">🚗 Ô tô</button>
             <button type="button" class="emoji-btn" data-emoji="✈️">✈️ Du lịch</button>
             <button type="button" class="emoji-btn" data-emoji="💍">💍 Gia đình</button>
@@ -844,6 +859,6 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.2.4"></script>
+  <script src="app.js?v=1.2.6"></script>
 </body>
 </html>
