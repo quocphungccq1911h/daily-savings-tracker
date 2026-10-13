@@ -29,12 +29,8 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
     final todayMidnight = DateTime(now.year, now.month, now.day);
 
     final double currentTotal = savingsState.lifetimeTotal;
-    final double dailyRate = savingsState.entries.isEmpty
-        ? savingsState.dailyGoal
-        : currentTotal / max(1, savingsState.entries.length);
-
     final double grabTotal = savingsState.grabLifetimeTotal;
-    final double grabDailyRate = savingsState.grabEntries.isEmpty
+    final double dailyRate = savingsState.grabEntries.isEmpty
         ? savingsState.dailyGoal
         : grabTotal / max(1, savingsState.grabEntries.length);
 
@@ -42,7 +38,7 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
     DateTime calcEstDate(double targetAmount) {
       if (currentTotal >= targetAmount) return now;
       final remainingNeeded = targetAmount - currentTotal;
-      final daysNeeded = (remainingNeeded / dailyRate).ceil();
+      final daysNeeded = (remainingNeeded / max(1.0, dailyRate)).ceil();
       return now.add(Duration(days: daysNeeded));
     }
 
@@ -50,10 +46,10 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
     final date50M = calcEstDate(50000000.0);
     final date100M = calcEstDate(100000000.0);
 
-    // Tính quỹ Tết Đinh Mùi (06/02/2027) từ nguồn Grab chạy xe
+    // Tính quỹ Tết từ tổng tích lũy hiện tại + tích lũy chạy xe mỗi ngày
     final tetDate = DateTime(2027, 2, 6);
     final daysToTet = max(0, tetDate.difference(todayMidnight).inDays);
-    final estTetFund = grabTotal + (daysToTet * grabDailyRate);
+    final estTetFund = currentTotal + (daysToTet * dailyRate);
 
     String strDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
@@ -88,14 +84,16 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
     final innerCardBg = isDark ? AppTheme.bgApp : const Color(0xFFF8FAFC);
 
     final double currentTotal = savingsState.lifetimeTotal;
-    final double dailyRate = savingsState.entries.isEmpty
+    final double grabTotal = savingsState.grabLifetimeTotal;
+    final double otherTotal = max(0.0, currentTotal - grabTotal);
+    final double dailyRate = savingsState.grabEntries.isEmpty
         ? savingsState.dailyGoal
-        : currentTotal / max(1, savingsState.entries.length);
+        : grabTotal / max(1, savingsState.grabEntries.length);
 
     DateTime calcEstDate(double targetAmount) {
       if (currentTotal >= targetAmount) return now;
       final remainingNeeded = targetAmount - currentTotal;
-      final daysNeeded = (remainingNeeded / dailyRate).ceil();
+      final daysNeeded = (remainingNeeded / max(1.0, dailyRate)).ceil();
       return now.add(Duration(days: daysNeeded));
     }
 
@@ -108,14 +106,10 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
     final daysToEndOfYear = max(0, endOfYear.difference(todayMidnight).inDays);
     final estYearFund = currentTotal + (daysToEndOfYear * dailyRate);
 
-    // Tính quỹ Tết Đinh Mùi (06/02/2027) từ nguồn Grab chạy xe
-    final grabTotal = savingsState.grabLifetimeTotal;
-    final grabDailyRate = savingsState.grabEntries.isEmpty
-        ? savingsState.dailyGoal
-        : grabTotal / max(1, savingsState.grabEntries.length);
+    // Tính quỹ Tết từ tổng tích lũy hiện tại + tích lũy chạy xe mỗi ngày
     final tetDate = DateTime(2027, 2, 6);
     final daysToTet = max(0, tetDate.difference(todayMidnight).inDays);
-    final estTetFund = grabTotal + (daysToTet * grabDailyRate);
+    final estTetFund = currentTotal + (daysToTet * dailyRate);
 
     String strDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
     int daysUntil(DateTime d) => max(0, d.difference(todayMidnight).inDays);
@@ -327,7 +321,12 @@ class _AiWealthPredictorDialogState extends ConsumerState<AiWealthPredictorDialo
                                     'Dự kiến quỹ ăn Tết: ${Formatters.formatShortNumber(estTetFund)}',
                                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: primaryTextColor),
                                   ),
-                                  Text('Còn đúng $daysToTet ngày nữa đến Tết!', style: TextStyle(fontSize: 10, color: secondaryTextColor)),
+                                  Text(
+                                    otherTotal > 0
+                                        ? 'Đã có ${Formatters.formatShortNumber(currentTotal)} (${Formatters.formatShortNumber(grabTotal)} chạy xe + ${Formatters.formatShortNumber(otherTotal)} khác) + tích lũy ${Formatters.formatShortNumber(dailyRate)}/ngày trong $daysToTet ngày tới'
+                                        : 'Còn đúng $daysToTet ngày nữa đến Tết!',
+                                    style: TextStyle(fontSize: 10, color: secondaryTextColor),
+                                  ),
                                 ],
                               ),
                             ),

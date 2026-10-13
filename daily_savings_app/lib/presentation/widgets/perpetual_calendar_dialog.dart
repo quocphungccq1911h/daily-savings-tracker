@@ -141,6 +141,111 @@ class LunarUtils {
     int chiIdx = (year - 4) % 12;
     return '${_can[canIdx < 0 ? canIdx + 10 : canIdx]} ${_chi[chiIdx < 0 ? chiIdx + 12 : chiIdx]}';
   }
+
+  static String getCanChiMonth(int lunarMonth, int lunarYear) {
+    int yearCanIdx = ((lunarYear - 4) % 10 + 10) % 10;
+    int startMonthCan = (yearCanIdx % 5) * 2 + 2;
+    int monthCanIdx = (startMonthCan + (lunarMonth - 1)) % 10;
+    int monthChiIdx = (lunarMonth + 1) % 12;
+    return '${_can[monthCanIdx]} ${_chi[monthChiIdx]}';
+  }
+
+  static String getGioHoangDao(DateTime date) {
+    int jd = jdFromDate(date.day, date.month, date.year);
+    int chiIdx = (jd + 1) % 12;
+    const gioMap = {
+      0: 'Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)',
+      6: 'Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)',
+      1: 'Dần (3-5), Mão (5-7), Tỵ (9-11), Thân (15-17), Tuất (19-21), Hợi (21-23)',
+      7: 'Dần (3-5), Mão (5-7), Tỵ (9-11), Thân (15-17), Tuất (19-21), Hợi (21-23)',
+      2: 'Tý (23-1), Sửu (1-3), Thìn (7-9), Tỵ (9-11), Mùi (13-15), Tuất (19-21)',
+      8: 'Tý (23-1), Sửu (1-3), Thìn (7-9), Tỵ (9-11), Mùi (13-15), Tuất (19-21)',
+      3: 'Tý (23-1), Dần (3-5), Mão (5-7), Ngọ (11-13), Mùi (13-15), Dậu (17-19)',
+      9: 'Tý (23-1), Dần (3-5), Mão (5-7), Ngọ (11-13), Mùi (13-15), Dậu (17-19)',
+      4: 'Dần (3-5), Thìn (7-9), Tỵ (9-11), Thân (15-17), Dậu (17-19), Hợi (21-23)',
+      10: 'Dần (3-5), Thìn (7-9), Tỵ (9-11), Thân (15-17), Dậu (17-19), Hợi (21-23)',
+      5: 'Sửu (1-3), Thìn (7-9), Ngọ (11-13), Mùi (13-15), Tuất (19-21), Hợi (21-23)',
+      11: 'Sửu (1-3), Thìn (7-9), Ngọ (11-13), Mùi (13-15), Tuất (19-21), Hợi (21-23)'
+    };
+    return gioMap[chiIdx] ?? 'Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)';
+  }
+
+  static Map<String, String> getHyThanTaiThan(DateTime date) {
+    int jd = jdFromDate(date.day, date.month, date.year);
+    int canIdx = (jd + 9) % 10;
+    const hyMap = ['Đông Bắc', 'Tây Bắc', 'Tây Nam', 'Chính Nam', 'Đông Nam', 'Đông Bắc', 'Tây Bắc', 'Tây Nam', 'Chính Nam', 'Đông Nam'];
+    const taiMap = ['Đông Nam', 'Đông Nam', 'Chính Đông', 'Chính Đông', 'Chính Bắc', 'Chính Nam', 'Tây Nam', 'Tây Nam', 'Chính Tây', 'Chính Bắc'];
+    return {'hy': hyMap[canIdx], 'tai': taiMap[canIdx]};
+  }
+
+  static String getTietKhi(DateTime date) {
+    int mm = date.month;
+    int dd = date.day;
+    const tietMap = [
+      {'m': 1, 'd': 6, 'name': 'Tiểu Hàn'}, {'m': 1, 'd': 21, 'name': 'Đại Hàn'},
+      {'m': 2, 'd': 4, 'name': 'Lập Xuân'}, {'m': 2, 'd': 19, 'name': 'Vũ Thủy'},
+      {'m': 3, 'd': 6, 'name': 'Kinh Trập'}, {'m': 3, 'd': 21, 'name': 'Xuân Phân'},
+      {'m': 4, 'd': 5, 'name': 'Thanh Minh'}, {'m': 4, 'd': 20, 'name': 'Cốc Vũ'},
+      {'m': 5, 'd': 6, 'name': 'Lập Hạ'}, {'m': 5, 'd': 21, 'name': 'Tiểu Mãn'},
+      {'m': 6, 'd': 6, 'name': 'Mang Chủng'}, {'m': 6, 'd': 21, 'name': 'Hạ Chí'},
+      {'m': 7, 'd': 7, 'name': 'Tiểu Thử'}, {'m': 7, 'd': 23, 'name': 'Đại Thử'},
+      {'m': 8, 'd': 8, 'name': 'Lập Thu'}, {'m': 8, 'd': 23, 'name': 'Xử Thử'},
+      {'m': 9, 'd': 8, 'name': 'Bạch Lộ'}, {'m': 9, 'd': 23, 'name': 'Thu Phân'},
+      {'m': 10, 'd': 8, 'name': 'Hàn Lộ'}, {'m': 10, 'd': 24, 'name': 'Sương Giáng'},
+      {'m': 11, 'd': 8, 'name': 'Lập Đông'}, {'m': 11, 'd': 22, 'name': 'Tiểu Tuyết'},
+      {'m': 12, 'd': 7, 'name': 'Đại Tuyết'}, {'m': 12, 'd': 22, 'name': 'Đông Chí'}
+    ];
+    String currentTiet = 'Hàn Lộ';
+    for (var t in tietMap) {
+      if (mm > (t['m'] as int) || (mm == t['m'] && dd >= (t['d'] as int))) {
+        currentTiet = t['name'] as String;
+      }
+    }
+    return currentTiet;
+  }
+
+  static bool isNgayHoangDao(DateTime date, int lunarMonth) {
+    int jd = jdFromDate(date.day, date.month, date.year);
+    int chiIdx = (jd + 1) % 12;
+    const hoangDaoMonths = {
+      1: [0, 1, 4, 7, 8, 11],
+      7: [0, 1, 4, 7, 8, 11],
+      2: [2, 3, 6, 9, 10, 1],
+      8: [2, 3, 6, 9, 10, 1],
+      3: [4, 5, 8, 11, 0, 3],
+      9: [4, 5, 8, 11, 0, 3],
+      4: [6, 7, 10, 1, 2, 5],
+      10: [6, 7, 10, 1, 2, 5],
+      5: [8, 9, 0, 3, 4, 7],
+      11: [8, 9, 0, 3, 4, 7],
+      6: [10, 11, 2, 5, 6, 9],
+      12: [10, 11, 2, 5, 6, 9]
+    };
+    final list = hoangDaoMonths[lunarMonth] ?? [0, 2, 4, 6, 8, 10];
+    return list.contains(chiIdx);
+  }
+
+  static Map<String, String> getTrucNgay(DateTime date, int lunarMonth) {
+    int jd = jdFromDate(date.day, date.month, date.year);
+    int chiIdx = (jd + 1) % 12;
+    int startChi = (lunarMonth + 1) % 12;
+    int trucIdx = ((chiIdx - startChi) % 12 + 12) % 12;
+    const trucs = [
+      {'name': 'Kiến', 'nghii': 'Xuất hành, khởi công, giao dịch', 'ky': 'Động thổ, kiện tụng'},
+      {'name': 'Trừ', 'nghii': 'Tẩy uế, dọn dẹp, cầu an', 'ky': 'Cưới hỏi, khai trương'},
+      {'name': 'Mãn', 'nghii': 'Cầu tài, mở kho, thu nợ', 'ky': 'Chôn cất, nhậm chức'},
+      {'name': 'Bình', 'nghii': 'Sửa chữa, giao dịch, hòa giải', 'ky': 'Đi xa, tranh chấp'},
+      {'name': 'Định', 'nghii': 'Giao kết, nhập trạch, ký hợp đồng', 'ky': 'Kiện tụng, xuất quân'},
+      {'name': 'Chấp', 'nghii': 'Xây dựng, đặt cọc, tích lũy', 'ky': 'Chuyển nhà, việc mạo hiểm'},
+      {'name': 'Phá', 'nghii': 'Phá dỡ, sửa đồ cũ, giải hạn', 'ky': 'Khai trương, ký kết'},
+      {'name': 'Nguy', 'nghii': 'Cúng tế, làm từ thiện, an phận', 'ky': 'Đi thuyền bè, leo cao'},
+      {'name': 'Thành', 'nghii': 'Khai trương, nhập học, khởi nghiệp', 'ky': 'Kiện tụng, tranh chấp'},
+      {'name': 'Thu', 'nghii': 'Thu nợ, gom góp tài sản, an cư', 'ky': 'Xuất hành, an táng'},
+      {'name': 'Khai', 'nghii': 'Mở tiệm, kết bạn, cầu tài lộc', 'ky': 'Động thổ, việc hung'},
+      {'name': 'Bế', 'nghii': 'Cất giữ tài sản, an cư', 'ky': 'Chữa bệnh, xuất hành'}
+    ];
+    return trucs[trucIdx];
+  }
 }
 
 class PerpetualCalendarDialog extends StatefulWidget {
@@ -179,7 +284,12 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
     final lunarYear = lunarList[2];
 
     final canChiDayStr = LunarUtils.getCanChiDay(_selectedDate);
+    final canChiMonthStr = LunarUtils.getCanChiMonth(lunarMonth, lunarYear);
     final canChiYearStr = LunarUtils.getCanChiYear(lunarYear);
+    final gioHoangDao = LunarUtils.getGioHoangDao(_selectedDate);
+    final hyTai = LunarUtils.getHyThanTaiThan(_selectedDate);
+    final tietKhi = LunarUtils.getTietKhi(_selectedDate);
+    final truc = LunarUtils.getTrucNgay(_selectedDate, lunarMonth);
 
     final isMung1OrRam = lunarDay == 1 || lunarDay == 15;
     final dayOfWeekStr = _selectedDate.weekday == 7 ? 'CHỦ NHẬT' : 'THỨ ${Formatters.formatDayOfWeek(_selectedDate).toUpperCase()}';
@@ -444,7 +554,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                                           ),
                                         ),
                                         Text(
-                                          'Tháng $lunarMonth Âm Lịch',
+                                          'Tháng $canChiMonthStr ($lunarMonth Âm)',
                                           style: TextStyle(fontSize: 10.5, color: secondaryTextColor),
                                         ),
                                       ],
@@ -504,9 +614,21 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                             const SizedBox(height: 6),
                             Divider(color: cardBorder, height: 10),
                             Text(
-                              '🌟 Giờ Hoàng Đạo: Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)',
+                              '🌟 Giờ Hoàng Đạo: $gioHoangDao',
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 10.5, color: secondaryTextColor, height: 1.3),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '☯️ Trực ${truc['name']}: Nên ${truc['nghii']} • Kiêng: ${truc['ky']}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 10, color: AppTheme.amberGoldLight, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '🌤️ Tiết: $tietKhi • Hướng Hỷ Thần: ${hyTai['hy']} • Tài Thần: ${hyTai['tai']}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 9.5, color: secondaryTextColor),
                             ),
                           ],
                         ),
@@ -613,6 +735,7 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                           final cellLunarDay = cellLunarList[0];
                           final cellLunarMonth = cellLunarList[1];
                           final isCellMung1OrRam = cellLunarDay == 1 || cellLunarDay == 15;
+                          final isCellHD = LunarUtils.isNgayHoangDao(cellDate, cellLunarMonth);
 
                           return InkWell(
                             onTap: () {
@@ -641,16 +764,33 @@ class _PerpetualCalendarDialogState extends State<PerpetualCalendarDialog> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  // Solar Day Number (Dương Lịch)
-                                  Text(
-                                    '$dayNum',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: isCellSelected
-                                          ? Colors.black
-                                          : (cellDate.weekday == 7 ? Colors.redAccent : primaryTextColor),
-                                    ),
+                                  // Solar Day Number & Hoang Dao dot
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '$dayNum',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: isCellSelected
+                                              ? Colors.black
+                                              : (cellDate.weekday == 7 ? Colors.redAccent : primaryTextColor),
+                                        ),
+                                      ),
+                                      if (isCellHD) ...[
+                                        const SizedBox(width: 2),
+                                        Container(
+                                          width: 4,
+                                          height: 4,
+                                          decoration: BoxDecoration(
+                                            color: isCellSelected ? Colors.black87 : AppTheme.amberGoldLight,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                   const SizedBox(height: 1),
                                   // Lunar Day Subtext (Âm Lịch)

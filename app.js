@@ -2488,6 +2488,146 @@ create policy "Public Access" on savings_entries for all using (true) with check
       return `${this._can[canIdx < 0 ? canIdx + 10 : canIdx]} ${this._chi[chiIdx < 0 ? chiIdx + 12 : chiIdx]}`;
     },
 
+    getCanChiMonth: function (lunarMonth, lunarYear) {
+      const yearCanIdx = ((lunarYear - 4) % 10 + 10) % 10;
+      const startMonthCan = (yearCanIdx % 5) * 2 + 2; // Tháng Giêng là Dần
+      const monthCanIdx = (startMonthCan + (lunarMonth - 1)) % 10;
+      const monthChiIdx = (lunarMonth + 1) % 12;
+      return `${this._can[monthCanIdx]} ${this._chi[monthChiIdx]}`;
+    },
+
+    getZodiacEmoji: function (chiName) {
+      const emojiMap = {
+        'Tý': '🐭', 'Sửu': '🐮', 'Dần': '🐯', 'Mão': '🐱',
+        'Thìn': '🐲', 'Tỵ': '🐍', 'Ngọ': '🐴', 'Mùi': '🐐',
+        'Thân': '🐵', 'Dậu': '🐔', 'Tuất': '🐶', 'Hợi': '🐷'
+      };
+      return emojiMap[chiName] || '✨';
+    },
+
+    getTietKhi: function (date) {
+      const mm = date.getMonth() + 1;
+      const dd = date.getDate();
+      const tietMap = [
+        { m: 1, d: 6, name: 'Tiểu Hàn' }, { m: 1, d: 21, name: 'Đại Hàn' },
+        { m: 2, d: 4, name: 'Lập Xuân' }, { m: 2, d: 19, name: 'Vũ Thủy' },
+        { m: 3, d: 6, name: 'Kinh Trập' }, { m: 3, d: 21, name: 'Xuân Phân' },
+        { m: 4, d: 5, name: 'Thanh Minh' }, { m: 4, d: 20, name: 'Cốc Vũ' },
+        { m: 5, d: 6, name: 'Lập Hạ' }, { m: 5, d: 21, name: 'Tiểu Mãn' },
+        { m: 6, d: 6, name: 'Mang Chủng' }, { m: 6, d: 21, name: 'Hạ Chí' },
+        { m: 7, d: 7, name: 'Tiểu Thử' }, { m: 7, d: 23, name: 'Đại Thử' },
+        { m: 8, d: 8, name: 'Lập Thu' }, { m: 8, d: 23, name: 'Xử Thử' },
+        { m: 9, d: 8, name: 'Bạch Lộ' }, { m: 9, d: 23, name: 'Thu Phân' },
+        { m: 10, d: 8, name: 'Hàn Lộ' }, { m: 10, d: 24, name: 'Sương Giáng' },
+        { m: 11, d: 8, name: 'Lập Đông' }, { m: 11, d: 22, name: 'Tiểu Tuyết' },
+        { m: 12, d: 7, name: 'Đại Tuyết' }, { m: 12, d: 22, name: 'Đông Chí' }
+      ];
+      let currentTiet = 'Hàn Lộ';
+      for (let i = 0; i < tietMap.length; i++) {
+        if (mm > tietMap[i].m || (mm === tietMap[i].m && dd >= tietMap[i].d)) {
+          currentTiet = tietMap[i].name;
+        }
+      }
+      return currentTiet;
+    },
+
+    getHyThanTaiThan: function (date) {
+      const jd = this.jdFromDate(date.getDate(), date.getMonth() + 1, date.getFullYear());
+      const canIdx = (jd + 9) % 10;
+      const hyMap = ['Đông Bắc', 'Tây Bắc', 'Tây Nam', 'Chính Nam', 'Đông Nam', 'Đông Bắc', 'Tây Bắc', 'Tây Nam', 'Chính Nam', 'Đông Nam'];
+      const taiMap = ['Đông Nam', 'Đông Nam', 'Chính Đông', 'Chính Đông', 'Chính Bắc', 'Chính Nam', 'Tây Nam', 'Tây Nam', 'Chính Tây', 'Chính Bắc'];
+      return { hy: hyMap[canIdx], tai: taiMap[canIdx] };
+    },
+
+    isNgayHoangDao: function (date, lunarMonth) {
+      const jd = this.jdFromDate(date.getDate(), date.getMonth() + 1, date.getFullYear());
+      const chiIdx = (jd + 1) % 12;
+      const hoangDaoMonths = {
+        1: [0, 1, 4, 7, 8, 11],
+        7: [0, 1, 4, 7, 8, 11],
+        2: [2, 3, 6, 9, 10, 1],
+        8: [2, 3, 6, 9, 10, 1],
+        3: [4, 5, 8, 11, 0, 3],
+        9: [4, 5, 8, 11, 0, 3],
+        4: [6, 7, 10, 1, 2, 5],
+        10: [6, 7, 10, 1, 2, 5],
+        5: [8, 9, 0, 3, 4, 7],
+        11: [8, 9, 0, 3, 4, 7],
+        6: [10, 11, 2, 5, 6, 9],
+        12: [10, 11, 2, 5, 6, 9]
+      };
+      const list = hoangDaoMonths[lunarMonth] || [0, 2, 4, 6, 8, 10];
+      return list.includes(chiIdx);
+    },
+
+    getTrucNgay: function (date, lunarMonth) {
+      const jd = this.jdFromDate(date.getDate(), date.getMonth() + 1, date.getFullYear());
+      const chiIdx = (jd + 1) % 12;
+      const startChi = (lunarMonth + 1) % 12;
+      const trucIdx = ((chiIdx - startChi) % 12 + 12) % 12;
+      const trucs = [
+        { name: 'Kiến', nghii: 'Xuất hành, khởi công, nạp tài', ky: 'Động thổ, kiện tụng' },
+        { name: 'Trừ', nghii: 'Tẩy uế, dọn dẹp, cầu an', ky: 'Cưới hỏi, khai trương' },
+        { name: 'Mãn', nghii: 'Cầu tài, mở kho, thu nợ', ky: 'Chôn cất, nhậm chức' },
+        { name: 'Bình', nghii: 'Sửa chữa, giao dịch, hòa giải', ky: 'Đi xa, tranh chấp' },
+        { name: 'Định', nghii: 'Giao kết, nhập trạch, ký hợp đồng', ky: 'Kiện tụng, xuất quân' },
+        { name: 'Chấp', nghii: 'Xây dựng, đặt cọc, tích lũy tiền', ky: 'Chuyển nhà, xuất tiền lớn' },
+        { name: 'Phá', nghii: 'Phá bỏ, sửa đồ cũ, giải hạn', ky: 'Khai trương, ký kết' },
+        { name: 'Nguy', nghii: 'Cúng tế, làm từ thiện, an phận', ky: 'Đi thuyền bè, leo cao' },
+        { name: 'Thành', nghii: 'Khai trương, nhập học, khởi nghiệp đại cát', ky: 'Kiện tụng, tranh chấp' },
+        { name: 'Thu', nghii: 'Thu nợ, gom góp tài sản, gửi tiết kiệm', ky: 'Xuất hành, an táng' },
+        { name: 'Khai', nghii: 'Mở tiệm, kết bạn, cầu tài lộc', ky: 'Động thổ, việc hung' },
+        { name: 'Bế', nghii: 'Cất giữ vàng bạc, tiết kiệm, an cư', ky: 'Chữa bệnh, xuất hành' }
+      ];
+      return trucs[trucIdx] || { name: 'Định', nghii: 'Giao kết, nạp tài', ky: 'Kiện tụng' };
+    },
+
+    getAuspiciousHoursDetailed: function (date) {
+      const jd = this.jdFromDate(date.getDate(), date.getMonth() + 1, date.getFullYear());
+      const chiIdx = (jd + 1) % 12;
+      const map = {
+        0: [{ c: 'Tý', r: '23h-01h' }, { c: 'Sửu', r: '01h-03h' }, { c: 'Mão', r: '05h-07h' }, { c: 'Ngọ', r: '11h-13h' }, { c: 'Thân', r: '15h-17h' }, { c: 'Dậu', r: '17h-19h' }],
+        6: [{ c: 'Tý', r: '23h-01h' }, { c: 'Sửu', r: '01h-03h' }, { c: 'Mão', r: '05h-07h' }, { c: 'Ngọ', r: '11h-13h' }, { c: 'Thân', r: '15h-17h' }, { c: 'Dậu', r: '17h-19h' }],
+        1: [{ c: 'Dần', r: '03h-05h' }, { c: 'Mão', r: '05h-07h' }, { c: 'Tỵ', r: '09h-11h' }, { c: 'Thân', r: '15h-17h' }, { c: 'Tuất', r: '19h-21h' }, { c: 'Hợi', r: '21h-23h' }],
+        7: [{ c: 'Dần', r: '03h-05h' }, { c: 'Mão', r: '05h-07h' }, { c: 'Tỵ', r: '09h-11h' }, { c: 'Thân', r: '15h-17h' }, { c: 'Tuất', r: '19h-21h' }, { c: 'Hợi', r: '21h-23h' }],
+        2: [{ c: 'Tý', r: '23h-01h' }, { c: 'Sửu', r: '01h-03h' }, { c: 'Thìn', r: '07h-09h' }, { c: 'Tỵ', r: '09h-11h' }, { c: 'Mùi', r: '13h-15h' }, { c: 'Tuất', r: '19h-21h' }],
+        8: [{ c: 'Tý', r: '23h-01h' }, { c: 'Sửu', r: '01h-03h' }, { c: 'Thìn', r: '07h-09h' }, { c: 'Tỵ', r: '09h-11h' }, { c: 'Mùi', r: '13h-15h' }, { c: 'Tuất', r: '19h-21h' }],
+        3: [{ c: 'Tý', r: '23h-01h' }, { c: 'Dần', r: '03h-05h' }, { c: 'Mão', r: '05h-07h' }, { c: 'Ngọ', r: '11h-13h' }, { c: 'Mùi', r: '13h-15h' }, { c: 'Dậu', r: '17h-19h' }],
+        9: [{ c: 'Tý', r: '23h-01h' }, { c: 'Dần', r: '03h-05h' }, { c: 'Mão', r: '05h-07h' }, { c: 'Ngọ', r: '11h-13h' }, { c: 'Mùi', r: '13h-15h' }, { c: 'Dậu', r: '17h-19h' }],
+        4: [{ c: 'Dần', r: '03h-05h' }, { c: 'Thìn', r: '07h-09h' }, { c: 'Tỵ', r: '09h-11h' }, { c: 'Thân', r: '15h-17h' }, { c: 'Dậu', r: '17h-19h' }, { c: 'Hợi', r: '21h-23h' }],
+        10: [{ c: 'Dần', r: '03h-05h' }, { c: 'Thìn', r: '07h-09h' }, { c: 'Tỵ', r: '09h-11h' }, { c: 'Thân', r: '15h-17h' }, { c: 'Dậu', r: '17h-19h' }, { c: 'Hợi', r: '21h-23h' }],
+        5: [{ c: 'Sửu', r: '01h-03h' }, { c: 'Thìn', r: '07h-09h' }, { c: 'Ngọ', r: '11h-13h' }, { c: 'Mùi', r: '13h-15h' }, { c: 'Tuất', r: '19h-21h' }, { c: 'Hợi', r: '21h-23h' }],
+        11: [{ c: 'Sửu', r: '01h-03h' }, { c: 'Thìn', r: '07h-09h' }, { c: 'Ngọ', r: '11h-13h' }, { c: 'Mùi', r: '13h-15h' }, { c: 'Tuất', r: '19h-21h' }, { c: 'Hợi', r: '21h-23h' }]
+      };
+      const hours = map[chiIdx] || map[0];
+      return hours.map(h => ({
+        emoji: this.getZodiacEmoji(h.c),
+        name: h.c,
+        range: h.r
+      }));
+    },
+
+    getDailyQuote: function (dayNumber) {
+      const quotes = [
+        "Vạn sự khởi đầu nan, kiên tâm ắt thành đại nghiệp.",
+        "Có công mài sắt, có ngày nên kim.",
+        "Thuận vợ thuận chồng, tát biển Đông cũng cạn.",
+        "Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao.",
+        "Đi một ngày đàng, học một sàng khôn.",
+        "Ở hiền gặp lành, gieo nhân lành gặt quả ngọt.",
+        "Tâm an vạn sự an, trí sáng tương lai rạng.",
+        "Ăn quả nhớ kẻ trồng cây, uống nước nhớ nguồn.",
+        "Lời nói chẳng mất tiền mua, lựa lời mà nói cho vừa lòng nhau.",
+        "Trời không phụ lòng người có chí."
+      ];
+      return quotes[(dayNumber - 1) % quotes.length];
+    },
+
+    getGioHoangDao: function (date) {
+      const hours = this.getAuspiciousHoursDetailed(date);
+      return hours.map(h => `${h.name} (${h.range})`).join(', ');
+    },
+
     getNextTetSolarDate: function (now) {
       for (let i = 0; i <= 400; i++) {
         const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
@@ -2572,7 +2712,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
       }
     }
 
-    // Tet Countdown Calculation (aligned with Mobile: Grab Lifetime + DaysLeft * GrabRate)
+    // Tet Countdown Calculation: Total Lifetime (Grab + Other) + DaysLeft * GrabRate
     const nextTet = LunarUtils.getNextTetSolarDate(todayMidnight);
     const msDiff = nextTet.getTime() - todayMidnight.getTime();
     const daysLeftToTet = Math.max(0, Math.round(msDiff / (1000 * 60 * 60 * 24)));
@@ -2583,15 +2723,25 @@ create policy "Public Access" on savings_entries for all using (true) with check
     const grabEntries = entries.filter(e => isGrabCategory(e.category));
     let grabTotal = 0;
     grabEntries.forEach(e => grabTotal += (e.amount || 0));
+    let otherTotal = 0;
+    entries.filter(e => !isGrabCategory(e.category)).forEach(e => otherTotal += (e.amount || 0));
+    const totalCurrentSavings = grabTotal + otherTotal;
+
     const grabRate = grabEntries.length === 0 ? dailyGoal : (grabTotal / grabEntries.length);
-    const estTetFund = grabTotal + (daysLeftToTet * grabRate);
+    const estTetFund = totalCurrentSavings + (daysLeftToTet * grabRate);
 
     if (tetCanChiYearDisplay) tetCanChiYearDisplay.textContent = tetYearCanChi;
     if (tetMung1DateDisplay) tetMung1DateDisplay.textContent = `Mùng 1: ${nextTet.getDate()}/${nextTet.getMonth() + 1}`;
     if (tetDaysLeftDisplay) tetDaysLeftDisplay.textContent = daysLeftToTet;
     if (tetEstimatedFundDisplay) tetEstimatedFundDisplay.textContent = formatCurrency(Math.round(estTetFund));
     if (tetMotivationFooter) {
-      tetMotivationFooter.innerHTML = `💰 Đã có <strong>${formatCurrency(grabTotal)}</strong> + tích lũy <strong>${formatCurrency(Math.round(grabRate))}/ngày</strong> trong ${daysLeftToTet} ngày tới để đón Tết ${tetYearCanChi} rực rỡ!`;
+      const breakdown = otherTotal > 0
+        ? ` (🛵 ${formatCurrency(grabTotal)} + 💼 ${formatCurrency(otherTotal)})`
+        : '';
+      tetMotivationFooter.innerHTML = `
+        <div style="margin-bottom: 2px;">💰 Đã có: <strong>${formatCurrency(totalCurrentSavings)}</strong>${breakdown}</div>
+        <div>🚀 Tích lũy <strong>${formatCurrency(Math.round(grabRate))}/ngày</strong> trong ${daysLeftToTet} ngày tới!</div>
+      `;
     }
   }
 
@@ -2963,21 +3113,32 @@ create policy "Public Access" on savings_entries for all using (true) with check
     const viewM = calViewMonth.getMonth();
 
     const isToday = (sel.getFullYear() === now.getFullYear() && sel.getMonth() === now.getMonth() && sel.getDate() === now.getDate());
+    const isViewingCurrentMonth = (viewY === now.getFullYear() && viewM === now.getMonth());
 
     const lunarList = LunarUtils.convertSolarToLunar(sel.getDate(), sel.getMonth() + 1, sel.getFullYear());
     const lDay = lunarList[0];
     const lMonth = lunarList[1];
     const lYear = lunarList[2];
     const canChiDayStr = LunarUtils.getCanChiDay(sel);
+    const canChiMonthStr = LunarUtils.getCanChiMonth(lMonth, lYear);
     const canChiYearStr = LunarUtils.getCanChiYear(lYear);
+    const tietKhiStr = LunarUtils.getTietKhi(sel);
+    const hyTai = LunarUtils.getHyThanTaiThan(sel);
+    const isHoangDaoDay = LunarUtils.isNgayHoangDao(sel, lMonth);
+    const trucData = LunarUtils.getTrucNgay(sel, lMonth);
+    const auspiciousHours = LunarUtils.getAuspiciousHoursDetailed(sel);
+    const dailyQuote = LunarUtils.getDailyQuote(sel.getDate());
 
-    const isMung1OrRam = (lDay === 1 || lDay === 15);
+    const isMung1 = (lDay === 1);
+    const isRam = (lDay === 15);
+    const isSpecialAuspicious = isMung1 || isRam;
     const dayNames = ['CHỦ NHẬT', 'THỨ HAI', 'THỨ BA', 'THỨ TƯ', 'THỨ NĂM', 'THỨ SÁU', 'THỨ BẢY'];
     const dayOfWeekStr = dayNames[sel.getDay()];
+    const isSunday = (sel.getDay() === 0);
 
     let specialBadge = '';
-    if (lDay === 1) specialBadge = '🌙 MÙNG 1 ÂM LỊCH • KHỞI ĐẦU MAY MẮN';
-    else if (lDay === 15) specialBadge = '🌕 NGÀY RẰM 15 ÂM LỊCH • NĂNG LƯỢNG AN LẠC';
+    if (isMung1) specialBadge = '🌙 MÙNG 1 ĐẦU THÁNG • KHỞI ĐẦU ĐẠI CÁT';
+    else if (isRam) specialBadge = `🌕 NGÀY RẰM THÁNG ${lMonth} • VIÊN MÃN AN LẠC`;
 
     const daysInMonth = new Date(viewY, viewM + 1, 0).getDate();
     const firstDayIndex = new Date(viewY, viewM, 1).getDay(); // 0=Sun, 1=Mon...
@@ -2985,91 +3146,159 @@ create policy "Public Access" on savings_entries for all using (true) with check
 
     let gridHtml = '';
     for (let p = 0; p < leadingPadding; p++) {
-      gridHtml += '<div style="aspect-ratio: 1; opacity: 0;"></div>';
+      gridHtml += '<div style="height: 56px; opacity: 0; pointer-events: none;"></div>';
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const cellDate = new Date(viewY, viewM, d);
       const isCellSel = (cellDate.getFullYear() === sel.getFullYear() && cellDate.getMonth() === sel.getMonth() && cellDate.getDate() === sel.getDate());
       const isCellToday = (cellDate.getFullYear() === now.getFullYear() && cellDate.getMonth() === now.getMonth() && cellDate.getDate() === now.getDate());
+      const cellDayOfWeek = cellDate.getDay();
+      const isCellSun = (cellDayOfWeek === 0);
+      const isCellSat = (cellDayOfWeek === 6);
 
       const cLunar = LunarUtils.convertSolarToLunar(d, viewM + 1, viewY);
       const cLDay = cLunar[0];
       const cLMonth = cLunar[1];
       const cIsMung1OrRam = (cLDay === 1 || cLDay === 15);
+      const cIsHD = LunarUtils.isNgayHoangDao(cellDate, cLMonth);
 
-      let bg = 'rgba(15, 23, 42, 0.5)';
-      let border = '1px solid var(--border-color)';
-      let color = 'var(--text-main)';
+      const classes = ['vn-cal-day-cell'];
+      if (isCellSel) classes.push('cell-selected');
+      if (isCellToday) classes.push('cell-today');
+      if (cIsMung1OrRam) classes.push('cell-mung1-ram');
+      if (isCellSun) classes.push('is-sunday');
+      if (isCellSat) classes.push('is-saturday');
 
-      if (isCellSel) {
-        bg = '#38bdf8';
-        border = '1.5px solid #38bdf8';
-        color = '#000000';
-      } else if (isCellToday) {
-        bg = 'rgba(56, 189, 248, 0.2)';
-        border = '1.5px solid #38bdf8';
-      } else if (cIsMung1OrRam) {
-        bg = 'rgba(251, 191, 36, 0.15)';
-        border = '1px solid #fbbf24';
-      }
+      const lunarLabel = cLDay === 1 ? `${cLDay}/${cLMonth}` : (cLDay === 15 ? '15🌕' : cLDay);
 
       gridHtml += `
-        <div class="cal-cell" data-day="${d}" style="aspect-ratio: 1; border-radius: 8px; background: ${bg}; border: ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;">
-          <span style="font-size: 0.85rem; font-weight: 800; color: ${isCellSel ? '#000' : (cellDate.getDay() === 0 ? '#f87171' : color)}; line-height: 1;">${d}</span>
-          <span style="font-size: 0.625rem; font-weight: 700; color: ${isCellSel ? '#1e293b' : (cIsMung1OrRam ? '#fbbf24' : 'var(--text-muted)')}; margin-top: 2px;">${cLDay === 1 ? `1/${cLMonth}` : cLDay}</span>
+        <div class="${classes.join(' ')}" data-day="${d}" title="Ngày ${d}/${viewM + 1}/${viewY} (Âm: ${cLDay}/${cLMonth}) - ${cIsHD ? 'Ngày Hoàng Đạo' : 'Ngày Hắc Đạo'}">
+          <div class="vn-cal-cell-top">
+            <span class="vn-cal-solar-num">${d}</span>
+            ${cIsHD ? '<span class="vn-cal-hd-dot" title="Ngày Hoàng Đạo"></span>' : ''}
+          </div>
+          <div class="vn-cal-cell-bottom" style="justify-content: flex-end;">
+            <span class="vn-cal-lunar-num ${cIsMung1OrRam ? 'is-special' : ''}">${lunarLabel}</span>
+          </div>
         </div>
       `;
     }
 
+    // Build the 6 Zodiac Hour Mini-Cards
+    const hoursHtml = auspiciousHours.map(h => `
+      <div class="vn-hour-pill">
+        ${h.emoji} <strong>${h.name}</strong>
+        <span>${h.range}</span>
+      </div>
+    `).join('');
+
     calendarModalContent.innerHTML = `
-      <!-- DUAL DESK CALENDAR BLOCK -->
-      <div style="background: rgba(15, 23, 42, 0.8); border: 1.5px solid ${isMung1OrRam ? '#fbbf24' : (isToday ? '#38bdf8' : 'var(--border-color)')}; border-radius: 16px; overflow: hidden; margin-bottom: 12px;">
-        <div style="background: rgba(0, 0, 0, 0.4); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
-          <span style="font-size: 0.7rem; font-weight: 800; color: #fbbf24; letter-spacing: 0.05em;">THÁNG ${lMonth} ÂM LỊCH • NĂM ${canChiYearStr}</span>
-          <span style="font-size: 0.65rem; color: var(--text-muted);">Hoàng Đạo</span>
-        </div>
-        <div style="display: flex; padding: 14px; align-items: center; text-align: center;">
-          <!-- SOLAR LEFT -->
-          <div style="flex: 1;">
-            <div style="display: inline-block; font-size: 0.65rem; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 2px 6px; border-radius: 6px; margin-bottom: 4px;">☀️ DƯƠNG LỊCH</div>
-            <div style="font-size: 2.8rem; font-weight: 900; line-height: 1; color: var(--text-main);">${sel.getDate()}</div>
-            <div style="font-size: 0.775rem; font-weight: 800; color: ${sel.getDay() === 0 ? '#f87171' : '#38bdf8'}; margin-top: 4px;">${dayOfWeekStr}</div>
-            <div style="font-size: 0.7rem; color: var(--text-muted);">Tháng ${sel.getMonth() + 1}/${sel.getFullYear()}</div>
+      <div class="vn-cal-master-layout">
+        <!-- 🏮 LEFT COLUMN: TỜ LỊCH LỐC HOÀNG GIA (3D TEAR-OFF BLOC SHEET) -->
+        <div class="vn-bloc-sheet ${isSpecialAuspicious ? 'is-auspicious-special' : ''}">
+          <!-- Metallic Top Binder Mount with Gold Screws & Perforated Line -->
+          <div class="vn-bloc-top-mount">
+            <span class="vn-bloc-screw"></span>
+            <span class="vn-bloc-mount-title">THÁNG ${lMonth} ÂM LỊCH • NĂM ${canChiYearStr}</span>
+            <span class="vn-bloc-screw"></span>
           </div>
-          <!-- DIVIDER -->
-          <div style="width: 1px; height: 75px; background: var(--border-color); margin: 0 8px;"></div>
-          <!-- LUNAR RIGHT -->
-          <div style="flex: 1;">
-            <div style="display: inline-block; font-size: 0.65rem; font-weight: 700; color: #fbbf24; background: rgba(251, 191, 36, 0.15); padding: 2px 6px; border-radius: 6px; margin-bottom: 4px;">🌙 ÂM LỊCH</div>
-            <div style="font-size: 2.8rem; font-weight: 900; line-height: 1; color: #fbbf24;">${lDay}</div>
-            <div style="font-size: 0.775rem; font-weight: 800; color: #fbbf24; margin-top: 4px;">Ngày ${canChiDayStr}</div>
-            <div style="font-size: 0.7rem; color: var(--text-muted);">Tháng ${lMonth} Âm Lịch</div>
+
+          <!-- Hero Solar Date Area -->
+          <div class="vn-bloc-hero">
+            <div class="vn-bloc-hero-Watermark">❂</div>
+            <div class="vn-bloc-status-row">
+              <span class="vn-bloc-solar-month-pill">Tháng ${sel.getMonth() + 1}/${sel.getFullYear()}</span>
+              <span class="vn-bloc-hoangdao-pill ${isHoangDaoDay ? 'pill-hoangdao' : 'pill-hacdao'}">
+                ${isHoangDaoDay ? '✨ Ngày Hoàng Đạo' : 'Ngày Hắc Đạo'}
+              </span>
+            </div>
+
+            <div class="vn-bloc-big-solar ${isSunday ? 'is-sunday-num' : ''}">${sel.getDate()}</div>
+            <div class="vn-bloc-weekday-badge ${isSunday ? 'is-sunday-badge' : ''}">${dayOfWeekStr}</div>
+            <div class="vn-bloc-quote">"${dailyQuote}"</div>
+
+            ${specialBadge ? `<div class="vn-bloc-special-banner">${specialBadge}</div>` : ''}
+          </div>
+
+          <!-- 3-Column Traditional Bát Tự & Lunar Medallion Section -->
+          <div class="vn-bloc-battu-grid">
+            <!-- Left: Hướng & Tiết Khí -->
+            <div class="vn-battu-col-left">
+              <div>🌤️ Tiết: <strong>${tietKhiStr}</strong></div>
+              <div>🧭 Hỷ: <strong>${hyTai.hy}</strong></div>
+              <div>💰 Tài: <strong>${hyTai.tai}</strong></div>
+            </div>
+
+            <!-- Center: Golden Lunar Medallion -->
+            <div class="vn-lunar-medallion">
+              <div class="vn-medallion-day">${lDay}</div>
+              <div class="vn-medallion-month">Tháng ${lMonth} Âm</div>
+            </div>
+
+            <!-- Right: Bát Tự Can Chi -->
+            <div class="vn-battu-col-right">
+              <div>Ngày: <strong>${canChiDayStr}</strong></div>
+              <div>Tháng: <strong>${canChiMonthStr}</strong></div>
+              <div>Năm: <strong>${canChiYearStr}</strong></div>
+            </div>
+          </div>
+
+          <!-- Bottom: 6 Auspicious Hours Grid -->
+          <div class="vn-bloc-hours-section">
+            <div class="vn-hours-title">🌟 6 KHUNG GIỜ HOÀNG ĐẠO KHỞI SỰ CÁT TƯỜNG</div>
+            <div class="vn-hours-grid">
+              ${hoursHtml}
+            </div>
           </div>
         </div>
-      </div>
 
-      ${specialBadge ? `
-        <div style="background: rgba(251, 191, 36, 0.12); border: 1px solid #fbbf24; border-radius: 10px; padding: 6px 10px; text-align: center; color: #fbbf24; font-size: 0.75rem; font-weight: 800; margin-bottom: 12px;">
-          ${specialBadge}
+        <!-- 📅 RIGHT COLUMN: INTERACTIVE MONTH CALENDAR & FENGSHUI ADVISOR -->
+        <div class="vn-month-panel">
+          <!-- Month Navigation Bar -->
+          <div class="vn-cal-nav-bar">
+            <button type="button" id="calPrevMonthBtn" class="vn-cal-nav-arrow" title="Tháng trước">◀</button>
+            <div class="vn-cal-nav-center">
+              <span class="vn-cal-month-title">THÁNG ${viewM + 1} - ${viewY}</span>
+              ${(!isToday || !isViewingCurrentMonth) ? `<button type="button" id="calJumpTodayBtn" class="vn-cal-today-btn">📍 Hôm nay</button>` : ''}
+            </div>
+            <button type="button" id="calNextMonthBtn" class="vn-cal-nav-arrow" title="Tháng sau">▶</button>
+          </div>
+
+          <!-- Weekday Labels -->
+          <div class="vn-cal-weekday-row">
+            <div class="vn-cal-weekday-label">T2</div>
+            <div class="vn-cal-weekday-label">T3</div>
+            <div class="vn-cal-weekday-label">T4</div>
+            <div class="vn-cal-weekday-label">T5</div>
+            <div class="vn-cal-weekday-label">T6</div>
+            <div class="vn-cal-weekday-label label-sat">T7</div>
+            <div class="vn-cal-weekday-label label-sun">CN</div>
+          </div>
+
+          <!-- Day Cells Grid -->
+          <div class="vn-cal-grid">
+            ${gridHtml}
+          </div>
+
+          <!-- Bottom Fengshui Advisor Card -->
+          <div class="vn-day-advisor-card">
+            <div class="vn-advisor-row">
+              <div>
+                <strong style="color: #fbbf24;">☯️ Trực ${trucData.name}:</strong>
+                <span style="color: #f8fafc; font-weight: 700; margin-left: 6px;">Nên: ${trucData.nghii}</span>
+              </div>
+            </div>
+            <div class="vn-advisor-row" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
+              <div style="color: #cbd5e1;">
+                <strong style="color: #f87171;">🚫 Việc Kiêng:</strong> ${trucData.ky}
+              </div>
+              <div style="color: #38bdf8; font-weight: 700;">
+                🧭 Hướng Hỷ Thần: ${hyTai.hy} • Tài Thần: ${hyTai.tai}
+              </div>
+            </div>
+          </div>
         </div>
-      ` : ''}
-
-      <!-- MONTH GRID HEADER -->
-      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 10px; padding: 6px 12px; margin-bottom: 8px;">
-        <button id="calPrevMonthBtn" class="btn-ghost" style="padding: 4px 10px; font-size: 0.9rem;">◀</button>
-        <span style="font-size: 0.825rem; font-weight: 800; color: var(--text-main);">THÁNG ${viewM + 1}/${viewY}</span>
-        <button id="calNextMonthBtn" class="btn-ghost" style="padding: 4px 10px; font-size: 0.9rem;">▶</button>
-      </div>
-
-      <!-- WEEKDAY HEADER -->
-      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); margin-bottom: 6px;">
-        <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div style="color: #f87171;">CN</div>
-      </div>
-
-      <!-- GRID BODY -->
-      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;">
-        ${gridHtml}
       </div>
     `;
 
@@ -3082,9 +3311,17 @@ create policy "Public Access" on savings_entries for all using (true) with check
       calViewMonth = new Date(calViewMonth.getFullYear(), calViewMonth.getMonth() + 1, 1);
       renderCalendar();
     });
+    const jumpTodayBtn = document.getElementById('calJumpTodayBtn');
+    if (jumpTodayBtn) {
+      jumpTodayBtn.addEventListener('click', () => {
+        calSelectedDate = new Date();
+        calViewMonth = new Date(calSelectedDate.getFullYear(), calSelectedDate.getMonth(), 1);
+        renderCalendar();
+      });
+    }
 
     // Cell clicks
-    calendarModalContent.querySelectorAll('.cal-cell').forEach(cell => {
+    calendarModalContent.querySelectorAll('.vn-cal-day-cell').forEach(cell => {
       cell.addEventListener('click', () => {
         const d = parseInt(cell.getAttribute('data-day'), 10);
         calSelectedDate = new Date(calViewMonth.getFullYear(), calViewMonth.getMonth(), d);
@@ -3182,12 +3419,16 @@ create policy "Public Access" on savings_entries for all using (true) with check
     let totalLifetime = 0;
     entries.forEach(e => totalLifetime += (e.amount || 0));
 
-    const dailyRate = entries.length === 0 ? dailyGoal : (totalLifetime / entries.length);
+    const grabEntries = entries.filter(e => isGrabCategory(e.category));
+    let grabTotal = 0;
+    grabEntries.forEach(e => grabTotal += (e.amount || 0));
+    const otherTotal = Math.max(0, totalLifetime - grabTotal);
+    const grabRate = grabEntries.length === 0 ? dailyGoal : (grabTotal / grabEntries.length);
 
     const calcEstDate = (target) => {
       if (totalLifetime >= target) return now;
       const remaining = target - totalLifetime;
-      const days = Math.ceil(remaining / Math.max(1, dailyRate));
+      const days = Math.ceil(remaining / Math.max(1, grabRate));
       return new Date(todayMidnight.getFullYear(), todayMidnight.getMonth(), todayMidnight.getDate() + days);
     };
 
@@ -3197,16 +3438,12 @@ create policy "Public Access" on savings_entries for all using (true) with check
 
     const endOfYear = new Date(now.getFullYear(), 11, 31);
     const daysToEndOfYear = Math.max(0, Math.round((endOfYear.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24)));
-    const estYearFund = totalLifetime + (daysToEndOfYear * dailyRate);
+    const estYearFund = totalLifetime + (daysToEndOfYear * grabRate);
 
-    // Tet forecast (Grab scoped)
+    // Tet forecast (Total current savings + future Grab rate)
     const nextTet = LunarUtils.getNextTetSolarDate(todayMidnight);
     const daysToTet = Math.max(0, Math.round((nextTet.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24)));
-    const grabEntries = entries.filter(e => isGrabCategory(e.category));
-    let grabTotal = 0;
-    grabEntries.forEach(e => grabTotal += (e.amount || 0));
-    const grabRate = grabEntries.length === 0 ? dailyGoal : (grabTotal / grabEntries.length);
-    const estTetFund = grabTotal + (daysToTet * grabRate);
+    const estTetFund = totalLifetime + (daysToTet * grabRate);
 
     const formatDateStr = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     const daysUntil = (d) => Math.max(0, Math.round((d.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24)));
@@ -3238,8 +3475,8 @@ create policy "Public Access" on savings_entries for all using (true) with check
         </div>
         <div style="width: 1px; height: 35px; background: var(--border-color);"></div>
         <div>
-          <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">TỐC ĐỘ TRUNG BÌNH</div>
-          <div style="font-size: 1.15rem; font-weight: 900; color: #fbbf24; margin-top: 2px;">${formatCurrency(Math.round(dailyRate))}/ngày</div>
+          <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">TỐC ĐỘ CHẠY XE TB</div>
+          <div style="font-size: 1.15rem; font-weight: 900; color: #fbbf24; margin-top: 2px;">${formatCurrency(Math.round(grabRate))}/ngày</div>
         </div>
       </div>
 
@@ -3257,9 +3494,9 @@ create policy "Public Access" on savings_entries for all using (true) with check
 
       <!-- Tet Forecast -->
       <div style="padding: 10px 12px; background: linear-gradient(135deg, rgba(220,38,38,0.15), rgba(245,158,11,0.15)); border: 1px solid rgba(220,38,38,0.4); border-radius: 12px; margin-bottom: 12px;">
-        <div style="font-size: 0.75rem; font-weight: 800; color: #f87171;">🧧 Quỹ Tết Nguyên Đán (Nguồn Grab)</div>
+        <div style="font-size: 0.75rem; font-weight: 800; color: #f87171;">🧧 Quỹ Tết Nguyên Đán</div>
         <div style="font-size: 1rem; font-weight: 900; color: #fef08a; margin: 2px 0;">Dự kiến quỹ ăn Tết: ${formatCurrency(Math.round(estTetFund))}</div>
-        <div style="font-size: 0.675rem; color: rgba(255,255,255,0.7);">Còn đúng ${daysToTet} ngày nữa đến Mùng 1 Tết!</div>
+        <div style="font-size: 0.675rem; color: rgba(255,255,255,0.75); line-height: 1.4;">Đã có ${formatCurrency(totalLifetime)}${otherTotal > 0 ? ` (${formatCurrency(grabTotal)} chạy xe + ${formatCurrency(otherTotal)} nguồn khác)` : ''} + tích lũy ${formatCurrency(Math.round(grabRate))}/ngày trong ${daysToTet} ngày tới!</div>
       </div>
 
       <div style="background: rgba(192, 132, 252, 0.1); border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 12px; padding: 10px 12px; text-align: center; font-size: 0.75rem; color: #e9d5ff;">
@@ -3424,8 +3661,9 @@ create policy "Public Access" on savings_entries for all using (true) with check
     const grabEntries = entries.filter(e => isGrabCategory(e.category));
     let grabTotal = 0;
     grabEntries.forEach(e => grabTotal += (e.amount || 0));
+    const otherTotal = Math.max(0, lifetimeTotal - grabTotal);
     const grabRate = grabEntries.length === 0 ? dailyGoal : (grabTotal / grabEntries.length);
-    const estTetFund = grabTotal + (daysLeftToTet * grabRate);
+    const estTetFund = lifetimeTotal + (daysLeftToTet * grabRate);
 
     // Fallback offline answers if API key not available or request fails
     const lower = userPrompt.toLowerCase();
@@ -3438,7 +3676,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
         }
       }
       if (lower.includes('tết') || lower.includes('đếm ngược') || lower.includes('mấy ngày')) {
-        return `🧧 Còn đúng **${daysLeftToTet} ngày** nữa là đến Mùng 1 Tết Nguyên Đán! Dự kiến quỹ Tết từ nguồn Grab của bạn sẽ đạt **${formatCurrency(Math.round(estTetFund))}** đó! 🍊`;
+        return `🧧 Còn đúng **${daysLeftToTet} ngày** nữa là đến Mùng 1 Tết Nguyên Đán! Hiện bạn đã có **${formatCurrency(lifetimeTotal)}** (chạy xe: ${formatCurrency(grabTotal)} + khác: ${formatCurrency(otherTotal)}) + tích lũy **${formatCurrency(Math.round(grabRate))}/ngày**, dự kiến quỹ Tết sẽ đạt **${formatCurrency(Math.round(estTetFund))}** đó! 🍊`;
       }
       if (lower.includes('hôm nay') || lower.includes('ngày mấy')) {
         const lunarList = LunarUtils.convertSolarToLunar(now.getDate(), now.getMonth() + 1, now.getFullYear());
@@ -3459,7 +3697,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
       const systemInstruction = `Bạn là "Trợ Lý AI Tiết Kiệm" trong ứng dụng "Sổ Tiết Kiệm Daily". Hãy trả lời ngắn gọn (2-4 câu), hào hứng, thân thiện, dùng emoji sinh động dựa trên dữ liệu thật của người dùng:
 - Mục tiêu ngày: ${dailyGoal} đ
 - Đã nạp hôm nay: ${todayAmount} đ (${isTargetAchieved ? 'ĐÃ ĐẠT TARGET' : 'CÒN THIẾU ' + remaining + ' đ'})
-- Tổng tích lũy trọn đời: ${lifetimeTotal} đ
+- Tổng tích lũy trọn đời: ${lifetimeTotal} đ (Chạy xe: ${grabTotal} đ + Khác: ${otherTotal} đ)
 - Đếm ngược đến Mùng 1 Tết: ${daysLeftToTet} ngày (Quỹ Tết dự kiến: ${Math.round(estTetFund)} đ)`;
 
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${customGeminiKey}`;

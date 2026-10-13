@@ -115,11 +115,13 @@ class AppMenuDrawer extends ConsumerWidget {
     final tetYearCanChi = LunarUtils.getCanChiYear(tetLunarList[2]);
 
     final dailyGoal = savingsState.dailyGoal;
+    final totalCurrentSavings = savingsState.lifetimeTotal;
     final grabTotal = savingsState.grabLifetimeTotal;
+    final otherTotal = max(0.0, totalCurrentSavings - grabTotal);
     final double realAvgRate = savingsState.grabEntries.isEmpty
         ? dailyGoal
         : grabTotal / max(1, savingsState.grabEntries.length);
-    final estimatedTetFund = grabTotal + (daysLeftToTet * realAvgRate);
+    final estimatedTetFund = totalCurrentSavings + (daysLeftToTet * realAvgRate);
 
     return Drawer(
       backgroundColor: isDark ? AppTheme.bgApp : AppTheme.bgAppLight,
@@ -465,8 +467,10 @@ class AppMenuDrawer extends ConsumerWidget {
                         const Divider(color: Colors.white24, height: 1),
                         const SizedBox(height: 8),
                         Text(
-                          '💰 Đã có ${Formatters.formatShortNumber(grabTotal)} + tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới để đón Tết $tetYearCanChi rực rỡ!',
-                          style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.3),
+                          otherTotal > 0
+                              ? '💰 Đã có: ${Formatters.formatShortNumber(totalCurrentSavings)} (🛵 ${Formatters.formatShortNumber(grabTotal)} + 💼 ${Formatters.formatShortNumber(otherTotal)})\n🚀 Tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới!'
+                              : '💰 Đã có: ${Formatters.formatShortNumber(totalCurrentSavings)}\n🚀 Tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới!',
+                          style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.4),
                         ),
                       ],
                     ),
