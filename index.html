@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.2.7">
+  <link rel="stylesheet" href="styles.css?v=1.2.8">
 </head>
 <body>
   <div class="app-container">
@@ -553,23 +553,33 @@ create policy "Users access own entries"
             <div class="tet-fund-val" id="tetEstimatedFundDisplay">0 đ</div>
           </div>
         </div>
+        <div class="tet-widget-footer" id="tetMotivationFooter">
+          💰 Tích lũy đều đặn mỗi ngày để đón Tết rực rỡ!
+        </div>
       </div>
 
-      <!-- 🌙 TODAY'S LUNAR INFO CARD -->
+      <!-- 🌙 TODAY'S LUNAR & HOÀNG ĐẠO INFO CARD (MATCHING MOBILE APP) -->
       <div class="drawer-lunar-card" id="drawerLunarCard">
         <div class="lunar-card-header">
-          <span>🌙 HÔM NAY (<span id="lunarSolarToday">--/--</span>)</span>
-          <span class="lunar-canchi" id="lunarCanChiDayDisplay">Ngày ...</span>
+          <span class="lunar-header-title">🌙 ÂM LỊCH HÔM NAY (<span id="lunarSolarToday">--/--</span>)</span>
+          <button type="button" class="lunar-open-cal-btn" id="lunarOpenCalQuickBtn">Xem Lịch ➔</button>
         </div>
         <div class="lunar-card-body">
           <div class="lunar-big-day">
-            <span class="lunar-day-num" id="lunarDayNumDisplay">1</span>
-            <span class="lunar-month-name" id="lunarMonthNameDisplay">Tháng ...</span>
+            <span class="lunar-day-num" id="lunarDayNumDisplay">4</span>
+            <span class="lunar-month-name" id="lunarMonthNameDisplay">Tháng 9 Âm</span>
           </div>
           <div class="lunar-details">
-            <div>Năm: <strong id="lunarYearCanChiDisplay">...</strong></div>
+            <div class="lunar-canchi-day-title" id="lunarCanChiDayDisplay">Ngày Canh Thân</div>
+            <div class="lunar-canchi-sub">
+              <span id="lunarMonthSubDisplay">Tháng 9</span> • Năm <strong id="lunarYearCanChiDisplay">Đinh Mùi</strong>
+            </div>
+            <div class="lunar-auspicious-dir">✨ Tiết Hàn Lộ • Hỷ Thần: Tây Nam</div>
             <div id="lunarSpecialBadge" class="lunar-special-tag" style="display: none;"></div>
           </div>
+        </div>
+        <div class="lunar-card-footer">
+          🌟 Giờ Hoàng Đạo: Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)
         </div>
       </div>
 
@@ -896,6 +906,6 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.2.7"></script>
+  <script src="app.js?v=1.2.8"></script>
 </body>
 </html>

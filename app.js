@@ -2518,8 +2518,11 @@ create policy "Public Access" on savings_entries for all using (true) with check
   const lunarCanChiDayDisplay = document.getElementById('lunarCanChiDayDisplay');
   const lunarDayNumDisplay = document.getElementById('lunarDayNumDisplay');
   const lunarMonthNameDisplay = document.getElementById('lunarMonthNameDisplay');
+  const lunarMonthSubDisplay = document.getElementById('lunarMonthSubDisplay');
   const lunarYearCanChiDisplay = document.getElementById('lunarYearCanChiDisplay');
   const lunarSpecialBadge = document.getElementById('lunarSpecialBadge');
+  const tetMotivationFooter = document.getElementById('tetMotivationFooter');
+  const lunarOpenCalQuickBtn = document.getElementById('lunarOpenCalQuickBtn');
 
   const drawerChangeGoalBtn = document.getElementById('drawerChangeGoalBtn');
   const drawerGoalSub = document.getElementById('drawerGoalSub');
@@ -2554,6 +2557,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
     if (lunarCanChiDayDisplay) lunarCanChiDayDisplay.textContent = `Ngày ${canChiDay}`;
     if (lunarDayNumDisplay) lunarDayNumDisplay.textContent = lDay;
     if (lunarMonthNameDisplay) lunarMonthNameDisplay.textContent = `Tháng ${lMonth} Âm`;
+    if (lunarMonthSubDisplay) lunarMonthSubDisplay.textContent = `Tháng ${lMonth}`;
     if (lunarYearCanChiDisplay) lunarYearCanChiDisplay.textContent = canChiYear;
 
     if (lunarSpecialBadge) {
@@ -2586,6 +2590,16 @@ create policy "Public Access" on savings_entries for all using (true) with check
     if (tetMung1DateDisplay) tetMung1DateDisplay.textContent = `Mùng 1: ${nextTet.getDate()}/${nextTet.getMonth() + 1}`;
     if (tetDaysLeftDisplay) tetDaysLeftDisplay.textContent = daysLeftToTet;
     if (tetEstimatedFundDisplay) tetEstimatedFundDisplay.textContent = formatCurrency(Math.round(estTetFund));
+    if (tetMotivationFooter) {
+      tetMotivationFooter.innerHTML = `💰 Đã có <strong>${formatCurrency(grabTotal)}</strong> + tích lũy <strong>${formatCurrency(Math.round(grabRate))}/ngày</strong> trong ${daysLeftToTet} ngày tới để đón Tết ${tetYearCanChi} rực rỡ!`;
+    }
+  }
+
+  if (lunarOpenCalQuickBtn) {
+    lunarOpenCalQuickBtn.addEventListener('click', () => {
+      closeDrawer();
+      if (drawerCalendarBtn) drawerCalendarBtn.click();
+    });
   }
 
   function openDrawer() {
