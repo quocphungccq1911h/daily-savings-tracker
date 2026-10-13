@@ -85,7 +85,7 @@ class BadgesTab extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            badge['name'],
+                            '#${index + 1} ${badge['name']}',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,

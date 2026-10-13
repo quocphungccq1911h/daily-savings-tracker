@@ -1161,6 +1161,278 @@
 
     // Render Category Pie Chart alongside Bar Chart
     renderCategoryPieChart(selectedMonth);
+    // Render Personal Records & Monthly Heatmap
+    renderPersonalRecords(selectedMonth);
+    renderMonthlyHeatmap(selectedMonth);
+  }
+
+  function formatCompactK(amount) {
+    if (!amount || amount <= 0) return '-';
+    if (amount >= 1000000) {
+      const m = (amount / 1000000).toFixed(amount % 1000000 === 0 ? 0 : 1);
+      return `${m}tr`;
+    }
+    return `${Math.round(amount / 1000)}k`;
+  }
+
+  function renderPersonalRecords(selectedMonthKey) {
+    const grid = document.getElementById('personalRecordsGrid');
+    if (!grid) return;
+
+    // 1. Gom nhóm tổng Grab theo từng ngày trên toàn bộ lịch sử
+    const grabByDate = {};
+    entries.forEach(e => {
+      if (!e.date) return;
+      if (isGrabCategory(e.category || parseEntryCategory(e))) {
+        grabByDate[e.date] = (grabByDate[e.date] || 0) + (Number(e.amount) || 0);
+      }
+    });
+
+    // 2. Tìm Ngày Kỷ Lục (Best Day)
+    let bestDayAmount = 0;
+    let bestDayDate = '';
+    Object.entries(grabByDate).forEach(([dt, amt]) => {
+      if (amt > bestDayAmount) {
+        bestDayAmount = amt;
+        bestDayDate = dt;
+      }
+    });
+    const bestDayFormatted = bestDayDate
+      ? `${bestDayDate.split('-')[2]}/${bestDayDate.split('-')[1]}/${bestDayDate.split('-')[0]}`
+      : 'Chưa có';
+
+    // 3. Tìm Chuỗi Streak Dài Nhất Lịch Sử (All-Time Best Streak >= dailyGoal)
+    const allSortedDates = Object.keys(grabByDate).sort();
+    let maxStreak = 0;
+    let tempStreak = 0;
+    let prevDateObj = null;
+
+    allSortedDates.forEach(dt => {
+      if (grabByDate[dt] >= dailyGoal) {
+        const parts = dt.split('-').map(Number);
+        const curDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+        if (prevDateObj) {
+          const diffDays = Math.round((curDateObj - prevDateObj) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            tempStreak++;
+          } else {
+            tempStreak = 1;
+          }
+        } else {
+          tempStreak = 1;
+        }
+        if (tempStreak > maxStreak) maxStreak = tempStreak;
+        prevDateObj = curDateObj;
+      } else {
+        tempStreak = 0;
+        prevDateObj = null;
+      }
+    });
+
+    // 4. Độ Chăm Chỉ Trong Tháng Đang Chọn
+    const [selYear, selMonth] = selectedMonthKey.split('-').map(Number);
+    const totalDaysInSelMonth = new Date(selYear, selMonth, 0).getDate();
+    const now = new Date();
+    const isCurrMonth = (now.getFullYear() === selYear && (now.getMonth() + 1) === selMonth);
+    const elapsedDays = isCurrMonth ? now.getDate() : totalDaysInSelMonth;
+
+    const monthDates = Object.keys(grabByDate).filter(d => d.startsWith(selectedMonthKey));
+    const activeGrabDays = monthDates.filter(d => grabByDate[d] > 0).length;
+    const targetMetDays = monthDates.filter(d => grabByDate[d] >= dailyGoal).length;
+    const hitRatePct = elapsedDays > 0 ? Math.round((targetMetDays / elapsedDays) * 100) : 0;
+
+    // 5. So sánh với tháng trước
+    let prevYear = selYear;
+    let prevMonth = selMonth - 1;
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear -= 1;
+    }
+    const prevMonthKey = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+    let currMonthGrabSum = 0;
+    let prevMonthGrabSum = 0;
+    Object.entries(grabByDate).forEach(([dt, amt]) => {
+      if (dt.startsWith(selectedMonthKey)) currMonthGrabSum += amt;
+      if (dt.startsWith(prevMonthKey)) prevMonthGrabSum += amt;
+    });
+
+    let compareHtml = '';
+    if (prevMonthGrabSum === 0) {
+      compareHtml = `<span style="color: #38bdf8;">Tháng đầu tiên ghi nhận</span>`;
+    } else {
+      const diffMonth = currMonthGrabSum - prevMonthGrabSum;
+      const sign = diffMonth >= 0 ? '+' : '-';
+      const color = diffMonth >= 0 ? '#34d399' : '#fbbf24';
+      compareHtml = `<span style="color: ${color}; font-weight: 700;">${sign}${formatShortNumber(Math.abs(diffMonth))}</span> so với T${prevMonth}`;
+    }
+
+    grid.innerHTML = `
+      <div class="record-card">
+        <div class="record-card-label">🥇 NGÀY CHẠY ĐỈNH NHẤT</div>
+        <div class="record-card-val" style="color: #fbbf24;">${bestDayAmount > 0 ? formatShortNumber(bestDayAmount) : '0 đ'}</div>
+        <div class="record-card-sub">Kỷ lục ngày: <strong>${bestDayFormatted}</strong></div>
+      </div>
+      <div class="record-card">
+        <div class="record-card-label">🔥 KỶ LỤC CHUỖI STREAK</div>
+        <div class="record-card-val" style="color: #34d399;">${maxStreak} ngày liên tiếp</div>
+        <div class="record-card-sub">Đạt mục tiêu ≥ ${formatCompactK(dailyGoal)}/ngày</div>
+      </div>
+      <div class="record-card">
+        <div class="record-card-label">📅 ĐỘ CHĂM CHỈ THÁNG ${selMonth}</div>
+        <div class="record-card-val" style="color: #38bdf8;">${activeGrabDays}/${elapsedDays} ngày chạy</div>
+        <div class="record-card-sub">Đạt target: <strong>${targetMetDays} ngày</strong> (${hitRatePct}%)</div>
+      </div>
+      <div class="record-card">
+        <div class="record-card-label">📈 PHONG ĐỘ THÁNG ${selMonth}</div>
+        <div class="record-card-val" style="color: #c084fc;">${formatShortNumber(currMonthGrabSum)}</div>
+        <div class="record-card-sub">${compareHtml}</div>
+      </div>
+    `;
+  }
+
+  function renderMonthlyHeatmap(selectedMonthKey) {
+    const container = document.getElementById('monthlyHeatmapGrid');
+    if (!container || !selectedMonthKey) return;
+
+    const [year, month] = selectedMonthKey.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const grabDayMap = {};
+    const otherDayMap = {};
+
+    entries.forEach(e => {
+      if (e.date && e.date.startsWith(selectedMonthKey)) {
+        const day = parseInt(e.date.split('-')[2], 10);
+        const amt = Number(e.amount) || 0;
+        if (isGrabCategory(e.category || parseEntryCategory(e))) {
+          grabDayMap[day] = (grabDayMap[day] || 0) + amt;
+        } else {
+          otherDayMap[day] = (otherDayMap[day] || 0) + amt;
+        }
+      }
+    });
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    let html = '';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateKey = `${selectedMonthKey}-${String(d).padStart(2, '0')}`;
+      const grabAmt = grabDayMap[d] || 0;
+      const otherAmt = otherDayMap[d] || 0;
+      const isToday = (dateKey === todayStr);
+
+      let cellClass = 'cell-empty';
+      let amtLabel = '-';
+      let tooltip = `Ngày ${String(d).padStart(2, '0')}/${String(month).padStart(2, '0')}: Chưa nhập (Bấm để chọn ngày này)`;
+
+      if (grabAmt >= dailyGoal) {
+        cellClass = 'cell-over';
+        amtLabel = formatCompactK(grabAmt);
+        tooltip = `Ngày ${String(d).padStart(2, '0')}/${String(month).padStart(2, '0')}: Grab ${formatShortNumber(grabAmt)}${otherAmt > 0 ? ` + Khác ${formatShortNumber(otherAmt)}` : ''} (Đạt target!)`;
+      } else if (grabAmt > 0) {
+        cellClass = 'cell-under';
+        amtLabel = formatCompactK(grabAmt);
+        tooltip = `Ngày ${String(d).padStart(2, '0')}/${String(month).padStart(2, '0')}: Grab ${formatShortNumber(grabAmt)} (Thiếu ${formatShortNumber(dailyGoal - grabAmt)})`;
+      } else if (otherAmt > 0) {
+        cellClass = 'cell-other';
+        amtLabel = formatCompactK(otherAmt);
+        tooltip = `Ngày ${String(d).padStart(2, '0')}/${String(month).padStart(2, '0')}: Nguồn khác ${formatShortNumber(otherAmt)}`;
+      }
+
+      html += `
+        <div class="heatmap-day-cell ${cellClass} ${isToday ? 'cell-today' : ''}" data-date="${dateKey}" title="${tooltip}">
+          <span class="heatmap-day-num">Ngày ${d}</span>
+          <span class="heatmap-day-amt">${amtLabel}</span>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.heatmap-day-cell').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const dt = cell.dataset.date;
+        if (!dt) return;
+        if (entryDate) {
+          entryDate.value = dt;
+          isFormOpen = true;
+          updateFormStateUI();
+          entryAmount.focus();
+          const parts = dt.split('-');
+          showToast(`Đã chọn ngày ${parts[2]}/${parts[1]}/${parts[0]} để nhập tiết kiệm!`, '📅');
+        }
+      });
+    });
+  }
+
+  function exportEntriesToCsv() {
+    if (!entries || entries.length === 0) {
+      showToast('Chưa có dữ liệu tiết kiệm để xuất!', '⚠️');
+      return;
+    }
+
+    const sorted = [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const header = ['STT', 'Ngày (DD/MM/YYYY)', 'Số tiền (VNĐ)', 'Nguồn thu', 'So với Target 150k', 'Ghi chú'];
+
+    const rows = sorted.map((item, idx) => {
+      const parts = (item.date || '').split('-');
+      const dateFormatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : (item.date || '');
+      const cat = item.category || parseEntryCategory(item);
+      const amt = Number(item.amount) || 0;
+      const diff = isGrabCategory(cat) ? (amt - dailyGoal) : '';
+      const noteClean = (cleanUserNote(item.note) || '').replace(/"/g, '""');
+      return [
+        idx + 1,
+        `"${dateFormatted}"`,
+        amt,
+        `"${cat}"`,
+        diff,
+        `"${noteClean}"`
+      ].join(',');
+    });
+
+    // Thêm dòng tổng kết ở cuối file Excel
+    const totalAll = sorted.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const totalGrab = sorted.filter(e => isGrabCategory(e.category || parseEntryCategory(e))).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const totalOther = totalAll - totalGrab;
+
+    rows.push('');
+    rows.push(['', '"TỔNG THU GRAB / CHẠY XE"', totalGrab, '', '', ''].join(','));
+    rows.push(['', '"TỔNG THU NGUỒN KHÁC"', totalOther, '', '', ''].join(','));
+    rows.push(['', '"TỔNG TÍCH LŨY TOÀN BỘ"', totalAll, '', '', ''].join(','));
+
+    // Thêm UTF-8 BOM (\uFEFF) để Microsoft Excel mở tiếng Việt có dấu chuẩn 100%
+    const csvContent = '\uFEFF' + [header.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const now = new Date();
+    const fileName = `So_Tiet_Kiem_Daily_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}.csv`;
+
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`Đã tải xuống ${fileName}!`, '📥');
+  }
+
+  const exportCsvTableBtn = document.getElementById('exportCsvTableBtn');
+  if (exportCsvTableBtn) {
+    exportCsvTableBtn.addEventListener('click', exportEntriesToCsv);
+  }
+
+  const drawerExportCsvBtn = document.getElementById('drawerExportCsvBtn');
+  if (drawerExportCsvBtn) {
+    drawerExportCsvBtn.addEventListener('click', () => {
+      const drawerOverlay = document.getElementById('drawerOverlay');
+      if (drawerOverlay) drawerOverlay.style.display = 'none';
+      exportEntriesToCsv();
+    });
   }
 
   // Category Pill Selector Engine

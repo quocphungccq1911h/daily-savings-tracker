@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.2.6">
+  <link rel="stylesheet" href="styles.css?v=1.2.7">
 </head>
 <body>
   <div class="app-container">
@@ -218,8 +218,11 @@
             <button type="button" class="banner-filter-pill table-filter-pill" data-filter="GRAB">🛵 Chỉ Grab</button>
             <button type="button" class="banner-filter-pill table-filter-pill" data-filter="OTHER">💼 Chỉ Nguồn Khác</button>
           </div>
-          <div id="tableTargetSubtitle" class="table-target-subtitle">
-            🎯 So sánh 150k/ngày chỉ tính riêng mục <strong>Grab / Chạy xe</strong>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div id="tableTargetSubtitle" class="table-target-subtitle">
+              🎯 So sánh 150k/ngày chỉ tính riêng mục <strong>Grab / Chạy xe</strong>
+            </div>
+            <button type="button" id="exportCsvTableBtn" class="btn-export-csv" title="Xuất toàn bộ sổ tiết kiệm ra file Excel (.csv)">📥 Xuất Excel (.csv)</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -242,8 +245,35 @@
         </div>
       </div>
 
-      <!-- Tab Content 2: Chart View -->
+      <!-- Tab Content 2: Chart View, Personal Records & Monthly Heatmap -->
       <div id="tabChartContent" class="tab-content" style="display: none;">
+        <!-- 🏆 KỶ LỤC CÁ NHÂN & THỐNG KÊ CHĂM CHỈ -->
+        <div class="personal-records-section">
+          <div class="records-header-title">🏆 KỶ LỤC CÁ NHÂN & ĐỘ CHĂM CHỈ (CHẠY XE GRAB)</div>
+          <div class="personal-records-grid" id="personalRecordsGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 🟩 LỊCH NHIỆT ĐỘ CHỐT SỔ THÁNG (CLICK ĐỂ NHẬP NHANH) -->
+        <div class="heatmap-section-box">
+          <div class="heatmap-header-row">
+            <div>
+              <span style="font-size: 0.8rem; font-weight: 700; color: #34d399;">🟩 LỊCH NHIỆT ĐỘ CHỐT SỔ TRONG THÁNG</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 6px;">(Bấm vào ô ngày bất kỳ để chọn ngày nhập tiền nhanh)</span>
+            </div>
+            <div class="heatmap-legend">
+              <span class="legend-item"><i class="legend-dot dot-over"></i> Đạt/Vượt 150k</span>
+              <span class="legend-item"><i class="legend-dot dot-under"></i> Thiếu (&lt;150k)</span>
+              <span class="legend-item"><i class="legend-dot dot-other"></i> Nguồn khác</span>
+              <span class="legend-item"><i class="legend-dot dot-empty"></i> Chưa nhập</span>
+            </div>
+          </div>
+          <div class="monthly-heatmap-grid" id="monthlyHeatmapGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
         <div class="charts-grid-wrapper">
           <div class="chart-box-main">
             <div style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">📈 XU HƯỚNG TÍCH LŨY THEO NGÀY</div>
@@ -597,6 +627,13 @@ create policy "Users access own entries"
             <div class="item-sub">Hỏi đáp target, đếm ngược Tết & tư vấn AI</div>
           </div>
         </button>
+        <button class="drawer-item" id="drawerExportCsvBtn">
+          <span class="item-icon">📥</span>
+          <div class="item-text">
+            <div class="item-title">Xuất Sổ Tiết Kiệm ra Excel (.csv)</div>
+            <div class="item-sub">Tải bảng kê toàn bộ thu nhập về máy tính</div>
+          </div>
+        </button>
 
         <div class="menu-section-title">GÓC GAME GIẢI TRÍ 🎮</div>
         <button class="drawer-item" id="drawerTetrisBtn">
@@ -859,6 +896,6 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.2.6"></script>
+  <script src="app.js?v=1.2.7"></script>
 </body>
 </html>

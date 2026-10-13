@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../services/notification_service.dart';
 import '../widgets/ai_chat_bottom_sheet.dart';
 import '../widgets/app_menu_drawer.dart';
 import '../widgets/collapsible_form.dart';
@@ -22,6 +25,24 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tự động kiểm tra xin quyền Thông báo & đặt lịch 20:00 ngay khi vào màn hình chính
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (kIsWeb) return;
+      final notif = NotificationService();
+      await notif.requestPermissions();
+      if (!mounted) return;
+      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final hasSavedToday = ref
+          .read(savingsProvider)
+          .entries
+          .any((e) => e.date == todayStr && e.amount > 0);
+      await notif.syncDailyReminderWithSavedStatus(hasSavedToday: hasSavedToday);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

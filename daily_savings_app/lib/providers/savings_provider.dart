@@ -252,6 +252,12 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     await LocalStorageService.deleteWishlistGoal(id);
   }
 
+  Future<void> resetDefaultWishlistGoals() async {
+    await LocalStorageService.resetDefaultWishlistGoals();
+    final refreshed = LocalStorageService.getWishlistGoals();
+    state = state.copyWith(wishlistGoals: refreshed);
+  }
+
   @override
   void dispose() {
     _realtimeChannel?.unsubscribe();

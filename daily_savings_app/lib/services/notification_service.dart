@@ -10,8 +10,10 @@ class NotificationService {
 
   static const int dailyReminderId = 888;
   static const int testNotificationId = 999;
-  static const String reminderChannelId = 'daily_savings_reminder_channel';
-  static const String reminderChannelName = 'Nhắc Nhở Tiết Kiệm Hàng Ngày';
+  static const int delayedTestNotificationId = 998;
+  // Sử dụng channel ID v2 mới để đảm bảo Android tạo kênh với Importance.max (tránh trường hợp kênh cũ bị cache ở mức thấp)
+  static const String reminderChannelId = 'daily_savings_reminder_channel_v2';
+  static const String reminderChannelName = 'Nhắc Nhở Tiết Kiệm Hàng Ngày (20:00)';
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -23,22 +25,20 @@ class NotificationService {
     if (_isInitialized) return;
 
     try {
-      // Initialize Timezones
+      // 1. Khởi tạo múi giờ Việt Nam (Asia/Ho_Chi_Minh)
       tz.initializeTimeZones();
       try {
         tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
-      } catch (_) {
-        // Fallback to local default if Asia/Ho_Chi_Minh is missing
-      }
+      } catch (_) {}
 
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
       const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings(
-        requestAlertPermission: false,
-        requestBadgePermission: false,
-        requestSoundPermission: false,
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
       );
 
       const InitializationSettings initializationSettings =
@@ -54,12 +54,31 @@ class NotificationService {
         },
       );
 
+      // 2. Chủ động đăng ký Notification Channel mức Importance.max với hệ điều hành Android
+      final androidPlugin = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+          reminderChannelId,
+          reminderChannelName,
+          description:
+              'Kênh phát thông báo nhắc nhở nạp tiền tiết kiệm vào 20:00 mỗi tối',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+        );
+        await androidPlugin.createNotificationChannel(channel);
+      }
+
       _isInitialized = true;
     } catch (e) {
       debugPrint('Error initializing notifications: $e');
     }
   }
 
+  /// Tự động kiểm tra và xin quyền thông báo ngay khi vào App
   Future<bool> requestPermissions() async {
     if (kIsWeb) return false;
     await init();
@@ -68,16 +87,33 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
-        final notifGranted = await androidPlugin.requestNotificationsPermission();
-        try {
-          await androidPlugin.requestExactAlarmsPermission();
-        } catch (_) {}
-        return notifGranted ?? false;
+        final bool? alreadyEnabled =
+            await androidPlugin.areNotificationsEnabled();
+        if (alreadyEnabled == true) {
+          return true;
+        }
+        final bool? requested =
+            await androidPlugin.requestNotificationsPermission();
+        return requested ?? false;
       }
     } catch (e) {
       debugPrint('Error requesting notification permissions: $e');
     }
     return true;
+  }
+
+  /// Mở màn hình cấp quyền Báo thức chính xác của hệ điều hành (nếu cần)
+  Future<void> openExactAlarmSettings() async {
+    if (kIsWeb) return;
+    await init();
+    try {
+      final androidPlugin = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        await androidPlugin.requestExactAlarmsPermission();
+      }
+    } catch (_) {}
   }
 
   Future<bool> canScheduleExact() async {
@@ -95,60 +131,90 @@ class NotificationService {
     return true;
   }
 
-  /// Đồng bộ lịch nhắc nhở 20:00 với trạng thái đã nạp tiền hay chưa
-  Future<void> syncDailyReminderWithSavedStatus({
+  AndroidNotificationDetails _buildAndroidDetails() {
+    return const AndroidNotificationDetails(
+      reminderChannelId,
+      reminderChannelName,
+      channelDescription:
+          'Kênh phát thông báo nhắc nhở nạp tiền tiết kiệm vào 20:00 mỗi tối',
+      importance: Importance.max,
+      priority: Priority.max,
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+      icon: '@mipmap/ic_launcher',
+      playSound: true,
+      enableVibration: true,
+      fullScreenIntent: true,
+    );
+  }
+
+  /// Đồng bộ lịch nhắc nhở 20:00 với trạng thái đã nạp tiền hay chưa.
+  /// Trả về chuỗi mô tả thời điểm báo thức tiếp theo để hiển thị rõ trên UI.
+  Future<String> syncDailyReminderWithSavedStatus({
     required bool hasSavedToday,
     int hour = 20,
     int minute = 0,
-    String title = '🐖 Sổ Tiết Kiệm Daily - Nhắc Nhở Tối',
-    String body = 'Hôm nay bạn chưa chốt sổ tiết kiệm! Hãy mở app để tích lũy ngay nhé! ✨',
+    String title = '🐖 Sổ Tiết Kiệm Daily - Nhắc Nhở 20:00',
+    String body =
+        'Hôm nay bạn chưa chốt sổ tiết kiệm! Hãy mở app để tích lũy ngay nhé! ✨',
   }) async {
-    if (kIsWeb) return;
+    if (kIsWeb) return 'Web mode';
     await init();
 
-    // Hủy thông báo cũ để tránh duplicate
+    // Đảm bảo quyền thông báo đã được cấp trước khi đặt lịch
+    try {
+      final androidPlugin = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        final enabled = await androidPlugin.areNotificationsEnabled();
+        if (enabled == false) {
+          await androidPlugin.requestNotificationsPermission();
+        }
+      }
+    } catch (_) {}
+
+    // Hủy thông báo cũ để tránh trùng lặp
     await cancelDailyReminder();
 
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
+    // Tính toán thời điểm 20:00 theo đúng giờ hệ thống của điện thoại
+    final DateTime localNow = DateTime.now();
+    DateTime targetLocal = DateTime(
+      localNow.year,
+      localNow.month,
+      localNow.day,
       hour,
       minute,
     );
 
-    // Nếu hôm nay đã nạp tiền rồi -> Bỏ qua tối nay, hẹn tối mai
+    bool isForTomorrow = false;
     if (hasSavedToday) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-      debugPrint('Today already saved! Rescheduled 20:00 reminder to tomorrow: $scheduledDate');
-    } else {
-      // Nếu chưa nạp tiền, nhưng hiện tại đã qua 20:00 hôm nay -> Hẹn tối mai
-      if (scheduledDate.isBefore(now)) {
-        scheduledDate = scheduledDate.add(const Duration(days: 1));
-        debugPrint('Past 20:00 today. Scheduled reminder to tomorrow: $scheduledDate');
-      } else {
-        debugPrint('Scheduled reminder for TONIGHT at $hour:$minute ($scheduledDate)');
-      }
+      targetLocal = targetLocal.add(const Duration(days: 1));
+      isForTomorrow = true;
+    } else if (targetLocal.isBefore(localNow)) {
+      targetLocal = targetLocal.add(const Duration(days: 1));
+      isForTomorrow = true;
     }
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      reminderChannelId,
-      reminderChannelName,
-      channelDescription: 'Kênh phát thông báo nhắc nhở nạp tiền tiết kiệm vào buổi tối hàng ngày',
-      importance: Importance.max,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-      playSound: true,
-      enableVibration: true,
+    final tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      targetLocal.year,
+      targetLocal.month,
+      targetLocal.day,
+      targetLocal.hour,
+      targetLocal.minute,
     );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(),
+    final NotificationDetails notificationDetails = NotificationDetails(
+      android: _buildAndroidDetails(),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
     );
 
+    // Ưu tiên số 1: AndroidScheduleMode.alarmClock (Tương đương đồng hồ báo thức Android, không bao giờ bị Doze Mode hay tiết kiệm pin chặn)
     try {
       await _notificationsPlugin.zonedSchedule(
         dailyReminderId,
@@ -156,14 +222,15 @@ class NotificationService {
         body,
         scheduledDate,
         notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-      debugPrint('Successfully scheduled exact reminder at $hour:$minute');
+      debugPrint(
+          'Scheduled ALARM_CLOCK reminder at $scheduledDate (tomorrow=$isForTomorrow)');
     } catch (e) {
-      debugPrint('Exact alarm scheduling failed ($e), falling back to inexact...');
+      debugPrint('AlarmClock mode failed ($e), trying exactAllowWhileIdle...');
       try {
         await _notificationsPlugin.zonedSchedule(
           dailyReminderId,
@@ -171,14 +238,106 @@ class NotificationService {
           body,
           scheduledDate,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
-        debugPrint('Successfully scheduled inexact reminder at $hour:$minute');
-      } catch (err) {
-        debugPrint('Failed to schedule reminder: $err');
+        debugPrint('Scheduled exactAllowWhileIdle reminder at $scheduledDate');
+      } catch (e2) {
+        debugPrint(
+            'exactAllowWhileIdle failed ($e2), falling back to inexactAllowWhileIdle...');
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            dailyReminderId,
+            title,
+            body,
+            scheduledDate,
+            notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.time,
+          );
+        } catch (err) {
+          debugPrint('Failed to schedule reminder: $err');
+        }
+      }
+    }
+
+    final dayLabel = isForTomorrow
+        ? '20:00 Tối Mai (${targetLocal.day.toString().padLeft(2, '0')}/${targetLocal.month.toString().padLeft(2, '0')})'
+        : '20:00 Tối Nay (${targetLocal.day.toString().padLeft(2, '0')}/${targetLocal.month.toString().padLeft(2, '0')})';
+    return dayLabel;
+  }
+
+  /// Kiểm tra xem thông báo 20:00 có đang nằm trong hàng đợi chờ phát của Android hay không
+  Future<bool> isDailyReminderPending() async {
+    if (kIsWeb) return false;
+    await init();
+    try {
+      final pending = await _notificationsPlugin.pendingNotificationRequests();
+      return pending.any((p) => p.id == dailyReminderId);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Đặt thử một báo thức ngầm nổ sau [seconds] giây (để kiểm tra thực tế khi tắt màn hình / thoát app)
+  Future<void> scheduleDelayedTestNotification({int seconds = 10}) async {
+    if (kIsWeb) return;
+    await init();
+
+    final tz.TZDateTime scheduledDate =
+        tz.TZDateTime.now(tz.local).add(Duration(seconds: seconds));
+
+    final NotificationDetails notificationDetails = NotificationDetails(
+      android: _buildAndroidDetails(),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        delayedTestNotificationId,
+        '⏰ Kiểm Tra Báo Thức Ngầm Thành Công!',
+        'Chuông hẹn giờ 20:00 hoạt động hoàn hảo ngay cả khi bạn đã đóng ứng dụng! 🎉',
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (_) {
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          delayedTestNotificationId,
+          '⏰ Kiểm Tra Báo Thức Ngầm Thành Công!',
+          'Chuông hẹn giờ 20:00 hoạt động hoàn hảo ngay cả khi bạn đã đóng ứng dụng! 🎉',
+          scheduledDate,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+      } catch (_) {
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            delayedTestNotificationId,
+            '⏰ Kiểm Tra Báo Thức Ngầm Thành Công!',
+            'Chuông hẹn giờ 20:00 hoạt động hoàn hảo ngay cả khi bạn đã đóng ứng dụng! 🎉',
+            scheduledDate,
+            notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+          );
+        } catch (err) {
+          debugPrint('Delayed test notification failed: $err');
+        }
       }
     }
   }
@@ -194,20 +353,13 @@ class NotificationService {
     if (kIsWeb) return;
     await init();
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      reminderChannelId,
-      reminderChannelName,
-      channelDescription: 'Kênh phát thông báo nhắc nhở nạp tiền tiết kiệm vào buổi tối hàng ngày',
-      importance: Importance.max,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-      playSound: true,
-      enableVibration: true,
-    );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(),
+    final NotificationDetails notificationDetails = NotificationDetails(
+      android: _buildAndroidDetails(),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
     );
 
     await _notificationsPlugin.show(
@@ -223,3 +375,4 @@ class NotificationService {
     await _notificationsPlugin.cancelAll();
   }
 }
+

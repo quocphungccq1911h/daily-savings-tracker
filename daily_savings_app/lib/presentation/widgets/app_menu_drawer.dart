@@ -668,49 +668,125 @@ class AppMenuDrawer extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.notifications_active_rounded, color: AppTheme.amberGoldLight),
                     title: Text('Nhắc Nhở Tối (20:00)', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Tự động phát lúc 20:00 mỗi tối nếu chưa lưu tiền (Bấm để kích hoạt 🔔)', style: TextStyle(color: subtextColor, fontSize: 11)),
+                    subtitle: Text(
+                      'Tự động nhắc lúc 20:00 mỗi tối nếu chưa lưu tiền (Bấm để kiểm tra chuông 🔔)',
+                      style: TextStyle(color: subtextColor, fontSize: 11),
+                    ),
                     onTap: () async {
                       final notif = NotificationService();
                       final granted = await notif.requestPermissions();
                       if (!context.mounted) return;
 
-                      if (granted) {
-                        final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-                        final hasSavedToday = ref.read(savingsProvider).entries.any((e) => e.date == todayStr && e.amount > 0);
-
-                        await notif.syncDailyReminderWithSavedStatus(hasSavedToday: hasSavedToday);
-                        final canExact = await notif.canScheduleExact();
-                        await notif.showTestNotification();
-
-                        if (context.mounted) {
-                          if (!canExact) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('🔔 Đã kích hoạt lịch 20:00! Mẹo: Hãy bật quyền "Báo thức và lời nhắc" trong Cài Đặt điện thoại để chuông nổ chuẩn xác từng phút.'),
-                                backgroundColor: Colors.amber,
-                                duration: Duration(seconds: 5),
+                      if (!granted) {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: isDark ? AppTheme.bgCard : Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text('⚠️ Chưa Cấp Quyền Thông Báo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+                            content: Text(
+                              'Ứng dụng chưa được cấp quyền hiển thị thông báo trên điện thoại.\n\nVui lòng vào: Cài đặt máy ➔ Ứng dụng ➔ Sổ Tiết Kiệm Daily ➔ Thông báo ➔ Bật Cho phép thông báo.',
+                              style: TextStyle(fontSize: 13, color: textColor),
+                            ),
+                            actions: [
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('Đã Hiểu'),
                               ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(hasSavedToday
-                                    ? '🔔 Đã kích hoạt lịch nhắc 20:00! Hôm nay bạn đã chốt sổ nên chuông sẽ nhắc từ tối mai.'
-                                    : '🔔 Đã kích hoạt nhắc nhở 20:00 tối nay và phát thông báo thử nghiệm!'),
-                                backgroundColor: AppTheme.emeraldPrimary,
-                                duration: const Duration(seconds: 4),
-                              ),
-                            );
-                          }
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('⚠️ Vui lòng cấp quyền thông báo cho ứng dụng trong Cài Đặt máy!'),
-                            backgroundColor: Colors.orangeAccent,
+                            ],
                           ),
                         );
+                        return;
                       }
+
+                      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                      final hasSavedToday = ref.read(savingsProvider).entries.any((e) => e.date == todayStr && e.amount > 0);
+
+                      final nextScheduleLabel = await notif.syncDailyReminderWithSavedStatus(hasSavedToday: hasSavedToday);
+                      final canExact = await notif.canScheduleExact();
+                      final isPending = await notif.isDailyReminderPending();
+
+                      // 1. Phát ngay lập tức 1 thông báo thử nghiệm lên thanh trạng thái
+                      await notif.showTestNotification();
+                      // 2. Hẹn thêm 1 thông báo nổ ngầm sau 10 giây
+                      await notif.scheduleDelayedTestNotification(seconds: 10);
+
+                      if (!context.mounted) return;
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: isDark ? AppTheme.bgCard : Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: Row(
+                            children: [
+                              const Icon(Icons.notifications_active, color: AppTheme.emeraldLight, size: 22),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Trạng Thái Chuông 20:00',
+                                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: textColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '✅ Quyền thông báo: Đã bật\n'
+                                '📅 Lịch hẹn tiếp theo: $nextScheduleLabel\n'
+                                '📌 Trạng thái hàng đợi: ${isPending ? "Đang chờ phát" : "Đã kích hoạt"}\n'
+                                '⏰ Quyền Báo thức chính xác: ${canExact ? "Đã cấp chuẩn 100%" : "Chưa bật (Cần cấp quyền)"}',
+                                style: TextStyle(fontSize: 12.5, height: 1.5, color: textColor),
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.emeraldPrimary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppTheme.emeraldLight.withValues(alpha: 0.4)),
+                                ),
+                                child: Text(
+                                  '🔔 Đã bắn 1 thông báo tức thì lên màn hình và hẹn thêm 1 chuông nổ ngầm sau 10 giây nữa!',
+                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? AppTheme.emeraldLight : const Color(0xFF047857)),
+                                ),
+                              ),
+                              if (!canExact) ...[
+                                const SizedBox(height: 10),
+                                const Text(
+                                  '⚠️ Lưu ý quan trọng: Điện thoại của bạn chưa bật quyền "Báo thức & lời nhắc" cho ứng dụng nên đúng 20:00 hệ điều hành có thể chặn chuông. Hãy bấm nút bên dưới để bật!',
+                                  style: TextStyle(fontSize: 11.5, color: Colors.orangeAccent, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ],
+                          ),
+                          actions: [
+                            if (!canExact)
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  Navigator.pop(ctx);
+                                  await notif.openExactAlarmSettings();
+                                },
+                                icon: const Icon(Icons.alarm_on, size: 16),
+                                label: const Text('Bật Quyền Báo Thức 20:00'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.emeraldPrimary,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Đóng'),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 10),

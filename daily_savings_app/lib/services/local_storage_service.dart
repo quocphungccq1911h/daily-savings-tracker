@@ -50,15 +50,27 @@ class LocalStorageService {
   // Wishlist Goals
   static List<WishlistGoal> getWishlistGoals() {
     final box = Hive.box(_wishlistBoxName);
-    if (box.isEmpty) {
-      // Seed initial 3 default wishlist goals
-      final defaults = AppConstants.defaultWishlistGoals
-          .map((m) => WishlistGoal.fromMap(m))
-          .toList();
-      for (var goal in defaults) {
-        saveWishlistGoal(goal);
+    final settingsBox = Hive.box(_settingsBoxName);
+    final String schemaVer = settingsBox.get('wishlist_schema_ver', defaultValue: 'v1') as String;
+
+    if (box.isEmpty || schemaVer != 'v2') {
+      final existingKeys = box.keys.map((k) => k.toString()).toList();
+      final isLegacyDefault = existingKeys.isEmpty ||
+          (existingKeys.length <= 4 &&
+              existingKeys.every((k) => ['w1', 'w2', 'w3', 'w4'].contains(k)));
+
+      if (isLegacyDefault) {
+        box.clear();
+        final defaults = AppConstants.defaultWishlistGoals
+            .map((m) => WishlistGoal.fromMap(m))
+            .toList();
+        for (var goal in defaults) {
+          saveWishlistGoal(goal);
+        }
+        settingsBox.put('wishlist_schema_ver', 'v2');
+        return defaults;
       }
-      return defaults;
+      settingsBox.put('wishlist_schema_ver', 'v2');
     }
 
     final List<WishlistGoal> list = [];
@@ -69,6 +81,19 @@ class LocalStorageService {
       }
     }
     return list;
+  }
+
+  static Future<void> resetDefaultWishlistGoals() async {
+    final box = Hive.box(_wishlistBoxName);
+    final settingsBox = Hive.box(_settingsBoxName);
+    await box.clear();
+    final defaults = AppConstants.defaultWishlistGoals
+        .map((m) => WishlistGoal.fromMap(m))
+        .toList();
+    for (var goal in defaults) {
+      await saveWishlistGoal(goal);
+    }
+    await settingsBox.put('wishlist_schema_ver', 'v2');
   }
 
   static Future<void> saveWishlistGoal(WishlistGoal goal) async {
