@@ -658,31 +658,30 @@
     const cumulativeTargetToToday = currentDay * dailyGoal;
 
     if (currentBannerFilter === 'GRAB') {
+      statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
+      statusPaceAmount.className = 'banner-val text-success';
+
       if (isCurrentMonth) {
         if (bannerMetaText) bannerMetaText.innerHTML = `Mục tiêu lũy kế đến nay: <strong>${formatShortNumber(cumulativeTargetToToday)}</strong>`;
         const paceDiff = savedUpToToday - cumulativeTargetToToday;
         if (paceDiff >= 0) {
-          statusPaceAmount.textContent = paceDiff === 0 ? 'Đúng Kế Hoạch' : `+${formatShortNumber(paceDiff)}`;
-          statusPaceAmount.className = 'banner-val text-success';
           statusPacePill.textContent = paceDiff === 0 ? 'Vừa đủ mục tiêu đến nay' : `Dư +${formatShortNumber(paceDiff)} so với lũy kế`;
+          statusPacePill.className = 'banner-sub text-success';
         } else {
           const diffAbs = Math.abs(paceDiff);
-          statusPaceAmount.textContent = `-${formatShortNumber(diffAbs)}`;
-          statusPaceAmount.className = 'banner-val text-danger';
           statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với lũy kế`;
+          statusPacePill.className = 'banner-sub text-danger';
         }
       } else {
         if (bannerMetaText) bannerMetaText.innerHTML = `Tổng mục tiêu tháng: <strong>${formatShortNumber(monthTarget)}</strong>`;
         const monthDiff = monthTotalSaved - monthTarget;
         if (monthDiff >= 0) {
-          statusPaceAmount.textContent = monthDiff === 0 ? 'Đạt 100% Target' : `+${formatShortNumber(monthDiff)}`;
-          statusPaceAmount.className = 'banner-val text-success';
           statusPacePill.textContent = `🎉 Hoàn thành tháng! Dư +${formatShortNumber(monthDiff)}`;
+          statusPacePill.className = 'banner-sub text-success';
         } else {
           const diffAbs = Math.abs(monthDiff);
-          statusPaceAmount.textContent = `-${formatShortNumber(diffAbs)}`;
-          statusPaceAmount.className = 'banner-val text-danger';
           statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với mục tiêu tháng`;
+          statusPacePill.className = 'banner-sub text-danger';
         }
       }
     } else if (currentBannerFilter === 'OTHER') {

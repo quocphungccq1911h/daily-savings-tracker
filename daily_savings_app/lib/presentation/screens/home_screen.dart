@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../providers/savings_provider.dart';
@@ -203,7 +204,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 6),
                     Expanded(child: _buildTabPill('📈 Biểu đồ', 1, isDark)),
                     const SizedBox(width: 6),
-                    Expanded(child: _buildTabPill('🏆 Huy hiệu', 2, isDark)),
+                    Expanded(
+                      child: _buildTabPill(
+                        '🏆 Huy hiệu',
+                        2,
+                        isDark,
+                        badgeCount: AppConstants.milestoneBadges
+                            .where((b) => state.lifetimeTotal >= (b['amount'] as num))
+                            .length,
+                        totalBadges: AppConstants.milestoneBadges.length,
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(child: _buildTabPill('🎯 Wishlist', 3, isDark)),
                   ],
@@ -237,7 +248,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   );
 }
 
-  Widget _buildTabPill(String title, int index, bool isDark) {
+  Widget _buildTabPill(String title, int index, bool isDark, {int? badgeCount, int? totalBadges}) {
     final isSelected = _selectedIndex == index;
     final unselectedBg = isDark ? AppTheme.bgCard : Colors.white;
     final unselectedBorder = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
@@ -271,14 +282,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(
-            title,
-            maxLines: 1,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: isSelected ? selectedTextColor : unselectedTextColor,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? selectedTextColor : unselectedTextColor,
+                ),
+              ),
+              if (badgeCount != null && totalBadges != null) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: AppTheme.skyBlueAccent.withValues(alpha: isDark ? 0.25 : 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.skyBlueAccent.withValues(alpha: 0.4), width: 0.8),
+                  ),
+                  child: Text(
+                    '$badgeCount/$totalBadges',
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.skyBlueAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
