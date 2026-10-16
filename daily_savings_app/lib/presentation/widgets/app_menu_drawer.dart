@@ -464,13 +464,120 @@ class AppMenuDrawer extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        const Divider(color: Colors.white24, height: 1),
+                        // 💰 HIGHLIGHT ĐÃ TÍCH LŨY & TIẾN ĐỘ
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.35), width: 1),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    '💰 ĐÃ TÍCH LŨY',
+                                    style: TextStyle(
+                                      color: AppTheme.amberGoldLight,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.amberGoldLight.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.4), width: 0.8),
+                                    ),
+                                    child: Text(
+                                      '${(estimatedTetFund > 0 ? (totalCurrentSavings / estimatedTetFund * 100).clamp(0, 100) : 0).round()}% mục tiêu',
+                                      style: const TextStyle(
+                                        color: AppTheme.amberGoldLight,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                Formatters.formatShortNumber(totalCurrentSavings),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.3,
+                                  shadows: [
+                                    Shadow(color: Color(0x99F59E0B), blurRadius: 8),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(99),
+                                child: LinearProgressIndicator(
+                                  value: estimatedTetFund > 0 ? (totalCurrentSavings / estimatedTetFund).clamp(0.0, 1.0) : 0.0,
+                                  backgroundColor: Colors.white12,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.amberGoldLight),
+                                  minHeight: 6,
+                                ),
+                              ),
+                              if (otherTotal > 0) ...[
+                                const SizedBox(height: 7),
+                                Container(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 0.8),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('🛵 Chạy xe', style: TextStyle(color: Colors.white70, fontSize: 9.0)),
+                                            const SizedBox(height: 1),
+                                            Text(
+                                              Formatters.formatShortNumber(grabTotal),
+                                              style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11.0, fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(height: 20, width: 1, color: Colors.white.withValues(alpha: 0.2)),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            const Text('💼 Nguồn khác', style: TextStyle(color: Colors.white70, fontSize: 9.0)),
+                                            const SizedBox(height: 1),
+                                            Text(
+                                              Formatters.formatShortNumber(otherTotal),
+                                              style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11.0, fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Text(
-                          otherTotal > 0
-                              ? '💰 Đã có: ${Formatters.formatShortNumber(totalCurrentSavings)} (🛵 ${Formatters.formatShortNumber(grabTotal)} + 💼 ${Formatters.formatShortNumber(otherTotal)})\n🚀 Tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới!'
-                              : '💰 Đã có: ${Formatters.formatShortNumber(totalCurrentSavings)}\n🚀 Tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới!',
-                          style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.4),
+                          '🚀 Tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới!',
+                          style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.3),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),

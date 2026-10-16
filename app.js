@@ -2652,6 +2652,10 @@ create policy "Public Access" on savings_entries for all using (true) with check
   const tetMung1DateDisplay = document.getElementById('tetMung1DateDisplay');
   const tetDaysLeftDisplay = document.getElementById('tetDaysLeftDisplay');
   const tetEstimatedFundDisplay = document.getElementById('tetEstimatedFundDisplay');
+  const tetCurrentSavingsDisplay = document.getElementById('tetCurrentSavingsDisplay');
+  const tetSavedPercent = document.getElementById('tetSavedPercent');
+  const tetProgressFill = document.getElementById('tetProgressFill');
+  const tetBreakdownRow = document.getElementById('tetBreakdownRow');
 
   const lunarSolarToday = document.getElementById('lunarSolarToday');
   const lunarCanChiDayDisplay = document.getElementById('lunarCanChiDayDisplay');
@@ -2729,17 +2733,41 @@ create policy "Public Access" on savings_entries for all using (true) with check
     const grabRate = grabEntries.length === 0 ? dailyGoal : (grabTotal / grabEntries.length);
     const estTetFund = totalCurrentSavings + (daysLeftToTet * grabRate);
 
+    const percentProgress = estTetFund > 0
+      ? Math.min(100, Math.max(0, Math.round((totalCurrentSavings / estTetFund) * 100)))
+      : 0;
+
     if (tetCanChiYearDisplay) tetCanChiYearDisplay.textContent = tetYearCanChi;
     if (tetMung1DateDisplay) tetMung1DateDisplay.textContent = `Mùng 1: ${nextTet.getDate()}/${nextTet.getMonth() + 1}`;
     if (tetDaysLeftDisplay) tetDaysLeftDisplay.textContent = daysLeftToTet;
     if (tetEstimatedFundDisplay) tetEstimatedFundDisplay.textContent = formatCurrency(Math.round(estTetFund));
+
+    if (tetCurrentSavingsDisplay) tetCurrentSavingsDisplay.textContent = formatCurrency(totalCurrentSavings);
+    if (tetSavedPercent) tetSavedPercent.textContent = `${percentProgress}% mục tiêu`;
+    if (tetProgressFill) tetProgressFill.style.width = `${percentProgress}%`;
+
+    if (tetBreakdownRow) {
+      if (otherTotal > 0) {
+        tetBreakdownRow.innerHTML = `
+          <div class="tet-bd-col">
+            <span class="tet-bd-label">🛵 Chạy xe</span>
+            <span class="tet-bd-val">${formatCurrency(grabTotal)}</span>
+          </div>
+          <div class="tet-bd-divider"></div>
+          <div class="tet-bd-col text-right">
+            <span class="tet-bd-label">💼 Nguồn khác</span>
+            <span class="tet-bd-val">${formatCurrency(otherTotal)}</span>
+          </div>
+        `;
+        tetBreakdownRow.style.display = 'flex';
+      } else {
+        tetBreakdownRow.style.display = 'none';
+      }
+    }
+
     if (tetMotivationFooter) {
-      const breakdown = otherTotal > 0
-        ? ` (🛵 ${formatCurrency(grabTotal)} + 💼 ${formatCurrency(otherTotal)})`
-        : '';
       tetMotivationFooter.innerHTML = `
-        <div style="margin-bottom: 2px;">💰 Đã có: <strong>${formatCurrency(totalCurrentSavings)}</strong>${breakdown}</div>
-        <div>🚀 Tích lũy <strong>${formatCurrency(Math.round(grabRate))}/ngày</strong> trong ${daysLeftToTet} ngày tới!</div>
+        🚀 Tích lũy <strong>${formatCurrency(Math.round(grabRate))}/ngày</strong> trong ${daysLeftToTet} ngày tới!
       `;
     }
   }

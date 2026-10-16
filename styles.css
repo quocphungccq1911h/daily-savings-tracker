@@ -1684,13 +1684,119 @@ body {
   color: #fef08a;
 }
 
+/* 💰 TET SAVED HIGHLIGHT BOX & PROGRESS BAR */
+.tet-saved-box {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.42), rgba(45, 10, 10, 0.5));
+  border: 1px solid rgba(254, 240, 138, 0.4);
+  border-radius: 12px;
+  padding: 9px 12px;
+  margin-top: 10px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35), 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+.tet-saved-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tet-saved-title {
+  font-size: 0.675rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fef08a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tet-saved-badge {
+  background: rgba(254, 240, 138, 0.2);
+  color: #fef08a;
+  border: 1px solid rgba(254, 240, 138, 0.45);
+  padding: 1.5px 7px;
+  border-radius: 10px;
+  font-size: 0.635rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.tet-saved-amount {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.2;
+  margin: 4px 0 7px 0;
+  text-shadow: 0 2px 12px rgba(250, 204, 21, 0.6), 0 0 2px rgba(254, 240, 138, 0.9);
+  letter-spacing: 0.01em;
+}
+
+.tet-progress-track {
+  width: 100%;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.tet-progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #f59e0b 0%, #fef08a 65%, #10b981 100%);
+  box-shadow: 0 0 10px rgba(254, 240, 138, 0.75);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tet-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+  gap: 8px;
+}
+
+.tet-bd-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tet-bd-col.text-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.tet-bd-label {
+  font-size: 0.585rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 1px;
+  white-space: nowrap;
+}
+
+.tet-bd-val {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fef08a;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.tet-bd-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .tet-widget-footer {
-  margin-top: 9px;
-  padding-top: 7px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.85);
+  margin-top: 8px;
+  padding-top: 6px;
+  font-size: 0.66rem;
+  color: rgba(255, 255, 255, 0.88);
   line-height: 1.35;
+  text-align: center;
 }
 
 /* 🌙 TODAY'S LUNAR CARD (MATCHING MOBILE APP EMERALD STYLE) */
