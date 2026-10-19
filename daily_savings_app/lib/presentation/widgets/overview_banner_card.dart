@@ -16,6 +16,10 @@ class OverviewBannerCard extends ConsumerStatefulWidget {
 class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
   // Filter mode: 'GRAB' (default), 'OTHER', 'ALL'
   String _selectedFilter = 'GRAB';
+  // Period mode: 'MONTH' (default), 'WEEK'
+  String _periodMode = 'MONTH';
+  // Week offset: 0 = current week, -1 = last week, etc.
+  int _weekOffset = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -29,40 +33,128 @@ class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
     final double dailyGoal = state.dailyGoal;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Filter relevant entries based on selection
+    // Filter relevant entries based on category selection
     List<SavingsEntry> activeEntries;
     int streak;
-    String modeTitle;
 
     if (_selectedFilter == 'GRAB') {
       activeEntries = state.grabEntries;
       streak = state.grabStreakCount;
-      modeTitle = 'LŨY KẾ GRAB HÔM NAY ($dateStr)';
     } else if (_selectedFilter == 'OTHER') {
       activeEntries = state.otherEntries;
       streak = 0;
-      modeTitle = 'THU NHẬP NGUỒN KHÁC ($dateStr)';
     } else {
       activeEntries = state.entries;
       streak = state.streakCount;
-      modeTitle = 'TỔNG LŨY KẾ TẤT CẢ ($dateStr)';
     }
 
-    // Current month calculations for active filter
-    final monthEntries = activeEntries.where((e) => e.date.startsWith(monthStr)).toList();
-    final double monthTotal = monthEntries.fold(0.0, (sum, item) => sum + item.amount);
+    // Week info helper
+    final weekInfo = Formatters.getWeekRange(_weekOffset);
+
+    // Period calculations
+    double periodTotal;
+    double periodTarget;
+    double periodCumulativeTarget;
+    bool isCurrentPeriod;
+    int daysPassedInPeriod;
+    String modeTitle;
+    String metaText;
+
+    if (_periodMode == 'WEEK') {
+      final activeWeekEntries = activeEntries
+          .where((e) => weekInfo.dateList.contains(e.date))
+          .toList();
+      periodTotal = activeWeekEntries.fold(0.0, (sum, item) => sum + item.amount);
+      periodTarget = 7 * dailyGoal;
+      isCurrentPeriod = weekInfo.isCurrentWeek;
+
+      if (isCurrentPeriod) {
+        daysPassedInPeriod = now.weekday; // 1 = Monday ... 7 = Sunday
+      } else if (_weekOffset > 0) {
+        daysPassedInPeriod = 0;
+      } else {
+        daysPassedInPeriod = 7;
+      }
+      periodCumulativeTarget = daysPassedInPeriod * dailyGoal;
+
+      final weekLabelText = _weekOffset == 0
+          ? 'TUẦN NÀY'
+          : (_weekOffset == -1 ? 'TUẦN TRƯỚC' : 'TUẦN');
+
+      if (_selectedFilter == 'GRAB') {
+        modeTitle = 'TIẾN ĐỘ GRAB $weekLabelText (${weekInfo.startDisplay} - ${weekInfo.endDisplay})';
+        if (isCurrentPeriod) {
+          metaText =
+              'Mục tiêu tuần đến nay ($daysPassedInPeriod/7 ngày): ${Formatters.formatShortNumber(periodCumulativeTarget)} / ${Formatters.formatShortNumber(periodTarget)}';
+        } else {
+          metaText =
+              'Tổng mục tiêu tuần (7 ngày): ${Formatters.formatShortNumber(periodTarget)}';
+        }
+      } else if (_selectedFilter == 'OTHER') {
+        modeTitle = 'NGUỒN KHÁC $weekLabelText (${weekInfo.startDisplay} - ${weekInfo.endDisplay})';
+        metaText = 'Tổng thu nhập nguồn khác toàn thời gian: ${Formatters.formatShortNumber(state.otherLifetimeTotal)}';
+      } else {
+        modeTitle = 'TỔNG TẤT CẢ $weekLabelText (${weekInfo.startDisplay} - ${weekInfo.endDisplay})';
+        final grabWeek = state.grabEntries
+            .where((e) => weekInfo.dateList.contains(e.date))
+            .fold(0.0, (s, e) => s + e.amount);
+        final otherWeek = state.otherEntries
+            .where((e) => weekInfo.dateList.contains(e.date))
+            .fold(0.0, (s, e) => s + e.amount);
+        metaText =
+            'Trong tuần: 🛵 Grab (${Formatters.formatShortNumber(grabWeek)}) + 💼 Khác (${Formatters.formatShortNumber(otherWeek)})';
+      }
+    } else {
+      // MONTH MODE
+      final monthEntries =
+          activeEntries.where((e) => e.date.startsWith(monthStr)).toList();
+      periodTotal = monthEntries.fold(0.0, (sum, item) => sum + item.amount);
+      periodTarget = dailyGoal * daysInMonth;
+      isCurrentPeriod = true;
+      daysPassedInPeriod = now.day;
+      periodCumulativeTarget = dailyGoal * now.day;
+
+      if (_selectedFilter == 'GRAB') {
+        modeTitle = 'LŨY KẾ GRAB HÔM NAY ($dateStr)';
+        metaText =
+            'Mục tiêu lũy kế đến nay: ${Formatters.formatShortNumber(periodCumulativeTarget)}';
+      } else if (_selectedFilter == 'OTHER') {
+        modeTitle = 'THU NHẬP NGUỒN KHÁC ($dateStr)';
+        metaText = 'Tổng tiết kiệm từ Lương, Thưởng và Nguồn khác tháng này';
+      } else {
+        modeTitle = 'TỔNG LŨY KẾ TẤT CẢ ($dateStr)';
+        final grabM = state.grabEntries
+            .where((e) => e.date.startsWith(monthStr))
+            .fold(0.0, (s, e) => s + e.amount);
+        final otherM = state.otherEntries
+            .where((e) => e.date.startsWith(monthStr))
+            .fold(0.0, (s, e) => s + e.amount);
+        metaText =
+            'Trong tháng: 🛵 Grab (${Formatters.formatShortNumber(grabM)}) + 💼 Khác (${Formatters.formatShortNumber(otherM)})';
+      }
+    }
+
+    // Pace difference
+    final double paceDiff = isCurrentPeriod
+        ? (periodTotal - periodCumulativeTarget)
+        : (periodTotal - periodTarget);
+
+    // Current month calculations for mini cards (Always based on Grab Month)
+    final grabMonthEntries =
+        state.grabEntries.where((e) => e.date.startsWith(monthStr)).toList();
+    final double grabMonthTotal =
+        grabMonthEntries.fold(0.0, (sum, item) => sum + item.amount);
     final double monthTarget = dailyGoal * daysInMonth;
-    final double monthProgressPct = (monthTotal / monthTarget).clamp(0.0, 1.0);
-    final double remainingMonthAmount = max(0.0, monthTarget - monthTotal);
+    final double monthProgressPct =
+        (grabMonthTotal / monthTarget).clamp(0.0, 1.0);
+    final double remainingMonthAmount = max(0.0, monthTarget - grabMonthTotal);
 
     final int daysLeftInMonth = max(1, daysInMonth - now.day);
     final double neededDailyRate = remainingMonthAmount / daysLeftInMonth;
 
-    final double monthExpectedTarget = dailyGoal * now.day;
-    final double monthDiff = monthTotal - monthExpectedTarget;
-
     // Lifetime total for active filter
-    final double activeLifetimeTotal = activeEntries.fold(0.0, (sum, item) => sum + item.amount);
+    final double activeLifetimeTotal =
+        activeEntries.fold(0.0, (sum, item) => sum + item.amount);
 
     // Yearly calculations for active filter
     DateTime earliestDateInYear = DateTime(now.year, 1, 1);
@@ -77,24 +169,30 @@ class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
       }
     }
     final endOfYear = DateTime(now.year, 12, 31);
-    final int activeYearDays = max(1, endOfYear.difference(earliestDateInYear).inDays + 1);
+    final int activeYearDays =
+        max(1, endOfYear.difference(earliestDateInYear).inDays + 1);
     final double yearlyTarget = activeYearDays * dailyGoal;
 
     final double realAvgRate = activeEntries.isEmpty
         ? dailyGoal
         : activeLifetimeTotal / max(1, activeEntries.length);
     final double yearForecast = realAvgRate * activeYearDays;
-    final double yearProgressPct = (activeLifetimeTotal / yearlyTarget).clamp(0.0, 1.0);
+    final double yearProgressPct =
+        (activeLifetimeTotal / yearlyTarget).clamp(0.0, 1.0);
 
     // Theme Colors
     final cardBg = Theme.of(context).cardColor;
     final innerCardBg = isDark ? AppTheme.bgApp : const Color(0xFFF1F5F9);
-    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
-    final textMutedColor = isDark ? AppTheme.textMuted : const Color(0xFF334155);
+    final borderColor =
+        isDark ? AppTheme.borderColor : AppTheme.borderColorLight;
+    final textMutedColor =
+        isDark ? AppTheme.textMuted : const Color(0xFF334155);
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtextColor = isDark ? Colors.white70 : const Color(0xFF334155);
-    final emeraldTextColor = isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
-    final amberTextColor = isDark ? AppTheme.amberGoldLight : const Color(0xFFB45309);
+    final emeraldTextColor =
+        isDark ? AppTheme.emeraldLight : const Color(0xFF047857);
+    final amberTextColor =
+        isDark ? AppTheme.amberGoldLight : const Color(0xFFB45309);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -124,15 +222,99 @@ class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
             ),
             child: Row(
               children: [
-                Expanded(child: _buildFilterPill('🛵 Grab / Chạy xe', 'GRAB', isDark)),
+                Expanded(child: _buildFilterPill('🛵 Grab', 'GRAB', isDark)),
                 const SizedBox(width: 4),
-                Expanded(child: _buildFilterPill('💼 Nguồn Khác', 'OTHER', isDark)),
+                Expanded(child: _buildFilterPill('💼 Khác', 'OTHER', isDark)),
                 const SizedBox(width: 4),
                 Expanded(child: _buildFilterPill('🌐 Tất Cả', 'ALL', isDark)),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+
+          // Period Mode Toggle Row (Tháng / Tuần & Tuần Navigation)
+          Row(
+            children: [
+              // Period Toggle Pill
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: innerCardBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildPeriodPill('Tháng', 'MONTH', isDark),
+                    _buildPeriodPill('Tuần', 'WEEK', isDark),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Week Navigator (Only shown in WEEK mode)
+              if (_periodMode == 'WEEK')
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: innerCardBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppTheme.skyBlueAccent.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          onTap: () => setState(() => _weekOffset--),
+                          borderRadius: BorderRadius.circular(6),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: Icon(
+                              Icons.chevron_left_rounded,
+                              size: 18,
+                              color: AppTheme.skyBlueAccent,
+                            ),
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            _weekOffset == 0
+                                ? 'Tuần này (${weekInfo.startDisplay} - ${weekInfo.endDisplay})'
+                                : (_weekOffset == -1
+                                    ? 'Tuần trước (${weekInfo.startDisplay} - ${weekInfo.endDisplay})'
+                                    : '${weekInfo.startDisplay} - ${weekInfo.endDisplay}'),
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.skyBlueAccent,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => setState(() => _weekOffset++),
+                          borderRadius: BorderRadius.circular(6),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: Icon(
+                              Icons.chevron_right_rounded,
+                              size: 18,
+                              color: AppTheme.skyBlueAccent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
 
           // Header Row
           Row(
@@ -193,7 +375,7 @@ class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
             spacing: 8,
             children: [
               Text(
-                Formatters.formatShortNumber(monthTotal),
+                Formatters.formatShortNumber(periodTotal),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -203,24 +385,24 @@ class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
               ),
               if (_selectedFilter == 'GRAB')
                 Text(
-                  monthDiff >= 0
-                      ? 'Dư +${Formatters.formatShortNumber(monthDiff)} so với lũy kế'
-                      : 'Thiếu -${Formatters.formatShortNumber(monthDiff.abs())} so với lũy kế',
+                  isCurrentPeriod
+                      ? (paceDiff >= 0
+                          ? 'Dư +${Formatters.formatShortNumber(paceDiff)} so với lũy kế'
+                          : 'Thiếu -${Formatters.formatShortNumber(paceDiff.abs())} so với lũy kế')
+                      : (paceDiff >= 0
+                          ? '🎉 Đạt mục tiêu! Dư +${Formatters.formatShortNumber(paceDiff)}'
+                          : 'Thiếu -${Formatters.formatShortNumber(paceDiff.abs())} so với mục tiêu'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: monthDiff >= 0 ? emeraldTextColor : Colors.redAccent,
+                    color: paceDiff >= 0 ? emeraldTextColor : Colors.redAccent,
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            _selectedFilter == 'GRAB'
-                ? 'Mục tiêu lũy kế đến nay: ${Formatters.formatShortNumber(monthExpectedTarget)}'
-                : (_selectedFilter == 'OTHER'
-                    ? 'Tổng tiết kiệm từ Lương, Thưởng và Nguồn khác tháng này'
-                    : 'Tổng tiết kiệm tất cả các nguồn tháng này'),
+            metaText,
             style: TextStyle(
               fontSize: 11,
               color: textMutedColor,
@@ -319,7 +501,7 @@ class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
                             ),
                           ),
                           Text(
-                            Formatters.formatShortNumber(monthTotal),
+                            Formatters.formatShortNumber(grabMonthTotal),
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -499,6 +681,42 @@ class _OverviewBannerCardState extends ConsumerState<OverviewBannerCard> {
                   ? Colors.white
                   : (isDark ? AppTheme.textMuted : const Color(0xFF475569)),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPeriodPill(String title, String key, bool isDark) {
+    final isSelected = _periodMode == key;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _periodMode = key;
+          if (key == 'WEEK') {
+            _weekOffset = 0;
+          }
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.skyBlueAccent
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? Colors.black87
+                : (isDark ? AppTheme.textMuted : const Color(0xFF64748B)),
           ),
         ),
       ),

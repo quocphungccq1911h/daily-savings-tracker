@@ -38,4 +38,54 @@ class Formatters {
       default: return '';
     }
   }
+
+  /// Calculates week boundaries (Monday to Sunday) based on offset
+  static WeekRange getWeekRange(int offset) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    // In Dart: Monday = 1, Sunday = 7
+    final currentMonday = today.subtract(Duration(days: today.weekday - 1));
+    final targetMonday = currentMonday.add(Duration(days: offset * 7));
+    final targetSunday = targetMonday.add(const Duration(days: 6));
+
+    final List<String> dateList = [];
+    for (int i = 0; i < 7; i++) {
+      final d = targetMonday.add(Duration(days: i));
+      dateList.add(
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
+      );
+    }
+
+    final startDisplay =
+        '${targetMonday.day.toString().padLeft(2, '0')}/${targetMonday.month.toString().padLeft(2, '0')}';
+    final endDisplay =
+        '${targetSunday.day.toString().padLeft(2, '0')}/${targetSunday.month.toString().padLeft(2, '0')}';
+
+    return WeekRange(
+      startDate: targetMonday,
+      endDate: targetSunday,
+      startDisplay: startDisplay,
+      endDisplay: endDisplay,
+      dateList: dateList,
+      isCurrentWeek: offset == 0,
+    );
+  }
+}
+
+class WeekRange {
+  final DateTime startDate;
+  final DateTime endDate;
+  final String startDisplay;
+  final String endDisplay;
+  final List<String> dateList;
+  final bool isCurrentWeek;
+
+  const WeekRange({
+    required this.startDate,
+    required this.endDate,
+    required this.startDisplay,
+    required this.endDisplay,
+    required this.dateList,
+    required this.isCurrentWeek,
+  });
 }
