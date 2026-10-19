@@ -482,6 +482,45 @@
   const monthCardTitle = document.getElementById('monthCardTitle');
   const yearCardTitle = document.getElementById('yearCardTitle');
 
+  // Period View Mode: 'MONTH' hoặc 'WEEK'
+  let currentPeriodMode = 'MONTH';
+  let currentWeekOffset = 0; // 0 = tuần hiện tại, -1 = tuần trước, v.v.
+
+  const periodTogglePills = document.getElementById('periodTogglePills');
+  const monthSelectWrapper = document.getElementById('monthSelectWrapper');
+  const weekSelectWrapper = document.getElementById('weekSelectWrapper');
+  const prevWeekBtn = document.getElementById('prevWeekBtn');
+  const nextWeekBtn = document.getElementById('nextWeekBtn');
+  const currentWeekLabel = document.getElementById('currentWeekLabel');
+
+  function getWeekRange(offset = 0) {
+    const now = new Date();
+    // JS: 0=Chủ nhật, 1=Thứ 2, ..., 6=Thứ 7
+    const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); // 1=T2, ..., 7=CN
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (dayOfWeek - 1) + (offset * 7));
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    
+    const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const formatDisplay = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    const dateList = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+      dateList.push(formatDate(d));
+    }
+
+    return {
+      monday,
+      sunday,
+      startStr: formatDate(monday),
+      endStr: formatDate(sunday),
+      startDisplay: formatDisplay(monday),
+      endDisplay: formatDisplay(sunday),
+      dateList,
+      isCurrentWeek: offset === 0
+    };
+  }
+
   let currentBannerFilter = 'GRAB';
   let currentTableFilter = 'ALL';
 
@@ -512,6 +551,64 @@
       });
     }
     renderTable();
+  }
+
+  if (periodTogglePills) {
+    periodTogglePills.addEventListener('click', (e) => {
+      const btn = e.target.closest('.period-pill');
+      if (!btn) return;
+      const period = btn.dataset.period;
+      if (period && period !== currentPeriodMode) {
+        setPeriodMode(period);
+      }
+    });
+  }
+
+  function setPeriodMode(mode) {
+    currentPeriodMode = mode;
+    if (periodTogglePills) {
+      periodTogglePills.querySelectorAll('.period-pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.period === mode);
+      });
+    }
+
+    if (monthSelectWrapper && weekSelectWrapper) {
+      if (mode === 'WEEK') {
+        monthSelectWrapper.style.display = 'none';
+        weekSelectWrapper.style.display = 'inline-flex';
+      } else {
+        monthSelectWrapper.style.display = 'block';
+        weekSelectWrapper.style.display = 'none';
+      }
+    }
+
+    renderDashboard();
+    renderTable();
+    if (tabChartContent && tabChartContent.style.display !== 'none') {
+      renderChart();
+    }
+  }
+
+  if (prevWeekBtn) {
+    prevWeekBtn.addEventListener('click', () => {
+      currentWeekOffset -= 1;
+      renderDashboard();
+      renderTable();
+      if (tabChartContent && tabChartContent.style.display !== 'none') {
+        renderChart();
+      }
+    });
+  }
+
+  if (nextWeekBtn) {
+    nextWeekBtn.addEventListener('click', () => {
+      currentWeekOffset += 1;
+      renderDashboard();
+      renderTable();
+      if (tabChartContent && tabChartContent.style.display !== 'none') {
+        renderChart();
+      }
+    });
   }
 
   if (bannerFilterPills) {
@@ -608,24 +705,52 @@
     let streak = 0;
     let modeTitle = '';
 
-    if (currentBannerFilter === 'GRAB') {
-      activeEntries = grabEntries;
-      streak = calculateStreakForEntries(grabEntries);
-      modeTitle = isCurrentMonth
-        ? `LŨY KẾ GRAB HÔM NAY (${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')})`
-        : `TỔNG KẾT GRAB THÁNG ${selectedMonth}/${selectedYear}`;
-    } else if (currentBannerFilter === 'OTHER') {
-      activeEntries = otherEntries;
-      streak = 0;
-      modeTitle = isCurrentMonth
-        ? `THU NHẬP NGUỒN KHÁC (${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')})`
-        : `NGUỒN KHÁC THÁNG ${selectedMonth}/${selectedYear}`;
+    const weekInfo = getWeekRange(currentWeekOffset);
+    if (currentWeekLabel) {
+      if (currentWeekOffset === 0) {
+        currentWeekLabel.textContent = `Tuần này (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+      } else if (currentWeekOffset === -1) {
+        currentWeekLabel.textContent = `Tuần trước (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+      } else {
+        currentWeekLabel.textContent = `${weekInfo.startDisplay} - ${weekInfo.endDisplay}`;
+      }
+    }
+
+    if (currentPeriodMode === 'WEEK') {
+      const weekLabelText = currentWeekOffset === 0 ? 'TUẦN NÀY' : (currentWeekOffset === -1 ? 'TUẦN TRƯỚC' : 'TUẦN');
+      if (currentBannerFilter === 'GRAB') {
+        activeEntries = grabEntries;
+        streak = calculateStreakForEntries(grabEntries);
+        modeTitle = `TIẾN ĐỘ GRAB ${weekLabelText} (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+      } else if (currentBannerFilter === 'OTHER') {
+        activeEntries = otherEntries;
+        streak = 0;
+        modeTitle = `NGUỒN KHÁC ${weekLabelText} (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+      } else {
+        activeEntries = entries;
+        streak = calculateStreakForEntries(entries);
+        modeTitle = `TỔNG TẤT CẢ ${weekLabelText} (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+      }
     } else {
-      activeEntries = entries;
-      streak = calculateStreakForEntries(entries);
-      modeTitle = isCurrentMonth
-        ? `TỔNG LŨY KẾ TẤT CẢ (${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')})`
-        : `TỔNG KẾT TẤT CẢ THÁNG ${selectedMonth}/${selectedYear}`;
+      if (currentBannerFilter === 'GRAB') {
+        activeEntries = grabEntries;
+        streak = calculateStreakForEntries(grabEntries);
+        modeTitle = isCurrentMonth
+          ? `LŨY KẾ GRAB HÔM NAY (${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')})`
+          : `TỔNG KẾT GRAB THÁNG ${selectedMonth}/${selectedYear}`;
+      } else if (currentBannerFilter === 'OTHER') {
+        activeEntries = otherEntries;
+        streak = 0;
+        modeTitle = isCurrentMonth
+          ? `THU NHẬP NGUỒN KHÁC (${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')})`
+          : `NGUỒN KHÁC THÁNG ${selectedMonth}/${selectedYear}`;
+      } else {
+        activeEntries = entries;
+        streak = calculateStreakForEntries(entries);
+        modeTitle = isCurrentMonth
+          ? `TỔNG LŨY KẾ TẤT CẢ (${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')})`
+          : `TỔNG KẾT TẤT CẢ THÁNG ${selectedMonth}/${selectedYear}`;
+      }
     }
 
     if (bannerTitleText) bannerTitleText.textContent = modeTitle;
@@ -640,62 +765,122 @@
       }
     }
 
-    // 4. Tính toán tiến độ tháng cho activeEntries
-    const activeMonthEntries = activeEntries.filter(e => e.date && e.date.startsWith(selectedMonthKey));
-    let monthTotalSaved = 0;
-    let savedUpToToday = 0;
-
-    activeMonthEntries.forEach(e => {
-      const dayNum = parseInt(e.date.split('-')[2], 10);
-      const amt = Number(e.amount) || 0;
-      monthTotalSaved += amt;
-      if (dayNum <= currentDay) {
-        savedUpToToday += amt;
-      }
-    });
-
+    // 4. Tính toán tiến độ theo Chu kỳ được chọn (Tuần hoặc Tháng)
     const monthTarget = totalDaysInMonth * dailyGoal;
     const cumulativeTargetToToday = currentDay * dailyGoal;
 
-    if (currentBannerFilter === 'GRAB') {
-      statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
-      statusPaceAmount.className = 'banner-val text-success';
+    if (currentPeriodMode === 'WEEK') {
+      const activeWeekEntries = activeEntries.filter(e => e.date && weekInfo.dateList.includes(e.date));
+      const weekTotalSaved = activeWeekEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
-      if (isCurrentMonth) {
-        if (bannerMetaText) bannerMetaText.innerHTML = `Mục tiêu lũy kế đến nay: <strong>${formatShortNumber(cumulativeTargetToToday)}</strong>`;
-        const paceDiff = savedUpToToday - cumulativeTargetToToday;
-        if (paceDiff >= 0) {
-          statusPacePill.textContent = paceDiff === 0 ? 'Vừa đủ mục tiêu đến nay' : `Dư +${formatShortNumber(paceDiff)} so với lũy kế`;
-          statusPacePill.className = 'banner-sub text-success';
+      const weekTarget = 7 * dailyGoal;
+      let daysPassedInWeek = 7;
+      if (weekInfo.isCurrentWeek) {
+        const jsDay = now.getDay() === 0 ? 7 : now.getDay(); // 1=T2 -> 7=CN
+        daysPassedInWeek = jsDay;
+      } else if (currentWeekOffset > 0) {
+        daysPassedInWeek = 0;
+      }
+      const cumulativeTargetWeek = daysPassedInWeek * dailyGoal;
+
+      if (currentBannerFilter === 'GRAB') {
+        statusPaceAmount.textContent = formatShortNumber(weekTotalSaved);
+        statusPaceAmount.className = 'banner-val text-success';
+
+        if (weekInfo.isCurrentWeek) {
+          if (bannerMetaText) bannerMetaText.innerHTML = `Mục tiêu tuần đến nay (${daysPassedInWeek}/7 ngày): <strong>${formatShortNumber(cumulativeTargetWeek)}</strong> / ${formatShortNumber(weekTarget)}`;
+          const paceDiff = weekTotalSaved - cumulativeTargetWeek;
+          if (paceDiff >= 0) {
+            statusPacePill.textContent = paceDiff === 0 ? 'Vừa đủ mục tiêu tuần đến nay' : `Dư +${formatShortNumber(paceDiff)} so với lũy kế tuần`;
+            statusPacePill.className = 'banner-sub text-success';
+          } else {
+            const diffAbs = Math.abs(paceDiff);
+            statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với lũy kế tuần`;
+            statusPacePill.className = 'banner-sub text-danger';
+          }
         } else {
-          const diffAbs = Math.abs(paceDiff);
-          statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với lũy kế`;
-          statusPacePill.className = 'banner-sub text-danger';
+          if (bannerMetaText) bannerMetaText.innerHTML = `Tổng mục tiêu tuần (7 ngày): <strong>${formatShortNumber(weekTarget)}</strong>`;
+          const weekDiff = weekTotalSaved - weekTarget;
+          if (weekDiff >= 0) {
+            statusPacePill.textContent = `🎉 Hoàn thành tuần! Dư +${formatShortNumber(weekDiff)}`;
+            statusPacePill.className = 'banner-sub text-success';
+          } else {
+            const diffAbs = Math.abs(weekDiff);
+            statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với mục tiêu tuần`;
+            statusPacePill.className = 'banner-sub text-danger';
+          }
         }
+      } else if (currentBannerFilter === 'OTHER') {
+        statusPaceAmount.textContent = formatShortNumber(weekTotalSaved);
+        statusPaceAmount.className = 'banner-val text-info';
+        statusPacePill.textContent = `Thu nhập nguồn khác tuần (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+        if (bannerMetaText) bannerMetaText.innerHTML = `Tổng thu nhập nguồn khác toàn thời gian: <strong>${formatShortNumber(otherLifetimeTotal)}</strong>`;
       } else {
-        if (bannerMetaText) bannerMetaText.innerHTML = `Tổng mục tiêu tháng: <strong>${formatShortNumber(monthTarget)}</strong>`;
-        const monthDiff = monthTotalSaved - monthTarget;
-        if (monthDiff >= 0) {
-          statusPacePill.textContent = `🎉 Hoàn thành tháng! Dư +${formatShortNumber(monthDiff)}`;
-          statusPacePill.className = 'banner-sub text-success';
-        } else {
-          const diffAbs = Math.abs(monthDiff);
-          statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với mục tiêu tháng`;
-          statusPacePill.className = 'banner-sub text-danger';
+        const grabWeekTotal = grabEntries.filter(e => e.date && weekInfo.dateList.includes(e.date)).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        const otherWeekTotal = otherEntries.filter(e => e.date && weekInfo.dateList.includes(e.date)).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+        statusPaceAmount.textContent = formatShortNumber(weekTotalSaved);
+        statusPaceAmount.className = 'banner-val text-success';
+        statusPacePill.textContent = `Tổng tích lũy tất cả các nguồn tuần (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+        if (bannerMetaText) {
+          bannerMetaText.innerHTML = `Trong tuần: <strong>🛵 Grab (${formatShortNumber(grabWeekTotal)})</strong> + <strong>💼 Khác (${formatShortNumber(otherWeekTotal)})</strong>`;
         }
       }
-    } else if (currentBannerFilter === 'OTHER') {
-      statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
-      statusPaceAmount.className = 'banner-val text-info';
-      statusPacePill.textContent = 'Tổng tiết kiệm từ Lương, Thưởng và Nguồn khác tháng này';
-      if (bannerMetaText) bannerMetaText.innerHTML = `Tổng thu nhập nguồn khác toàn thời gian: <strong>${formatShortNumber(otherLifetimeTotal)}</strong>`;
     } else {
-      // ALL (Matches Flutter OverviewBannerCard: displays total of all sources without comparing Other income against Grab 150k target)
-      statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
-      statusPaceAmount.className = 'banner-val text-success';
-      statusPacePill.textContent = 'Tổng tiết kiệm tất cả các nguồn tháng này';
-      if (bannerMetaText) {
-        bannerMetaText.innerHTML = `Trong tháng: <strong>🛵 Grab (${formatShortNumber(grabMonthTotal)})</strong> + <strong>💼 Khác (${formatShortNumber(otherMonthTotal)})</strong>`;
+      // Chế độ Tháng
+      const activeMonthEntries = activeEntries.filter(e => e.date && e.date.startsWith(selectedMonthKey));
+      let monthTotalSaved = 0;
+      let savedUpToToday = 0;
+
+      activeMonthEntries.forEach(e => {
+        const dayNum = parseInt(e.date.split('-')[2], 10);
+        const amt = Number(e.amount) || 0;
+        monthTotalSaved += amt;
+        if (dayNum <= currentDay) {
+          savedUpToToday += amt;
+        }
+      });
+
+      if (currentBannerFilter === 'GRAB') {
+        statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
+        statusPaceAmount.className = 'banner-val text-success';
+
+        if (isCurrentMonth) {
+          if (bannerMetaText) bannerMetaText.innerHTML = `Mục tiêu lũy kế đến nay: <strong>${formatShortNumber(cumulativeTargetToToday)}</strong>`;
+          const paceDiff = savedUpToToday - cumulativeTargetToToday;
+          if (paceDiff >= 0) {
+            statusPacePill.textContent = paceDiff === 0 ? 'Vừa đủ mục tiêu đến nay' : `Dư +${formatShortNumber(paceDiff)} so với lũy kế`;
+            statusPacePill.className = 'banner-sub text-success';
+          } else {
+            const diffAbs = Math.abs(paceDiff);
+            statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với lũy kế`;
+            statusPacePill.className = 'banner-sub text-danger';
+          }
+        } else {
+          if (bannerMetaText) bannerMetaText.innerHTML = `Tổng mục tiêu tháng: <strong>${formatShortNumber(monthTarget)}</strong>`;
+          const monthDiff = monthTotalSaved - monthTarget;
+          if (monthDiff >= 0) {
+            statusPacePill.textContent = `🎉 Hoàn thành tháng! Dư +${formatShortNumber(monthDiff)}`;
+            statusPacePill.className = 'banner-sub text-success';
+          } else {
+            const diffAbs = Math.abs(monthDiff);
+            statusPacePill.textContent = `Thiếu -${formatShortNumber(diffAbs)} so với mục tiêu tháng`;
+            statusPacePill.className = 'banner-sub text-danger';
+          }
+        }
+      } else if (currentBannerFilter === 'OTHER') {
+        statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
+        statusPaceAmount.className = 'banner-val text-info';
+        statusPacePill.textContent = 'Tổng tiết kiệm từ Lương, Thưởng và Nguồn khác tháng này';
+        if (bannerMetaText) bannerMetaText.innerHTML = `Tổng thu nhập nguồn khác toàn thời gian: <strong>${formatShortNumber(otherLifetimeTotal)}</strong>`;
+      } else {
+        // ALL
+        statusPaceAmount.textContent = formatShortNumber(monthTotalSaved);
+        statusPaceAmount.className = 'banner-val text-success';
+        statusPacePill.textContent = 'Tổng tiết kiệm tất cả các nguồn tháng này';
+        if (bannerMetaText) {
+          bannerMetaText.innerHTML = `Trong tháng: <strong>🛵 Grab (${formatShortNumber(grabMonthTotal)})</strong> + <strong>💼 Khác (${formatShortNumber(otherMonthTotal)})</strong>`;
+        }
       }
     }
 
@@ -855,24 +1040,35 @@
     const selectedMonth = filterMonthSelect.value;
     savingsTableBody.innerHTML = '';
 
-    // 1. Lấy tất cả khoản thu trong tháng để tính tổng quan tháng trên thanh tiêu đề bảng
-    const allMonthEntries = entries.filter(e => e.date && e.date.startsWith(selectedMonth));
-    const monthGrabSum = allMonthEntries
+    const weekInfo = getWeekRange(currentWeekOffset);
+    const isWeek = currentPeriodMode === 'WEEK';
+
+    // 1. Lấy tất cả khoản thu trong khoảng thời gian được chọn để tính tổng quan trên thanh tiêu đề bảng
+    const periodEntries = isWeek
+      ? entries.filter(e => e.date && weekInfo.dateList.includes(e.date))
+      : entries.filter(e => e.date && e.date.startsWith(selectedMonth));
+
+    const periodGrabSum = periodEntries
       .filter(e => isGrabCategory(e.category || parseEntryCategory(e)))
       .reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const monthOtherSum = allMonthEntries
+    const periodOtherSum = periodEntries
       .filter(e => !isGrabCategory(e.category || parseEntryCategory(e)))
       .reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const monthAllSum = monthGrabSum + monthOtherSum;
+    const periodAllSum = periodGrabSum + periodOtherSum;
 
     const tableTargetSubtitle = document.getElementById('tableTargetSubtitle');
     if (tableTargetSubtitle) {
-      const [yStr, mStr] = (selectedMonth || '').split('-');
-      const mLabel = (yStr && mStr) ? `T${parseInt(mStr, 10)}/${yStr}` : selectedMonth;
-      tableTargetSubtitle.innerHTML = `📅 <strong>${mLabel}:</strong> 🛵 Grab: <strong>${formatShortNumber(monthGrabSum)}</strong> • 💼 Khác: <strong style="color:#c084fc;">${formatShortNumber(monthOtherSum)}</strong> • 💰 Tổng: <strong style="color:#fbbf24;">${formatShortNumber(monthAllSum)}</strong>`;
+      let label = '';
+      if (isWeek) {
+        label = `Tuần (${weekInfo.startDisplay} - ${weekInfo.endDisplay})`;
+      } else {
+        const [yStr, mStr] = (selectedMonth || '').split('-');
+        label = (yStr && mStr) ? `T${parseInt(mStr, 10)}/${yStr}` : selectedMonth;
+      }
+      tableTargetSubtitle.innerHTML = `📅 <strong>${label}:</strong> 🛵 Grab: <strong>${formatShortNumber(periodGrabSum)}</strong> • 💼 Khác: <strong style="color:#c084fc;">${formatShortNumber(periodOtherSum)}</strong> • 💰 Tổng: <strong style="color:#fbbf24;">${formatShortNumber(periodAllSum)}</strong>`;
     }
 
-    // 2. Lọc theo bộ lọc riêng của bảng (Mặc định currentTableFilter = 'ALL' để hiển thị đầy đủ cả các khoản Khác giống bản App)
+    // 2. Lọc theo bộ lọc riêng của bảng
     let sourceEntries = entries;
     if (currentTableFilter === 'GRAB') {
       sourceEntries = entries.filter(e => isGrabCategory(e.category || parseEntryCategory(e)));
@@ -880,14 +1076,17 @@
       sourceEntries = entries.filter(e => !isGrabCategory(e.category || parseEntryCategory(e)));
     }
 
-    const filtered = sourceEntries.filter(e => e.date && e.date.startsWith(selectedMonth));
+    const filtered = isWeek
+      ? sourceEntries.filter(e => e.date && weekInfo.dateList.includes(e.date))
+      : sourceEntries.filter(e => e.date && e.date.startsWith(selectedMonth));
 
     if (filtered.length === 0) {
-      let emptyMsg = `Chưa có ghi nhận tiết kiệm cho ${selectedMonth.replace('-', '/')}.`;
+      const periodName = isWeek ? `tuần (${weekInfo.startDisplay} - ${weekInfo.endDisplay})` : selectedMonth.replace('-', '/');
+      let emptyMsg = `Chưa có ghi nhận tiết kiệm cho ${periodName}.`;
       if (currentTableFilter === 'GRAB') {
-        emptyMsg = `Chưa có khoản chạy xe Grab nào trong ${selectedMonth.replace('-', '/')}.`;
+        emptyMsg = `Chưa có khoản chạy xe Grab nào trong ${periodName}.`;
       } else if (currentTableFilter === 'OTHER') {
-        emptyMsg = `Chưa có khoản thu nhập nguồn khác trong ${selectedMonth.replace('-', '/')}.`;
+        emptyMsg = `Chưa có khoản thu nhập nguồn khác trong ${periodName}.`;
       }
       savingsTableBody.innerHTML = `
         <tr>
@@ -1083,31 +1282,56 @@
     const selectedMonth = filterMonthSelect.value;
     if (!selectedMonth) return;
 
-    const [year, month] = selectedMonth.split('-').map(Number);
-    const daysInMonth = new Date(year, month, 0).getDate();
-
     const labels = [];
     const actualData = [];
     const targetData = [];
 
-    // Biểu đồ xu hướng ngày chỉ thống kê thu nhập chạy xe Grab (giống hệt ChartTab trên Mobile App)
-    const dayMap = {};
-    entries.forEach(e => {
-      if (e.date && e.date.startsWith(selectedMonth)) {
-        if (isGrabCategory(e.category || parseEntryCategory(e))) {
-          const day = parseInt(e.date.split('-')[2]);
-          dayMap[day] = (dayMap[day] || 0) + e.amount;
-        }
-      }
-    });
+    const isWeek = currentPeriodMode === 'WEEK';
+    const weekInfo = getWeekRange(currentWeekOffset);
 
-    for (let d = 1; d <= daysInMonth; d++) {
-      labels.push(`${d}`);
-      actualData.push(dayMap[d] || 0);
-      targetData.push(dailyGoal);
+    if (isWeek) {
+      const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+      const dayMap = {};
+      entries.forEach(e => {
+        if (e.date && weekInfo.dateList.includes(e.date)) {
+          if (isGrabCategory(e.category || parseEntryCategory(e))) {
+            dayMap[e.date] = (dayMap[e.date] || 0) + (Number(e.amount) || 0);
+          }
+        }
+      });
+
+      weekInfo.dateList.forEach((dStr, idx) => {
+        const parts = dStr.split('-');
+        const shortDate = `${parts[2]}/${parts[1]}`;
+        labels.push(`${dayNames[idx]} (${shortDate})`);
+        actualData.push(dayMap[dStr] || 0);
+        targetData.push(dailyGoal);
+      });
+    } else {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      // Biểu đồ xu hướng ngày chỉ thống kê thu nhập chạy xe Grab (giống hệt ChartTab trên Mobile App)
+      const dayMap = {};
+      entries.forEach(e => {
+        if (e.date && e.date.startsWith(selectedMonth)) {
+          if (isGrabCategory(e.category || parseEntryCategory(e))) {
+            const day = parseInt(e.date.split('-')[2], 10);
+            dayMap[day] = (dayMap[day] || 0) + (Number(e.amount) || 0);
+          }
+        }
+      });
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        labels.push(`${d}`);
+        actualData.push(dayMap[d] || 0);
+        targetData.push(dailyGoal);
+      }
     }
 
-    const ctx = document.getElementById('savingsChart').getContext('2d');
+    const chartCanvas = document.getElementById('savingsChart');
+    if (!chartCanvas) return;
+    const ctx = chartCanvas.getContext('2d');
 
     if (savingsChartInstance) {
       savingsChartInstance.destroy();
