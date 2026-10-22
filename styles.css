@@ -3815,18 +3815,117 @@ body {
   box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
 }
 
+.hometown-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin: 12px 0 8px 0;
+}
+
+.hometown-group-header.upcoming {
+  color: #34d399;
+}
+
+.hometown-group-header.completed {
+  color: #94a3b8;
+}
+
+.hometown-group-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 10px 0;
+}
+
+.hometown-group-divider .divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hometown-group-divider .divider-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
 .hometown-trip-card.is-upcoming {
-  border-left: 3.5px solid #10b981;
+  background: linear-gradient(145deg, rgba(14, 47, 39, 0.85), rgba(19, 34, 56, 0.85));
+  border: 1.5px solid rgba(52, 211, 153, 0.65);
+  box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.22);
+}
+
+.hometown-trip-card.is-upcoming:hover {
+  background: linear-gradient(145deg, rgba(16, 60, 48, 0.95), rgba(22, 42, 68, 0.95));
+  border-color: rgba(52, 211, 153, 0.85);
+  box-shadow: 0 6px 24px -2px rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.hometown-trip-card.is-upcoming .hometown-date-badge {
+  background: linear-gradient(180deg, rgba(6, 78, 59, 0.8), rgba(11, 41, 34, 0.9));
+  border: 1.2px solid rgba(52, 211, 153, 0.7);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+}
+
+.hometown-trip-card.is-upcoming .hometown-date-badge .date-month {
+  color: #34d399;
+  font-weight: 900;
+}
+
+.hometown-trip-card.is-upcoming .hometown-date-badge .date-day {
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.hometown-trip-card.is-upcoming .hometown-trip-card-title {
+  color: #ffffff;
+  font-size: 0.96rem;
+  font-weight: 900;
+}
+
+.hometown-trip-card.is-upcoming .badge-upcoming {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+  font-weight: 800;
+}
+
+.hometown-trip-card.is-upcoming .hometown-meta-pill.budget {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+  font-weight: 800;
 }
 
 .hometown-trip-card.is-active {
-  border-left: 3.5px solid #f472b6;
-  background: rgba(244, 114, 182, 0.04);
+  background: linear-gradient(145deg, rgba(76, 29, 56, 0.85), rgba(19, 34, 56, 0.85));
+  border: 1.5px solid rgba(244, 114, 182, 0.65);
+  box-shadow: 0 4px 20px -2px rgba(244, 114, 182, 0.25);
 }
 
 .hometown-trip-card.is-completed {
-  border-left: 3.5px solid rgba(148, 163, 184, 0.4);
-  opacity: 0.88;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(15, 23, 42, 0.35);
+  opacity: 0.68;
+}
+
+.hometown-trip-card.is-completed:hover {
+  opacity: 0.9;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.hometown-trip-card.is-completed .hometown-trip-card-title {
+  color: #cbd5e1;
 }
 
 /* Date Badge on the Left */

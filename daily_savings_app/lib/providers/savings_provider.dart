@@ -133,11 +133,37 @@ class SavingsState {
 
   // --- HOMETOWN TRIPS COMPUTED PROPERTIES ---
 
-  /// Danh sách chuyến đi sắp xếp theo ngày bắt đầu (sớm nhất -> muộn nhất)
+  /// Danh sách chuyến đi sắp xếp:
+  /// 1. Đang ở quê (ongoing) lên đầu tiên
+  /// 2. Các chuyến sắp tới (chưa về: today, tomorrow, upcoming) xếp theo ngày tăng dần (gần nhất lên trước)
+  /// 3. Các chuyến đã hoàn thành (completed) xếp xuống dưới cùng, theo ngày giảm dần
   List<HometownTrip> get sortedHometownTrips {
     final list = List<HometownTrip>.from(hometownTrips);
-    list.sort((a, b) => a.startDate.compareTo(b.startDate));
+    list.sort((a, b) {
+      final rankA = _statusRank(a.status);
+      final rankB = _statusRank(b.status);
+      if (rankA != rankB) {
+        return rankA.compareTo(rankB);
+      }
+      if (rankA < 2) {
+        return a.startDate.compareTo(b.startDate);
+      }
+      return b.startDate.compareTo(a.startDate);
+    });
     return list;
+  }
+
+  static int _statusRank(HometownTripStatus status) {
+    switch (status) {
+      case HometownTripStatus.ongoing:
+        return 0;
+      case HometownTripStatus.today:
+      case HometownTripStatus.tomorrow:
+      case HometownTripStatus.upcoming:
+        return 1;
+      case HometownTripStatus.completed:
+        return 2;
+    }
   }
 
   /// Chuyến đi đang diễn ra (nếu có)

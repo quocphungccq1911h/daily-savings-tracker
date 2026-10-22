@@ -870,56 +870,205 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
       );
     }
 
+    final upcomingTrips = trips.where((t) => t.status != HometownTripStatus.completed).toList();
+    final completedTrips = trips.where((t) => t.status == HometownTripStatus.completed).toList();
+
     return Column(
-      children: trips.map((trip) => _buildTripCard(isDark, trip)).toList(),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (upcomingTrips.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 2),
+            child: Row(
+              children: [
+                const Icon(Icons.rocket_launch_rounded, size: 14, color: Color(0xFF34D399)),
+                const SizedBox(width: 6),
+                Text(
+                  'CHUYẾN ĐI SẮP TỚI (${upcomingTrips.length})',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF34D399),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...upcomingTrips.map((trip) => _buildTripCard(isDark, trip, isUpcoming: true)),
+        ],
+
+        if (completedTrips.isNotEmpty) ...[
+          if (upcomingTrips.isNotEmpty)
+            _buildCompletedSectionDivider(isDark, completedTrips.length)
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, top: 2),
+              child: Row(
+                children: [
+                  Icon(Icons.history_rounded, size: 14, color: isDark ? AppTheme.textMuted : const Color(0xFF64748B)),
+                  const SizedBox(width: 5),
+                  Text(
+                    'ĐÃ HOÀN THÀNH (${completedTrips.length})',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppTheme.textMuted : const Color(0xFF64748B),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ...completedTrips.map((trip) => _buildTripCard(isDark, trip, isUpcoming: false)),
+        ],
+      ],
     );
   }
 
-  Widget _buildTripCard(bool isDark, HometownTrip trip) {
+  Widget _buildCompletedSectionDivider(bool isDark, int count) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.black12, thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              children: [
+                Icon(Icons.history_rounded, size: 13, color: isDark ? AppTheme.textMuted : const Color(0xFF64748B)),
+                const SizedBox(width: 4),
+                Text(
+                  'ĐÃ HOÀN THÀNH ($count)',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppTheme.textMuted : const Color(0xFF64748B),
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.black12, thickness: 1)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTripCard(bool isDark, HometownTrip trip, {required bool isUpcoming}) {
     final status = trip.status;
-    final cardBg = isDark ? const Color(0xFF141C2E) : const Color(0xFFF8FAFC);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
 
     // Status styling
+    Gradient? statusGradient;
+    Color? statusBg;
     Color statusColor;
-    Color statusBg;
     String statusText;
 
     switch (status) {
       case HometownTripStatus.ongoing:
-        statusColor = const Color(0xFFF472B6);
-        statusBg = const Color(0xFFF472B6).withValues(alpha: 0.15);
-        statusText = '❤️ Đang ở quê';
+        statusGradient = const LinearGradient(colors: [Color(0xFFDB2777), Color(0xFFF472B6)]);
+        statusColor = Colors.white;
+        statusText = '❤️ Đang ở quê sum vầy';
         break;
       case HometownTripStatus.today:
-        statusColor = const Color(0xFF34D399);
-        statusBg = const Color(0xFF10B981).withValues(alpha: 0.18);
+        statusGradient = const LinearGradient(colors: [Color(0xFF059669), Color(0xFF10B981)]);
+        statusColor = Colors.white;
         statusText = '🚗 Hôm nay lên đường!';
         break;
       case HometownTripStatus.tomorrow:
-        statusColor = const Color(0xFFFBBF24);
-        statusBg = const Color(0xFFF59E0B).withValues(alpha: 0.18);
+        statusGradient = const LinearGradient(colors: [Color(0xFFD97706), Color(0xFFF59E0B)]);
+        statusColor = Colors.white;
         statusText = '🚗 Ngày mai lên đường!';
         break;
       case HometownTripStatus.upcoming:
-        statusColor = const Color(0xFF34D399);
-        statusBg = const Color(0xFF10B981).withValues(alpha: 0.15);
+        statusGradient = const LinearGradient(colors: [Color(0xFF047857), Color(0xFF10B981)]);
+        statusColor = Colors.white;
         statusText = '⏳ Còn ${trip.daysLeft} ngày';
         break;
       case HometownTripStatus.completed:
-        statusColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
         statusBg = isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0);
+        statusColor = isDark ? AppTheme.textMuted : const Color(0xFF64748B);
         statusText = '✅ Đã hoàn thành';
         break;
     }
 
-    return Container(
+    // Outer card decoration
+    final BoxDecoration cardDecoration = isUpcoming
+        ? BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      const Color(0xFF0E2F27), // Deep emerald glow
+                      const Color(0xFF132238), // Rich night indigo
+                    ]
+                  : [
+                      const Color(0xFFECFDF5),
+                      const Color(0xFFF0FDF4),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF34D399).withValues(alpha: isDark ? 0.65 : 0.8),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.22 : 0.14),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: isDark ? const Color(0xFF141C2E).withValues(alpha: 0.45) : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0),
+            ),
+          );
+
+    // Left Date Badge decoration
+    final BoxDecoration dateBadgeDecoration = isUpcoming
+        ? BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isDark
+                  ? [
+                      const Color(0xFF064E3B).withValues(alpha: 0.8),
+                      const Color(0xFF0B2922),
+                    ]
+                  : [
+                      const Color(0xFFD1FAE5),
+                      Colors.white,
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF34D399).withValues(alpha: 0.8),
+              width: 1.3,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                blurRadius: 8,
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.5) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+            ),
+          );
+
+    final Widget cardWidget = Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
+      decoration: cardDecoration,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -929,30 +1078,24 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
             Container(
               width: 58,
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
-                ),
-              ),
+              decoration: dateBadgeDecoration,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     trip.dateMonthText,
                     style: TextStyle(
-                      color: isDark ? AppTheme.textMuted : const Color(0xFF64748B),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
+                      color: isUpcoming ? const Color(0xFF34D399) : (isDark ? AppTheme.textMuted : const Color(0xFF94A3B8)),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 1),
                   Text(
                     trip.dateDayText,
                     style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black87,
-                      fontSize: 18,
+                      color: isUpcoming ? Colors.white : (isDark ? Colors.white60 : Colors.black54),
+                      fontSize: isUpcoming ? 20 : 17,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                     ),
@@ -961,13 +1104,16 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      gradient: isUpcoming
+                          ? const LinearGradient(colors: [Color(0xFF059669), Color(0xFF10B981)])
+                          : null,
+                      color: isUpcoming ? null : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       '${trip.durationInDays}N',
-                      style: const TextStyle(
-                        color: Color(0xFF34D399),
+                      style: TextStyle(
+                        color: isUpcoming ? Colors.white : (isDark ? AppTheme.textMuted : const Color(0xFF64748B)),
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                       ),
@@ -987,18 +1133,29 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: EdgeInsets.symmetric(horizontal: isUpcoming ? 8 : 6, vertical: isUpcoming ? 3 : 2),
                         decoration: BoxDecoration(
+                          gradient: statusGradient,
                           color: statusBg,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 0.8),
+                          borderRadius: BorderRadius.circular(7),
+                          border: statusGradient == null
+                              ? Border.all(color: statusColor.withValues(alpha: 0.4), width: 0.8)
+                              : Border.all(color: Colors.white.withValues(alpha: 0.35), width: 0.8),
+                          boxShadow: isUpcoming
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                    blurRadius: 6,
+                                  ),
+                                ]
+                              : null,
                         ),
                         child: Text(
                           statusText,
                           style: TextStyle(
                             color: statusColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                            fontSize: isUpcoming ? 10.5 : 10,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -1007,9 +1164,9 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
                         child: Text(
                           trip.formattedDateRange,
                           style: TextStyle(
-                            color: isDark ? AppTheme.textMuted : const Color(0xFF64748B),
+                            color: isUpcoming ? (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF059669)) : (isDark ? AppTheme.textMuted : const Color(0xFF64748B)),
                             fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: isUpcoming ? FontWeight.w700 : FontWeight.w600,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1023,9 +1180,11 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
                   Text(
                     trip.title,
                     style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black87,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
+                      color: isUpcoming
+                          ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                          : (isDark ? Colors.white60 : const Color(0xFF475569)),
+                      fontSize: isUpcoming ? 14.5 : 13,
+                      fontWeight: isUpcoming ? FontWeight.w900 : FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -1037,21 +1196,33 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
                     children: [
                       if (trip.budget > 0)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0xFFF1F5F9),
+                            color: isUpcoming
+                                ? const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.22 : 0.12)
+                                : (isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0xFFF1F5F9)),
                             borderRadius: BorderRadius.circular(6),
+                            border: isUpcoming
+                                ? Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.5), width: 0.9)
+                                : null,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('🎯 Quỹ: ', style: TextStyle(color: Colors.white60, fontSize: 10)),
+                              Text(
+                                '🎯 Quỹ: ',
+                                style: TextStyle(
+                                  color: isUpcoming ? const Color(0xFFFBBF24) : (isDark ? Colors.white54 : Colors.black45),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               Text(
                                 Formatters.formatCurrency(trip.budget),
-                                style: const TextStyle(
-                                  color: Color(0xFF34D399),
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
+                                style: TextStyle(
+                                  color: isUpcoming ? const Color(0xFFFDE68A) : (isDark ? Colors.white70 : Colors.black87),
+                                  fontSize: 11,
+                                  fontWeight: isUpcoming ? FontWeight.w900 : FontWeight.w700,
                                 ),
                               ),
                             ],
@@ -1096,14 +1267,14 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   icon: const Icon(Icons.edit_rounded, size: 16),
-                  color: const Color(0xFF38BDF8),
+                  color: isUpcoming ? const Color(0xFF38BDF8) : (isDark ? Colors.white38 : Colors.black38),
                   tooltip: 'Chỉnh sửa',
                   onPressed: () => _editTrip(trip),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                  color: Colors.redAccent.withValues(alpha: 0.8),
+                  color: isUpcoming ? Colors.redAccent.withValues(alpha: 0.8) : (isDark ? Colors.white24 : Colors.black26),
                   tooltip: 'Xóa',
                   onPressed: () => _confirmDeleteTrip(trip),
                 ),
@@ -1113,6 +1284,15 @@ class _HometownPlannerDialogState extends ConsumerState<HometownPlannerDialog> {
         ),
       ),
     );
+
+    if (isUpcoming) {
+      return cardWidget;
+    } else {
+      return Opacity(
+        opacity: 0.7,
+        child: cardWidget,
+      );
+    }
   }
 }
 

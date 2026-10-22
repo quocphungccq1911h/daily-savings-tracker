@@ -3650,7 +3650,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
         return b.startDate.localeCompare(a.startDate);
       });
 
-      hometownTripListContainer.innerHTML = sortedTrips.map(trip => {
+      const renderSingleTripCard = (trip) => {
         const status = getHometownTripStatus(trip, now);
         const duration = getHometownTripDuration(trip);
         let cardClass = 'hometown-trip-card';
@@ -3670,7 +3670,7 @@ create policy "Public Access" on savings_entries for all using (true) with check
         if (status.type === 'ACTIVE') {
           cardClass += ' is-active';
           badgeClass += ' badge-active';
-          badgeText = '❤️ Đang ở quê';
+          badgeText = '❤️ Đang ở quê sum vầy';
         } else if (status.type === 'UPCOMING') {
           cardClass += ' is-upcoming';
           badgeClass += ' badge-upcoming';
@@ -3678,11 +3678,11 @@ create policy "Public Access" on savings_entries for all using (true) with check
         } else {
           cardClass += ' is-completed';
           badgeClass += ' badge-completed';
-          badgeText = '✓ Đã về';
+          badgeText = '✓ Đã hoàn thành';
         }
 
         const budgetHtml = trip.budget > 0
-          ? `<span class="hometown-meta-pill budget"><span class="meta-icon">💰</span> Quỹ: ${formatCurrency(trip.budget)}</span>`
+          ? `<span class="hometown-meta-pill budget"><span class="meta-icon">🎯</span> Quỹ: ${formatCurrency(trip.budget)}</span>`
           : '';
         const noteHtml = trip.note 
           ? `<div class="hometown-trip-note"><span class="note-quote">“</span>${trip.note}<span class="note-quote">”</span></div>` 
@@ -3715,7 +3715,46 @@ create policy "Public Access" on savings_entries for all using (true) with check
             </div>
           </div>
         `;
-      }).join('');
+      };
+
+      const upcomingTrips = sortedTrips.filter(t => getHometownTripStatus(t, now).type !== 'COMPLETED');
+      const completedTrips = sortedTrips.filter(t => getHometownTripStatus(t, now).type === 'COMPLETED');
+
+      let listHtml = '';
+      if (upcomingTrips.length > 0) {
+        listHtml += `
+          <div class="hometown-group-header upcoming">
+            <span>🚀</span>
+            <span>CHUYẾN ĐI SẮP TỚI (${upcomingTrips.length})</span>
+          </div>
+        `;
+        listHtml += upcomingTrips.map(renderSingleTripCard).join('');
+      }
+
+      if (completedTrips.length > 0) {
+        if (upcomingTrips.length > 0) {
+          listHtml += `
+            <div class="hometown-group-divider">
+              <div class="divider-line"></div>
+              <div class="divider-label">
+                <span>🕒</span>
+                <span>ĐÃ HOÀN THÀNH (${completedTrips.length})</span>
+              </div>
+              <div class="divider-line"></div>
+            </div>
+          `;
+        } else {
+          listHtml += `
+            <div class="hometown-group-header completed">
+              <span>🕒</span>
+              <span>ĐÃ HOÀN THÀNH (${completedTrips.length})</span>
+            </div>
+          `;
+        }
+        listHtml += completedTrips.map(renderSingleTripCard).join('');
+      }
+
+      hometownTripListContainer.innerHTML = listHtml;
 
       // Wire edit and delete buttons
       document.querySelectorAll('.edit-hometown-btn').forEach(btn => {
