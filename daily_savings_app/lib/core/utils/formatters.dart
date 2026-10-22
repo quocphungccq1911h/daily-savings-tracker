@@ -9,6 +9,10 @@ class Formatters {
     return '${_currencyFormat.format(amount.round())} đ';
   }
 
+  /// Alias for formatShortNumber
+  static String formatCurrency(num amount) => formatShortNumber(amount);
+
+
   /// Formats raw number into dotted string (e.g. 150000 -> 150.000)
   static String formatNumberDot(num amount) {
     return _currencyFormat.format(amount.round());

@@ -2938,26 +2938,131 @@ create policy "Public Access" on savings_entries for all using (true) with check
       drawerGoalSub.textContent = `Thay đổi số tiền mục tiêu ${formatCurrency(dailyGoal)}/ngày`;
     }
 
-    if (drawerHometownSub && typeof getHometownTripStatus === 'function') {
+    // 2. 🏡 Render Hometown Trip Card in Drawer
+    const drawerHometownCard = document.getElementById('drawerHometownCard');
+    const drawerHometownTag = document.getElementById('drawerHometownTag');
+    const drawerHometownBody = document.getElementById('drawerHometownBody');
+    const drawerHometownHighlight = document.getElementById('drawerHometownHighlight');
+    const drawerHometownBudgetVal = document.getElementById('drawerHometownBudgetVal');
+    const drawerHometownDaysVal = document.getElementById('drawerHometownDaysVal');
+    const drawerHometownFooter = document.getElementById('drawerHometownFooter');
+
+    if (drawerHometownCard && typeof getHometownTripStatus === 'function') {
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const activeTrip = hometownTrips.find(t => todayStr >= t.startDate && todayStr <= t.endDate);
       const upcomingTrips = hometownTrips
         .filter(t => todayStr < t.startDate)
         .sort((a, b) => a.startDate.localeCompare(b.startDate));
-      const yearTrips = hometownTrips.filter(t => {
-        return (t.startDate && t.startDate.startsWith(String(now.getFullYear()))) && todayStr > t.endDate;
-      });
+      const targetTrip = activeTrip || upcomingTrips[0];
 
-      if (activeTrip) {
-        drawerHometownSub.textContent = `❤️ Đang ở quê sum vầy (${activeTrip.title})`;
-      } else if (upcomingTrips.length > 0) {
-        const next = upcomingTrips[0];
-        const status = getHometownTripStatus(next, now);
-        drawerHometownSub.textContent = status.daysLeft === 0 
-          ? `🚗 Hôm nay về quê! (${next.title})`
-          : `⏳ Còn ${status.daysLeft} ngày nữa về quê (${next.title})`;
+      // Completed trips this year
+      const yearCompletedTrips = hometownTrips.filter(t => {
+        const isThisYear = (t.startDate && t.startDate.startsWith(String(now.getFullYear()))) || 
+                           (t.endDate && t.endDate.startsWith(String(now.getFullYear())));
+        const status = getHometownTripStatus(t, now).type;
+        return isThisYear && status === 'COMPLETED';
+      });
+      const completedCount = yearCompletedTrips.length;
+      let totalDaysHome = 0;
+      yearCompletedTrips.forEach(t => totalDaysHome += getHometownTripDuration(t));
+
+      if (targetTrip) {
+        const status = getHometownTripStatus(targetTrip, now);
+        const duration = getHometownTripDuration(targetTrip);
+        const dateRangeStr = formatTripDateRange(targetTrip.startDate, targetTrip.endDate);
+
+        if (status.type === 'ACTIVE') {
+          if (drawerHometownTag) drawerHometownTag.textContent = 'ĐANG Ở QUÊ SUM VẦY';
+          drawerHometownBody.innerHTML = `
+            <div class="hometown-col-left">
+              <span class="hometown-card-label">Trạng thái:</span>
+              <div class="hometown-card-countdown">
+                <span class="hometown-card-days-num" style="font-size: 1.25rem; color: #6ee7b7;">SUM VẦY</span>
+              </div>
+            </div>
+            <div class="hometown-card-divider"></div>
+            <div class="hometown-col-right">
+              <div class="hometown-card-trip-title" title="${targetTrip.title}">${targetTrip.title}</div>
+              <div class="hometown-card-trip-dates">${dateRangeStr}</div>
+            </div>
+          `;
+        } else if (status.daysLeft === 0) {
+          if (drawerHometownTag) drawerHometownTag.textContent = 'HÔM NAY VỀ QUÊ';
+          drawerHometownBody.innerHTML = `
+            <div class="hometown-col-left">
+              <span class="hometown-card-label">Khởi hành:</span>
+              <div class="hometown-card-countdown">
+                <span class="hometown-card-days-num" style="font-size: 1.2rem; color: #fbbf24;">LÊN ĐƯỜNG</span>
+              </div>
+            </div>
+            <div class="hometown-card-divider"></div>
+            <div class="hometown-col-right">
+              <div class="hometown-card-trip-title" title="${targetTrip.title}">${targetTrip.title}</div>
+              <div class="hometown-card-trip-dates">${dateRangeStr}</div>
+            </div>
+          `;
+        } else if (status.daysLeft === 1) {
+          if (drawerHometownTag) drawerHometownTag.textContent = 'NGÀY MAI KHỞI HÀNH';
+          drawerHometownBody.innerHTML = `
+            <div class="hometown-col-left">
+              <span class="hometown-card-label">Khởi hành:</span>
+              <div class="hometown-card-countdown">
+                <span class="hometown-card-days-num" style="font-size: 1.2rem; color: #fbbf24;">NGÀY MAI</span>
+              </div>
+            </div>
+            <div class="hometown-card-divider"></div>
+            <div class="hometown-col-right">
+              <div class="hometown-card-trip-title" title="${targetTrip.title}">${targetTrip.title}</div>
+              <div class="hometown-card-trip-dates">${dateRangeStr}</div>
+            </div>
+          `;
+        } else {
+          if (drawerHometownTag) drawerHometownTag.textContent = 'VỀ QUÊ SẮP TỚI';
+          drawerHometownBody.innerHTML = `
+            <div class="hometown-col-left">
+              <span class="hometown-card-label">Thời gian đếm ngược:</span>
+              <div class="hometown-card-countdown">
+                <span class="hometown-card-days-num">${status.daysLeft}</span>
+                <span class="hometown-card-days-unit">ngày nữa</span>
+              </div>
+            </div>
+            <div class="hometown-card-divider"></div>
+            <div class="hometown-col-right">
+              <div class="hometown-card-trip-title" title="${targetTrip.title}">${targetTrip.title}</div>
+              <div class="hometown-card-trip-dates">${dateRangeStr}</div>
+            </div>
+          `;
+        }
+
+        if (drawerHometownHighlight) drawerHometownHighlight.style.display = 'flex';
+        if (drawerHometownBudgetVal) {
+          drawerHometownBudgetVal.textContent = targetTrip.budget > 0 ? formatCurrency(targetTrip.budget) : 'Chưa đặt quỹ';
+        }
+        if (drawerHometownDaysVal) {
+          drawerHometownDaysVal.textContent = `${duration} ngày về`;
+        }
+        if (drawerHometownFooter) {
+          drawerHometownFooter.textContent = `🚗 Năm ${now.getFullYear()}: Đã về ${completedCount} lần (${totalDaysHome} ngày sum vầy)`;
+        }
       } else {
-        drawerHometownSub.textContent = `Năm nay đã về ${yearTrips.length} lần • Bấm để lên lịch`;
+        // Empty state when no trip scheduled
+        if (drawerHometownTag) drawerHometownTag.textContent = 'KẾ HOẠCH VỀ QUÊ';
+        drawerHometownBody.innerHTML = `
+          <div class="hometown-empty-box">
+            <span class="hometown-empty-icon">📍</span>
+            <div class="hometown-empty-text">
+              <span class="hometown-empty-title">Chưa có lịch về quê sắp tới</span>
+              <span class="hometown-empty-sub">Bấm để lên lịch trình & chuẩn bị quỹ chuyến đi</span>
+            </div>
+            <span style="font-size: 0.8rem; color: #6ee7b7;">➔</span>
+          </div>
+        `;
+        if (drawerHometownHighlight) drawerHometownHighlight.style.display = 'none';
+        if (drawerHometownFooter) {
+          drawerHometownFooter.textContent = completedCount > 0
+            ? `🚗 Năm ${now.getFullYear()}: Đã về ${completedCount} lần (${totalDaysHome} ngày sum vầy)`
+            : `🚗 Lên kế hoạch về thăm quê sum họp cùng gia đình ❤️`;
+        }
       }
     }
 
@@ -3370,8 +3475,11 @@ create policy "Public Access" on savings_entries for all using (true) with check
       `;
     }
 
-    hometownCountdownBanner.style.display = 'flex';
-
+    // Keep home screen clean; card is placed inside the Menu Drawer
+    hometownCountdownBanner.style.display = 'none';
+    if (typeof renderDrawerInfo === 'function') {
+      renderDrawerInfo();
+    }
     const bannerBtn = document.getElementById('openHometownFromBannerBtn');
     if (bannerBtn) {
       bannerBtn.addEventListener('click', openHometownModal);
@@ -3637,6 +3745,21 @@ create policy "Public Access" on savings_entries for all using (true) with check
   }
 
   // Event Listeners for Hometown Modal & Form
+  const drawerHometownCardEl = document.getElementById('drawerHometownCard');
+  const drawerHometownQuickBtnEl = document.getElementById('drawerHometownQuickBtn');
+  if (drawerHometownCardEl) {
+    drawerHometownCardEl.addEventListener('click', () => {
+      closeDrawer();
+      openHometownModal();
+    });
+  }
+  if (drawerHometownQuickBtnEl) {
+    drawerHometownQuickBtnEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeDrawer();
+      openHometownModal();
+    });
+  }
   if (drawerHometownBtn) {
     drawerHometownBtn.addEventListener('click', () => {
       closeDrawer();

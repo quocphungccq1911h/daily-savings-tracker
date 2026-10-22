@@ -1870,6 +1870,230 @@ body {
   text-align: center;
 }
 
+/* 🏡 HOMETOWN COUNTDOWN CARD IN DRAWER (MATCHING MOBILE APP DEEP EMERALD STYLE) */
+.drawer-hometown-card {
+  background: linear-gradient(145deg, #064e3b 0%, #047857 50%, #0f766e 100%);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: 16px;
+  padding: 13px 14px;
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font);
+}
+
+.drawer-hometown-card:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(52, 211, 153, 0.7);
+  box-shadow: 0 6px 22px rgba(4, 120, 87, 0.35);
+}
+
+.hometown-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.hometown-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hometown-header-icon {
+  font-size: 0.95rem;
+}
+
+.hometown-header-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #6ee7b7;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hometown-open-modal-btn {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.hometown-open-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.hometown-card-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hometown-col-left {
+  flex: 0 0 115px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hometown-card-label {
+  font-size: 0.66rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 2px;
+}
+
+.hometown-card-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.hometown-card-days-num {
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.hometown-card-days-unit {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+.hometown-card-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.hometown-col-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hometown-card-trip-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hometown-card-trip-dates {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6ee7b7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hometown-card-highlight {
+  margin-top: 10px;
+  padding: 7px 10px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.hometown-hl-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hometown-hl-icon {
+  font-size: 0.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hometown-hl-label {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hometown-hl-val {
+  color: #ffffff;
+  font-weight: 800;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.hometown-hl-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+.hometown-card-footer {
+  margin-top: 8px;
+  padding-top: 6px;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.hometown-empty-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 10px;
+  padding: 9px 12px;
+  width: 100%;
+}
+
+.hometown-empty-icon {
+  font-size: 1.25rem;
+  color: #6ee7b7;
+}
+
+.hometown-empty-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.hometown-empty-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.hometown-empty-sub {
+  font-size: 0.675rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* 🌙 TODAY'S LUNAR CARD (MATCHING MOBILE APP EMERALD STYLE) */
 .drawer-lunar-card {
   background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(6, 78, 59, 0.25));

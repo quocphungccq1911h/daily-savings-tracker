@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/expense_entry.dart';
+import '../../models/hometown_trip.dart';
 import '../../models/savings_entry.dart';
 
 class SupabaseService {
@@ -97,16 +98,27 @@ class SupabaseService {
   /// Lắng nghe Realtime tự động khi có dữ liệu được thêm/sửa/xóa từ nguồn khác (ví dụ từ Web App)
   static RealtimeChannel? subscribeToRealtimeChanges(void Function() onChange) {
     try {
-      final channel = client.channel('public:savings_entries_${DateTime.now().millisecondsSinceEpoch}');
-      channel.onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'savings_entries',
-        callback: (payload) {
-          print('⚡ [Supabase Realtime] Change detected in DB (${payload.eventType}) -> Reloading data!');
-          onChange();
-        },
-      ).subscribe();
+      final channel = client.channel('public:savings_all_${DateTime.now().millisecondsSinceEpoch}');
+      channel
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'savings_entries',
+            callback: (payload) {
+              print('⚡ [Supabase Realtime] Change detected in savings_entries (${payload.eventType}) -> Reloading data!');
+              onChange();
+            },
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'hometown_trips',
+            callback: (payload) {
+              print('⚡ [Supabase Realtime] Change detected in hometown_trips (${payload.eventType}) -> Reloading data!');
+              onChange();
+            },
+          )
+          .subscribe();
       return channel;
     } catch (e) {
       print('❌ [Supabase Realtime] Subscription Error: $e');
@@ -152,6 +164,52 @@ class SupabaseService {
       print('✅ [Supabase] Deleted expense $id from cloud!');
     } catch (e) {
       print('ℹ️ [Supabase] Cloud Delete Expense Notice: $e');
+    }
+  }
+
+  // Cloud Sync For Hometown Trips
+  static Future<List<HometownTrip>> fetchHometownTripsFromCloud() async {
+    try {
+      if (currentUser == null) return [];
+      final data = await client
+          .from('hometown_trips')
+          .select('*')
+          .eq('user_id', currentUser!.id)
+          .order('start_date', ascending: true);
+      print('✅ [Supabase] Loaded ${(data as List).length} hometown trips from cloud');
+      return (data as List).map((map) => HometownTrip.fromMap(map)).toList();
+    } catch (e) {
+      print('ℹ️ [Supabase] Cloud Fetch Hometown Trips Notice: $e');
+      return [];
+    }
+  }
+
+  static Future<void> syncSaveHometownTrip(HometownTrip trip) async {
+    try {
+      final payload = <String, dynamic>{
+        'id': trip.id,
+        'title': trip.title,
+        'start_date': trip.startDate,
+        'end_date': trip.endDate,
+        'budget': trip.budget.toInt(),
+        'note': trip.note,
+      };
+      if (currentUser != null) {
+        payload['user_id'] = currentUser!.id;
+      }
+      await client.from('hometown_trips').upsert(payload);
+      print('✅ [Supabase] Synced hometown trip ${trip.id} (${trip.title}) to cloud!');
+    } catch (e) {
+      print('ℹ️ [Supabase] Cloud Sync Hometown Trip Notice: $e');
+    }
+  }
+
+  static Future<void> syncDeleteHometownTrip(String id) async {
+    try {
+      await client.from('hometown_trips').delete().eq('id', id);
+      print('✅ [Supabase] Deleted hometown trip $id from cloud!');
+    } catch (e) {
+      print('ℹ️ [Supabase] Cloud Delete Hometown Trip Notice: $e');
     }
   }
 }

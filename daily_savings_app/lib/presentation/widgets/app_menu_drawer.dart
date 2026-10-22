@@ -18,6 +18,8 @@ import 'compound_interest_dialog.dart';
 import 'darts_game_dialog.dart';
 import 'expense_tracker_dialog.dart';
 import 'flappy_piggy_dialog.dart';
+import 'hometown_planner_dialog.dart';
+import '../../models/hometown_trip.dart';
 import 'perpetual_calendar_dialog.dart';
 import 'tetris_game_dialog.dart';
 import 'weekly_report_dialog.dart';
@@ -123,6 +125,10 @@ class AppMenuDrawer extends ConsumerWidget {
         : grabTotal / max(1, savingsState.grabEntries.length);
     final estimatedTetFund = totalCurrentSavings + (daysLeftToTet * realAvgRate);
 
+    final bannerTrip = savingsState.bannerHometownTrip;
+    final completedHometownTripsCount = savingsState.completedTripsInYear(now.year);
+    final totalDaysHome = savingsState.totalDaysHomeInYear(now.year);
+
     return Drawer(
       backgroundColor: isDark ? AppTheme.bgApp : AppTheme.bgAppLight,
       child: SafeArea(
@@ -216,6 +222,50 @@ class AppMenuDrawer extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
 
+                  // 1. 🧧 WIDGET ĐẾM NGƯỢC TẾT NGUYÊN ĐÁN (ĐƯỢC ĐƯA LÊN ĐẦU TIÊN)
+                  _buildTetCountdownCard(
+                    tetYearCanChi: tetYearCanChi,
+                    tetDate: tetDate,
+                    daysLeftToTet: daysLeftToTet,
+                    estimatedTetFund: estimatedTetFund,
+                    totalCurrentSavings: totalCurrentSavings,
+                    realAvgRate: realAvgRate,
+                    grabTotal: grabTotal,
+                    otherTotal: otherTotal,
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // 2. 🏡 WIDGET NGÀY VỀ QUÊ (MÔ ĐUN VỀ QUÊ)
+                  _buildHometownCountdownCard(
+                    context: context,
+                    trip: bannerTrip,
+                    completedTripsCount: completedHometownTripsCount,
+                    totalDaysHome: totalDaysHome,
+                    currentYear: now.year,
+                    isDark: isDark,
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // 3. 🌙 WIDGET ÂM LỊCH HÔM NAY
+                  _buildLunarInfoCard(
+                    context: context,
+                    isDark: isDark,
+                    cardBgColor: cardBgColor,
+                    textColor: textColor,
+                    subtextColor: subtextColor,
+                    borderColor: borderColor,
+                    todayLunarDay: todayLunarDay,
+                    todayLunarMonth: todayLunarMonth,
+                    todayCanChiDay: todayCanChiDay,
+                    todayCanChiYear: todayCanChiYear,
+                  ),
+
+                  const SizedBox(height: 12),
+                  const Divider(color: AppTheme.borderColor, height: 16, indent: 16, endIndent: 16),
+
+                  // 🎯 MỤC TIÊU TÍCH LŨY
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
@@ -234,6 +284,7 @@ class AppMenuDrawer extends ConsumerWidget {
                   ),
                   const Divider(color: AppTheme.borderColor, height: 16, indent: 16, endIndent: 16),
 
+                  // 🧰 BỘ CÔNG CỤ TIỆN ÍCH
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
@@ -344,377 +395,6 @@ class AppMenuDrawer extends ConsumerWidget {
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 10),
-
-                  // 🧧 TET COUNTDOWN & SAVINGS MOTIVATION WIDGET
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7F1D1D), Color(0xFFB45309)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.6)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  const Text('🧧', style: TextStyle(fontSize: 15)),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      'ĐẾM NGƯỢC TẾT $tetYearCanChi',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: AppTheme.amberGoldLight,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                'Mùng 1: ${tetDate.day}/${tetDate.month}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 9.5, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Thời gian đếm ngược:', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Text(
-                                        '$daysLeftToTet',
-                                        style: const TextStyle(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white,
-                                          height: 1.0,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Text('ngày', style: TextStyle(color: AppTheme.amberGoldLight, fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              height: 32,
-                              width: 1,
-                              color: Colors.white24,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Dự kiến quỹ ăn Tết:', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    Formatters.formatShortNumber(estimatedTetFund),
-                                    style: const TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w900,
-                                      color: AppTheme.amberGoldLight,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        // 💰 HIGHLIGHT ĐÃ TÍCH LŨY & TIẾN ĐỘ
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.35), width: 1),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    '💰 ĐÃ TÍCH LŨY',
-                                    style: TextStyle(
-                                      color: AppTheme.amberGoldLight,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.amberGoldLight.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.4), width: 0.8),
-                                    ),
-                                    child: Text(
-                                      '${(estimatedTetFund > 0 ? (totalCurrentSavings / estimatedTetFund * 100).clamp(0, 100) : 0).round()}% mục tiêu',
-                                      style: const TextStyle(
-                                        color: AppTheme.amberGoldLight,
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                Formatters.formatShortNumber(totalCurrentSavings),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.3,
-                                  shadows: [
-                                    Shadow(color: Color(0x99F59E0B), blurRadius: 8),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(99),
-                                child: LinearProgressIndicator(
-                                  value: estimatedTetFund > 0 ? (totalCurrentSavings / estimatedTetFund).clamp(0.0, 1.0) : 0.0,
-                                  backgroundColor: Colors.white12,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.amberGoldLight),
-                                  minHeight: 6,
-                                ),
-                              ),
-                              if (otherTotal > 0) ...[
-                                const SizedBox(height: 7),
-                                Container(
-                                  padding: const EdgeInsets.only(top: 6),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      top: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 0.8),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text('🛵 Chạy xe', style: TextStyle(color: Colors.white70, fontSize: 9.0)),
-                                            const SizedBox(height: 1),
-                                            Text(
-                                              Formatters.formatShortNumber(grabTotal),
-                                              style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11.0, fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Container(height: 20, width: 1, color: Colors.white.withValues(alpha: 0.2)),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            const Text('💼 Nguồn khác', style: TextStyle(color: Colors.white70, fontSize: 9.0)),
-                                            const SizedBox(height: 1),
-                                            Text(
-                                              Formatters.formatShortNumber(otherTotal),
-                                              style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11.0, fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '🚀 Tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới!',
-                          style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.3),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // 🌙 TODAY'S LUNAR & HOÀNG ĐẠO INFO WIDGET
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: cardBgColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.emeraldLight.withValues(alpha: 0.4)),
-                      boxShadow: isDark
-                          ? null
-                          : [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Expanded(
-                              child: Row(
-                                children: [
-                                  Text('🌙', style: TextStyle(fontSize: 15)),
-                                  SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      'ÂM LỊCH HÔM NAY',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: AppTheme.emeraldLight,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            InkWell(
-                              onTap: () {
-                                Navigator.pop(context);
-                                showDialog(context: context, builder: (_) => const PerpetualCalendarDialog());
-                              },
-                              child: const Text(
-                                'Xem Lịch ➔',
-                                style: TextStyle(color: AppTheme.skyBlueAccent, fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppTheme.emeraldLight.withValues(alpha: 0.18),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppTheme.emeraldLight.withValues(alpha: 0.5), width: 1.5),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.emeraldLight.withValues(alpha: 0.15),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '$todayLunarDay',
-                                    style: const TextStyle(
-                                      fontSize: 38,
-                                      fontWeight: FontWeight.w900,
-                                      color: AppTheme.emeraldLight,
-                                      height: 0.95,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Tháng $todayLunarMonth Âm',
-                                    style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Ngày $todayCanChiDay',
-                                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Tháng $todayLunarMonth • Năm $todayCanChiYear',
-                                    style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '✨ Tiết Lập Thu • Hướng Hỷ Thần: Tây Nam',
-                                    style: TextStyle(color: subtextColor, fontSize: 9.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Divider(color: borderColor, height: 1),
-                        const SizedBox(height: 8),
-                        Text(
-                          '🌟 Giờ Hoàng Đạo: Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)',
-                          style: TextStyle(color: subtextColor, fontSize: 9.5, height: 1.3),
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 10),
                   const Divider(color: AppTheme.borderColor, height: 16, indent: 16, endIndent: 16),
 
@@ -919,4 +599,720 @@ class AppMenuDrawer extends ConsumerWidget {
       ),
     );
   }
+
+  /// 🧧 Widget Đếm Ngược Tết Nguyên Đán
+  Widget _buildTetCountdownCard({
+    required String tetYearCanChi,
+    required DateTime tetDate,
+    required int daysLeftToTet,
+    required double estimatedTetFund,
+    required double totalCurrentSavings,
+    required double realAvgRate,
+    required double grabTotal,
+    required double otherTotal,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7F1D1D), Color(0xFFB45309)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.6)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    const Text('🧧', style: TextStyle(fontSize: 15)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'ĐẾM NGƯỢC TẾT $tetYearCanChi',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppTheme.amberGoldLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'Mùng 1: ${tetDate.day}/${tetDate.month}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 9.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Thời gian đếm ngược:', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
+                    const SizedBox(height: 2),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '$daysLeftToTet',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            height: 1.0,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text('ngày', style: TextStyle(color: AppTheme.amberGoldLight, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 32,
+                width: 1,
+                color: Colors.white24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Dự kiến quỹ ăn Tết:', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
+                    const SizedBox(height: 2),
+                    Text(
+                      Formatters.formatShortNumber(estimatedTetFund),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.amberGoldLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // 💰 HIGHLIGHT ĐÃ TÍCH LŨY & TIẾN ĐỘ
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.35), width: 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '💰 ĐÃ TÍCH LŨY',
+                      style: TextStyle(
+                        color: AppTheme.amberGoldLight,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: AppTheme.amberGoldLight.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.amberGoldLight.withValues(alpha: 0.4), width: 0.8),
+                      ),
+                      child: Text(
+                        '${(estimatedTetFund > 0 ? (totalCurrentSavings / estimatedTetFund * 100).clamp(0, 100) : 0).round()}% mục tiêu',
+                        style: const TextStyle(
+                          color: AppTheme.amberGoldLight,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  Formatters.formatShortNumber(totalCurrentSavings),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.3,
+                    shadows: [
+                      Shadow(color: Color(0x99F59E0B), blurRadius: 8),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: estimatedTetFund > 0 ? (totalCurrentSavings / estimatedTetFund).clamp(0.0, 1.0) : 0.0,
+                    backgroundColor: Colors.white12,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.amberGoldLight),
+                    minHeight: 6,
+                  ),
+                ),
+                if (otherTotal > 0) ...[
+                  const SizedBox(height: 7),
+                  Container(
+                    padding: const EdgeInsets.only(top: 6),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 0.8),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('🛵 Chạy xe', style: TextStyle(color: Colors.white70, fontSize: 9.0)),
+                              const SizedBox(height: 1),
+                              Text(
+                                Formatters.formatShortNumber(grabTotal),
+                                style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11.0, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(height: 20, width: 1, color: Colors.white.withValues(alpha: 0.2)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text('💼 Nguồn khác', style: TextStyle(color: Colors.white70, fontSize: 9.0)),
+                              const SizedBox(height: 1),
+                              Text(
+                                Formatters.formatShortNumber(otherTotal),
+                                style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11.0, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '🚀 Tích lũy ${Formatters.formatShortNumber(realAvgRate)}/ngày trong $daysLeftToTet ngày tới!',
+            style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.3),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🏡 Widget Kế Hoạch & Đếm Ngược Về Quê
+  Widget _buildHometownCountdownCard({
+    required BuildContext context,
+    required HometownTrip? trip,
+    required int completedTripsCount,
+    required int totalDaysHome,
+    required int currentYear,
+    required bool isDark,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF0F766E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF047857).withValues(alpha: 0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.pop(context);
+            HometownPlannerDialog.show(context);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Text('🏡', style: TextStyle(fontSize: 15)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              trip == null
+                                  ? 'KẾ HOẠCH VỀ QUÊ'
+                                  : (trip.status == HometownTripStatus.ongoing
+                                      ? 'ĐANG Ở QUÊ SUM VẦY'
+                                      : (trip.status == HometownTripStatus.today
+                                          ? 'HÔM NAY VỀ QUÊ'
+                                          : (trip.status == HometownTripStatus.tomorrow
+                                              ? 'NGÀY MAI KHỞI HÀNH'
+                                              : 'VỀ QUÊ SẮP TỚI'))),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF6EE7B7),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'Sổ Về Quê ➔',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                if (trip != null) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              trip.status == HometownTripStatus.ongoing
+                                  ? 'Trạng thái:'
+                                  : 'Thời gian đếm ngược:',
+                              style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+                            ),
+                            const SizedBox(height: 2),
+                            if (trip.status == HometownTripStatus.ongoing)
+                              const Text(
+                                'SUM VẦY',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF6EE7B7),
+                                  height: 1.1,
+                                ),
+                              )
+                            else if (trip.status == HometownTripStatus.today)
+                              const Text(
+                                'LÊN ĐƯỜNG',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.amberGoldLight,
+                                  height: 1.1,
+                                ),
+                              )
+                            else if (trip.status == HometownTripStatus.tomorrow)
+                              const Text(
+                                'NGÀY MAI',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.amberGoldLight,
+                                  height: 1.1,
+                                ),
+                              )
+                            else
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    '${trip.daysLeft}',
+                                    style: const TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'ngày nữa',
+                                    style: TextStyle(
+                                      color: Color(0xFF6EE7B7),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                      Container(height: 32, width: 1, color: Colors.white24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 6,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              trip.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              trip.formattedDateRange,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF6EE7B7),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Highlight box for budget & duration
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFF34D399).withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.savings_outlined, color: AppTheme.amberGoldLight, size: 14),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  trip.budget > 0
+                                      ? 'Quỹ: ${Formatters.formatShortNumber(trip.budget)}'
+                                      : 'Chưa đặt quỹ',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(height: 16, width: 1, color: Colors.white24),
+                        const SizedBox(width: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.date_range_rounded, color: Color(0xFF6EE7B7), size: 14),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${trip.durationInDays} ngày về',
+                              style: const TextStyle(
+                                color: Color(0xFF6EE7B7),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '🚗 Năm $currentYear: Đã về $completedTripsCount lần ($totalDaysHome ngày sum vầy)',
+                    style: const TextStyle(color: Colors.white70, fontSize: 10),
+                    textAlign: TextAlign.center,
+                  ),
+                ] else ...[
+                  // Empty state when no trip scheduled
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFF34D399).withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF34D399).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.add_location_alt_rounded, color: Color(0xFF6EE7B7), size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Chưa có lịch về quê sắp tới',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Chạm để lên lịch & chuẩn bị quỹ chuyến đi',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white60, size: 12),
+                      ],
+                    ),
+                  ),
+                  if (completedTripsCount > 0) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '🚗 Năm $currentYear: Đã về $completedTripsCount lần ($totalDaysHome ngày bên gia đình)',
+                      style: const TextStyle(color: Colors.white70, fontSize: 10),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🌙 Widget Âm Lịch Hôm Nay & Hoàng Đạo
+  Widget _buildLunarInfoCard({
+    required BuildContext context,
+    required bool isDark,
+    required Color cardBgColor,
+    required Color textColor,
+    required Color subtextColor,
+    required Color borderColor,
+    required int todayLunarDay,
+    required int todayLunarMonth,
+    required String todayCanChiDay,
+    required String todayCanChiYear,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.emeraldLight.withValues(alpha: 0.4)),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Row(
+                  children: [
+                    Text('🌙', style: TextStyle(fontSize: 15)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'ÂM LỊCH HÔM NAY',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppTheme.emeraldLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  showDialog(context: context, builder: (_) => const PerpetualCalendarDialog());
+                },
+                child: const Text(
+                  'Xem Lịch ➔',
+                  style: TextStyle(color: AppTheme.skyBlueAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.emeraldLight.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.emeraldLight.withValues(alpha: 0.5), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.emeraldLight.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$todayLunarDay',
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.emeraldLight,
+                        height: 0.95,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Tháng $todayLunarMonth Âm',
+                      style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ngày $todayCanChiDay',
+                      style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Tháng $todayLunarMonth • Năm $todayCanChiYear',
+                      style: const TextStyle(color: AppTheme.amberGoldLight, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '✨ Tiết Lập Thu • Hướng Hỷ Thần: Tây Nam',
+                      style: TextStyle(color: subtextColor, fontSize: 9.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Divider(color: borderColor, height: 1),
+          const SizedBox(height: 8),
+          Text(
+            '🌟 Giờ Hoàng Đạo: Tý (23-1), Sửu (1-3), Mão (5-7), Ngọ (11-13), Thân (15-17), Dậu (17-19)',
+            style: TextStyle(color: subtextColor, fontSize: 9.5, height: 1.3),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

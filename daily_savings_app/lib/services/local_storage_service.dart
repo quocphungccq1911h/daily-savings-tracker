@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../models/expense_entry.dart';
+import '../../models/hometown_trip.dart';
 import '../../models/savings_entry.dart';
 import '../../models/wishlist_goal.dart';
 import '../core/constants/app_constants.dart';
@@ -10,6 +11,7 @@ class LocalStorageService {
   static const String _wishlistBoxName = 'wishlist_goals_box_v1';
   static const String _settingsBoxName = 'settings_box_v1';
   static const String _expensesBoxName = 'expenses_box_v1';
+  static const String _hometownBoxName = 'hometown_trips_box_v1';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -17,6 +19,7 @@ class LocalStorageService {
     await Hive.openBox(_wishlistBoxName);
     await Hive.openBox(_settingsBoxName);
     await Hive.openBox(_expensesBoxName);
+    await Hive.openBox(_hometownBoxName);
   }
 
   // Savings Entries
@@ -45,7 +48,10 @@ class LocalStorageService {
   static Future<void> clearAllUserData() async {
     final box = Hive.box(_entriesBoxName);
     await box.clear();
+    final hometownBox = Hive.box(_hometownBoxName);
+    await hometownBox.clear();
   }
+
 
   // Wishlist Goals
   static List<WishlistGoal> getWishlistGoals() {
@@ -196,6 +202,37 @@ class LocalStorageService {
 
   static Future<void> deleteExpense(String id) async {
     final box = Hive.box(_expensesBoxName);
+    await box.delete(id);
+  }
+
+  // Hometown Trips Persistence
+  static List<HometownTrip> getHometownTrips() {
+    final box = Hive.box(_hometownBoxName);
+    final List<HometownTrip> list = [];
+    for (var key in box.keys) {
+      final String? jsonStr = box.get(key);
+      if (jsonStr != null) {
+        list.add(HometownTrip.fromMap(jsonDecode(jsonStr)));
+      }
+    }
+    return list;
+  }
+
+  static Future<void> saveHometownTrip(HometownTrip trip) async {
+    final box = Hive.box(_hometownBoxName);
+    await box.put(trip.id, jsonEncode(trip.toMap()));
+  }
+
+  static Future<void> saveAllHometownTrips(List<HometownTrip> trips) async {
+    final box = Hive.box(_hometownBoxName);
+    await box.clear();
+    for (var trip in trips) {
+      await box.put(trip.id, jsonEncode(trip.toMap()));
+    }
+  }
+
+  static Future<void> deleteHometownTrip(String id) async {
+    final box = Hive.box(_hometownBoxName);
     await box.delete(id);
   }
 }

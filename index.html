@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.4.3">
+  <link rel="stylesheet" href="styles.css?v=1.4.7">
 </head>
 <body>
   <div class="app-container">
@@ -583,7 +583,7 @@ create policy "Users access own hometown trips"
         </div>
       </div>
 
-      <!-- 🧧 TET COUNTDOWN & SAVINGS MOTIVATION WIDGET -->
+      <!-- 1. 🧧 TET COUNTDOWN & SAVINGS MOTIVATION WIDGET -->
       <div class="drawer-tet-widget" id="drawerTetWidget">
         <div class="tet-widget-header">
           <span class="tet-widget-tag">🧧 ĐẾM NGƯỢC TẾT <span id="tetCanChiYearDisplay">...</span></span>
@@ -622,7 +622,39 @@ create policy "Users access own hometown trips"
         </div>
       </div>
 
-      <!-- 🌙 TODAY'S LUNAR & HOÀNG ĐẠO INFO CARD (MATCHING MOBILE APP) -->
+      <!-- 2. 🏡 HOMETOWN COUNTDOWN & LIVE PLANNER CARD -->
+      <div class="drawer-hometown-card" id="drawerHometownCard">
+        <div class="hometown-card-header">
+          <div class="hometown-header-left">
+            <span class="hometown-header-icon">🏡</span>
+            <span class="hometown-header-tag" id="drawerHometownTag">KẾ HOẠCH VỀ QUÊ</span>
+          </div>
+          <button type="button" class="hometown-open-modal-btn" id="drawerHometownQuickBtn">Sổ Về Quê ➔</button>
+        </div>
+
+        <div class="hometown-card-body" id="drawerHometownBody">
+          <!-- Dynamically populated by JS: either active/upcoming trip or empty state -->
+        </div>
+
+        <div class="hometown-card-highlight" id="drawerHometownHighlight">
+          <div class="hometown-hl-item">
+            <span class="hometown-hl-icon">💰</span>
+            <span class="hometown-hl-label">Quỹ:</span>
+            <strong class="hometown-hl-val" id="drawerHometownBudgetVal">Chưa đặt quỹ</strong>
+          </div>
+          <div class="hometown-hl-divider"></div>
+          <div class="hometown-hl-item">
+            <span class="hometown-hl-icon">📅</span>
+            <span class="hometown-hl-val" id="drawerHometownDaysVal">0 ngày về</span>
+          </div>
+        </div>
+
+        <div class="hometown-card-footer" id="drawerHometownFooter">
+          🚗 Năm 2026: Đã về 0 lần (0 ngày sum vầy)
+        </div>
+      </div>
+
+      <!-- 3. 🌙 TODAY'S LUNAR & HOÀNG ĐẠO INFO CARD (MATCHING MOBILE APP) -->
       <div class="drawer-lunar-card" id="drawerLunarCard">
         <div class="lunar-card-header">
           <span class="lunar-header-title">🌙 ÂM LỊCH HÔM NAY (<span id="lunarSolarToday">--/--</span>)</span>
@@ -659,13 +691,6 @@ create policy "Users access own hometown trips"
         </button>
 
         <div class="menu-section-title">BỘ CÔNG CỤ TIỆN ÍCH 🧰</div>
-        <button class="drawer-item" id="drawerHometownBtn">
-          <span class="item-icon">🏡</span>
-          <div class="item-text">
-            <div class="item-title">Kế Hoạch Về Quê &amp; Đếm Ngược</div>
-            <div class="item-sub" id="drawerHometownSub">Đếm ngược chuyến đi &amp; thống kê số lần về quê</div>
-          </div>
-        </button>
         <button class="drawer-item" id="drawerExpenseBtn">
           <span class="item-icon">🧾</span>
           <div class="item-text">
@@ -1058,6 +1083,6 @@ create policy "Users access own hometown trips"
     </div>
   </div>
 
-  <script src="app.js?v=1.4.3"></script>
+  <script src="app.js?v=1.4.7"></script>
 </body>
 </html>

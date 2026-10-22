@@ -305,6 +305,7 @@ class _AiChatBottomSheetState extends ConsumerState<AiChatBottomSheet> {
             child: Row(
               children: [
                 _buildQuickChip('💡 Còn bao nhiêu nữa đủ target?'),
+                _buildQuickChip('🏡 Đếm ngược về quê?'),
                 _buildQuickChip('🧧 Đếm ngược đến Tết?'),
                 _buildQuickChip('🌙 Hôm nay ngày bao nhiêu?'),
                 _buildQuickChip('📈 Cho tôi lời khuyên tiết kiệm'),

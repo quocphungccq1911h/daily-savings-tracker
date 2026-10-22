@@ -41,6 +41,13 @@ class GeminiService {
       final estimatedTetFund =
           savingsState.lifetimeTotal + (daysLeftToTet * savingsState.dailyGoal);
 
+      // Kế hoạch về quê
+      final hometownTrip = savingsState.bannerHometownTrip;
+      final String hometownInfo = hometownTrip != null
+          ? '${hometownTrip.title} (${hometownTrip.formattedDateRange}), trạng thái: còn ${hometownTrip.daysLeft} ngày nữa${hometownTrip.budget > 0 ? ", ngân sách chuẩn bị: ${hometownTrip.budget.toInt()} VNĐ" : ""}'
+          : 'Chưa có kế hoạch nào được lên lịch';
+      final int completedTripsThisYear = savingsState.completedTripsInYear(now.year);
+
       // System Prompt đóng gói Live Context
       final String systemInstruction = '''
 Bạn là "Trợ Lý AI Tiết Kiệm" thông minh, thân thiện và giàu năng lượng trong ứng dụng "Sổ Tiết Kiệm Daily".
@@ -50,10 +57,12 @@ Nhiệm vụ của bạn là giải đáp câu hỏi của người dùng và đ
 - Hôm nay (Dương lịch): $todayStr
 - Mục tiêu tiết kiệm hằng ngày: ${savingsState.dailyGoal.toInt()} VNĐ/ngày
 - Số tiền đã nạp tiết kiệm HÔM NAY: ${todayAmount.toInt()} VNĐ
-- Trạng thái mục tiêu hôm nay: ${isTargetAchieved ? 'ĐÃ ĐẠT TARGET 🎉' : 'CHƯA ĐẠT (Còn thiếu ' + (remainingTarget > 0 ? remainingTarget.toInt().toString() : '0') + ' VNĐ)'}
+- Trạng thái mục tiêu hôm nay: ${isTargetAchieved ? 'ĐÃ ĐẠT TARGET 🎉' : 'CHƯA ĐẠT (Còn thiếu ${remainingTarget > 0 ? remainingTarget.toInt() : 0} VNĐ)'}
 - Chuỗi ngày tích lũy liên tục (Streak): ${savingsState.streakCount} ngày 🔥
 - Tổng tích lũy từ trước đến nay: ${savingsState.lifetimeTotal.toInt()} VNĐ
 - Tổng tiết kiệm tháng này: ${savingsState.currentMonthTotal.toInt()} VNĐ
+- Kế hoạch về quê sắp tới: $hometownInfo 🏡
+- Số lần đã về quê trong năm ${now.year}: $completedTripsThisYear lần 🚗
 - Đếm ngược đến Mùng 1 Tết Nguyên Đán (Đinh Mùi): còn $daysLeftToTet ngày 🧧
 - Dự tính quỹ ăn Tết: ${estimatedTetFund.toInt()} VNĐ
 

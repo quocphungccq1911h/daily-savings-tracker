@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../models/hometown_trip.dart';
 import '../../models/savings_entry.dart';
 import '../../models/wishlist_goal.dart';
 import '../core/constants/app_constants.dart';
@@ -12,12 +13,14 @@ import '../services/supabase_service.dart';
 class SavingsState {
   final List<SavingsEntry> entries;
   final List<WishlistGoal> wishlistGoals;
+  final List<HometownTrip> hometownTrips;
   final double dailyGoal;
   final bool isLoading;
 
   SavingsState({
     required this.entries,
     required this.wishlistGoals,
+    this.hometownTrips = const [],
     this.dailyGoal = AppConstants.defaultDailyGoal,
     this.isLoading = false,
   });
@@ -25,12 +28,14 @@ class SavingsState {
   SavingsState copyWith({
     List<SavingsEntry>? entries,
     List<WishlistGoal>? wishlistGoals,
+    List<HometownTrip>? hometownTrips,
     double? dailyGoal,
     bool? isLoading,
   }) {
     return SavingsState(
       entries: entries ?? this.entries,
       wishlistGoals: wishlistGoals ?? this.wishlistGoals,
+      hometownTrips: hometownTrips ?? this.hometownTrips,
       dailyGoal: dailyGoal ?? this.dailyGoal,
       isLoading: isLoading ?? this.isLoading,
     );
@@ -125,6 +130,82 @@ class SavingsState {
         .where((e) => e.date.startsWith(monthPrefix))
         .fold(0.0, (sum, e) => sum + e.amount);
   }
+
+  // --- HOMETOWN TRIPS COMPUTED PROPERTIES ---
+
+  /// Danh sách chuyến đi sắp xếp theo ngày bắt đầu (sớm nhất -> muộn nhất)
+  List<HometownTrip> get sortedHometownTrips {
+    final list = List<HometownTrip>.from(hometownTrips);
+    list.sort((a, b) => a.startDate.compareTo(b.startDate));
+    return list;
+  }
+
+  /// Chuyến đi đang diễn ra (nếu có)
+  HometownTrip? get activeHometownTrip {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final trip in sortedHometownTrips) {
+      final start = DateTime(trip.startDateTime.year, trip.startDateTime.month, trip.startDateTime.day);
+      final end = DateTime(trip.endDateTime.year, trip.endDateTime.month, trip.endDateTime.day);
+      if (!today.isBefore(start) && !today.isAfter(end)) {
+        return trip;
+      }
+    }
+    return null;
+  }
+
+  /// Chuyến đi sắp tới gần nhất (chưa bắt đầu)
+  HometownTrip? get nearestUpcomingHometownTrip {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final trip in sortedHometownTrips) {
+      final start = DateTime(trip.startDateTime.year, trip.startDateTime.month, trip.startDateTime.day);
+      if (start.isAfter(today)) {
+        return trip;
+      }
+    }
+    return null;
+  }
+
+  /// Chuyến đi để hiển thị trên Banner: ưu tiên chuyến đang diễn ra, sau đó đến chuyến sắp tới gần nhất
+  HometownTrip? get bannerHometownTrip =>
+      activeHometownTrip ?? nearestUpcomingHometownTrip;
+
+  /// Số lần đã về quê trong năm (mặc định năm hiện tại)
+  int completedTripsInYear([int? year]) {
+    final targetYear = year ?? DateTime.now().year;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return hometownTrips.where((t) {
+      if (t.startDateTime.year != targetYear) return false;
+      final end = DateTime(t.endDateTime.year, t.endDateTime.month, t.endDateTime.day);
+      return end.isBefore(today);
+    }).length;
+  }
+
+  /// Tổng số ngày ở quê trong năm
+  int totalDaysHomeInYear([int? year]) {
+    final targetYear = year ?? DateTime.now().year;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return hometownTrips.where((t) {
+      if (t.startDateTime.year != targetYear) return false;
+      final end = DateTime(t.endDateTime.year, t.endDateTime.month, t.endDateTime.day);
+      return end.isBefore(today);
+    }).fold(0, (sum, t) => sum + t.durationInDays);
+  }
+
+  /// Số chuyến đi kế hoạch sắp tới trong năm
+  int upcomingTripsInYear([int? year]) {
+    final targetYear = year ?? DateTime.now().year;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return hometownTrips.where((t) {
+      if (t.startDateTime.year != targetYear) return false;
+      final start = DateTime(t.startDateTime.year, t.startDateTime.month, t.startDateTime.day);
+      return !start.isBefore(today);
+    }).length;
+  }
 }
 
 class SavingsNotifier extends StateNotifier<SavingsState> {
@@ -145,8 +226,14 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
   Future<void> _loadInitialData() async {
     final localEntries = LocalStorageService.getEntries();
     final localGoals = LocalStorageService.getWishlistGoals();
+    final localTrips = LocalStorageService.getHometownTrips();
     final savedGoal = LocalStorageService.getDailyGoal();
-    state = state.copyWith(entries: localEntries, wishlistGoals: localGoals, dailyGoal: savedGoal);
+    state = state.copyWith(
+      entries: localEntries,
+      wishlistGoals: localGoals,
+      hometownTrips: localTrips,
+      dailyGoal: savedGoal,
+    );
 
     await refreshFromCloud();
   }
@@ -166,13 +253,18 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
   Future<void> refreshFromCloud() async {
     try {
       final cloudEntries = await SupabaseService.fetchEntries();
-      state = state.copyWith(entries: cloudEntries);
+      final cloudTrips = await SupabaseService.fetchHometownTripsFromCloud();
+      state = state.copyWith(
+        entries: cloudEntries,
+        hometownTrips: cloudTrips,
+      );
       
       // Xóa và ghi đè cache cũ bằng dữ liệu mới nhất từ cloud
       await LocalStorageService.clearAllUserData();
       for (var e in cloudEntries) {
         await LocalStorageService.saveEntry(e);
       }
+      await LocalStorageService.saveAllHometownTrips(cloudTrips);
       _syncNotificationReminder();
     } catch (_) {}
   }
@@ -182,7 +274,12 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     _realtimeChannel?.unsubscribe();
     _realtimeChannel = null;
     await LocalStorageService.clearAllUserData();
-    state = SavingsState(entries: [], wishlistGoals: state.wishlistGoals, dailyGoal: state.dailyGoal);
+    state = SavingsState(
+      entries: [],
+      wishlistGoals: state.wishlistGoals,
+      hometownTrips: [],
+      dailyGoal: state.dailyGoal,
+    );
   }
 
   /// Đăng ký lại Realtime khi Đăng nhập lại
@@ -256,6 +353,44 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     await LocalStorageService.resetDefaultWishlistGoals();
     final refreshed = LocalStorageService.getWishlistGoals();
     state = state.copyWith(wishlistGoals: refreshed);
+  }
+
+  // --- HOMETOWN TRIPS ACTIONS ---
+
+  Future<void> addOrUpdateHometownTrip(HometownTrip trip) async {
+    final List<HometownTrip> updated = List.from(state.hometownTrips);
+    final idx = updated.indexWhere((t) => t.id == trip.id);
+    if (idx != -1) {
+      updated[idx] = trip;
+    } else {
+      updated.add(trip);
+    }
+    state = state.copyWith(hometownTrips: updated);
+
+    await LocalStorageService.saveHometownTrip(trip);
+    await SupabaseService.syncSaveHometownTrip(trip);
+
+    try {
+      final cloudTrips = await SupabaseService.fetchHometownTripsFromCloud();
+      if (cloudTrips.isNotEmpty) {
+        state = state.copyWith(hometownTrips: cloudTrips);
+        await LocalStorageService.saveAllHometownTrips(cloudTrips);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> deleteHometownTrip(String id) async {
+    final updated = state.hometownTrips.where((t) => t.id != id).toList();
+    state = state.copyWith(hometownTrips: updated);
+
+    await LocalStorageService.deleteHometownTrip(id);
+    await SupabaseService.syncDeleteHometownTrip(id);
+
+    try {
+      final cloudTrips = await SupabaseService.fetchHometownTripsFromCloud();
+      state = state.copyWith(hometownTrips: cloudTrips);
+      await LocalStorageService.saveAllHometownTrips(cloudTrips);
+    } catch (_) {}
   }
 
   @override
