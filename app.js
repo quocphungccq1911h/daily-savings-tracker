@@ -208,6 +208,7 @@
   }
 
   let realtimeChannel = null;
+  let realtimeHometownChannel = null;
 
   function onUserLoggedIn(user) {
     currentUser = user;
@@ -215,6 +216,8 @@
     userProfileBadge.style.display = 'flex';
     authScreenModal.style.display = 'none';
     fetchFromCloud();
+    fetchHometownTripsFromCloud();
+    fetchExpensesFromCloud();
     subscribeRealtime();
   }
 
@@ -223,6 +226,10 @@
     if (realtimeChannel && supabaseClient) {
       try { supabaseClient.removeChannel(realtimeChannel); } catch (e) {}
       realtimeChannel = null;
+    }
+    if (realtimeHometownChannel && supabaseClient) {
+      try { supabaseClient.removeChannel(realtimeHometownChannel); } catch (e) {}
+      realtimeHometownChannel = null;
     }
     userProfileBadge.style.display = 'none';
     authScreenModal.style.display = 'flex';
@@ -329,6 +336,17 @@
           fetchFromCloud();
         });
       realtimeChannel.subscribe();
+
+      if (realtimeHometownChannel) {
+        try { supabaseClient.removeChannel(realtimeHometownChannel); } catch (e) {}
+        realtimeHometownChannel = null;
+      }
+      realtimeHometownChannel = supabaseClient
+        .channel(`user-hometown-${currentUser.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hometown_trips', filter: `user_id=eq.${currentUser.id}` }, () => {
+          fetchHometownTripsFromCloud();
+        });
+      realtimeHometownChannel.subscribe();
     } catch (err) {
       console.warn("Realtime sub warning:", err.message);
     }
@@ -342,6 +360,11 @@
       const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
+  }
+
+  function isValidUUID(str) {
+    if (!str || typeof str !== 'string') return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
   }
 
   async function syncSaveToCloud(entryItem) {
@@ -2477,6 +2500,9 @@ create policy "Public Access" on savings_entries for all using (true) with check
     if (typeof renderDrawerInfo === 'function') {
       renderDrawerInfo();
     }
+    if (typeof renderHometownBanner === 'function') {
+      renderHometownBanner();
+    }
   }
 
   // Auth Form Listener
@@ -2912,6 +2938,29 @@ create policy "Public Access" on savings_entries for all using (true) with check
       drawerGoalSub.textContent = `Thay đổi số tiền mục tiêu ${formatCurrency(dailyGoal)}/ngày`;
     }
 
+    if (drawerHometownSub && typeof getHometownTripStatus === 'function') {
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const activeTrip = hometownTrips.find(t => todayStr >= t.startDate && todayStr <= t.endDate);
+      const upcomingTrips = hometownTrips
+        .filter(t => todayStr < t.startDate)
+        .sort((a, b) => a.startDate.localeCompare(b.startDate));
+      const yearTrips = hometownTrips.filter(t => {
+        return (t.startDate && t.startDate.startsWith(String(now.getFullYear()))) && todayStr > t.endDate;
+      });
+
+      if (activeTrip) {
+        drawerHometownSub.textContent = `❤️ Đang ở quê sum vầy (${activeTrip.title})`;
+      } else if (upcomingTrips.length > 0) {
+        const next = upcomingTrips[0];
+        const status = getHometownTripStatus(next, now);
+        drawerHometownSub.textContent = status.daysLeft === 0 
+          ? `🚗 Hôm nay về quê! (${next.title})`
+          : `⏳ Còn ${status.daysLeft} ngày nữa về quê (${next.title})`;
+      } else {
+        drawerHometownSub.textContent = `Năm nay đã về ${yearTrips.length} lần • Bấm để lên lịch`;
+      }
+    }
+
     // Lunar Today Calculation
     const lunarList = LunarUtils.convertSolarToLunar(now.getDate(), now.getMonth() + 1, now.getFullYear());
     const lDay = lunarList[0];
@@ -3052,6 +3101,634 @@ create policy "Public Access" on savings_entries for all using (true) with check
       closeDrawer();
       modalGoalInput.value = dailyGoal;
       goalModal.style.display = 'flex';
+    });
+  }
+
+  // =========================================================================
+  // 🏡 KẾ HOẠCH VỀ QUÊ & ĐẾM NGƯỢC (HOMETOWN TRIP TRACKER & COUNTDOWN)
+  // =========================================================================
+  const HOMETOWN_TRIPS_STORAGE_KEY = 'savings_hometown_trips_v1';
+  const DEFAULT_HOMETOWN_TRIPS = [
+    {
+      id: 'a1b2c3d4-e5f6-4a7b-8c9d-000000000001',
+      title: 'Nghỉ Lễ 30/4 & Về Quê',
+      startDate: '2026-04-29',
+      endDate: '2026-05-03',
+      budget: 3000000,
+      note: 'Về thăm gia đình dịp nghỉ lễ'
+    },
+    {
+      id: 'a1b2c3d4-e5f6-4a7b-8c9d-000000000002',
+      title: 'Về Giỗ Bố & Thăm Nhà',
+      startDate: '2026-11-20',
+      endDate: '2026-11-23',
+      budget: 3500000,
+      note: 'Mua quà biếu bố mẹ & gặp người thân'
+    }
+  ];
+
+  let rawHometownData = localStorage.getItem(HOMETOWN_TRIPS_STORAGE_KEY);
+  let hometownTrips = rawHometownData ? JSON.parse(rawHometownData) : DEFAULT_HOMETOWN_TRIPS;
+  if (!rawHometownData) {
+    localStorage.setItem(HOMETOWN_TRIPS_STORAGE_KEY, JSON.stringify(hometownTrips));
+  }
+  let selectedHometownYear = new Date().getFullYear();
+
+  const hometownCountdownBanner = document.getElementById('hometownCountdownBanner');
+  const drawerHometownBtn = document.getElementById('drawerHometownBtn');
+  const drawerHometownSub = document.getElementById('drawerHometownSub');
+  const hometownModal = document.getElementById('hometownModal');
+  const closeHometownModalBtn = document.getElementById('closeHometownModalBtn');
+  const hometownStatsBox = document.getElementById('hometownStatsBox');
+  const toggleHometownFormBtn = document.getElementById('toggleHometownFormBtn');
+  const hometownFormContainer = document.getElementById('hometownFormContainer');
+  const hometownFormTitle = document.getElementById('hometownFormTitle');
+  const hometownForm = document.getElementById('hometownForm');
+  const hometownTripId = document.getElementById('hometownTripId');
+  const hometownTitleInput = document.getElementById('hometownTitleInput');
+  const hometownStartDateInput = document.getElementById('hometownStartDateInput');
+  const hometownEndDateInput = document.getElementById('hometownEndDateInput');
+  const hometownBudgetInput = document.getElementById('hometownBudgetInput');
+  const hometownNoteInput = document.getElementById('hometownNoteInput');
+  const cancelHometownFormBtn = document.getElementById('cancelHometownFormBtn');
+  const hometownTripListContainer = document.getElementById('hometownTripListContainer');
+  const hometownListHeaderTitle = document.getElementById('hometownListHeaderTitle');
+
+  function saveHometownTrips() {
+    localStorage.setItem(HOMETOWN_TRIPS_STORAGE_KEY, JSON.stringify(hometownTrips));
+  }
+
+  async function syncSaveHometownTripToCloud(trip) {
+    if (!supabaseClient || !currentUser) return;
+    try {
+      if (!isValidUUID(trip.id)) {
+        trip.id = generateUUID();
+        saveHometownTrips();
+      }
+      const payload = {
+        id: trip.id,
+        user_id: currentUser.id,
+        title: trip.title,
+        start_date: trip.startDate,
+        end_date: trip.endDate,
+        budget: Math.round(trip.budget || 0),
+        note: trip.note || ''
+      };
+      const { error } = await supabaseClient
+        .from('hometown_trips')
+        .upsert(payload);
+
+      if (error) {
+        console.warn("Cloud save hometown trip warning:", error.message);
+      }
+    } catch (err) {
+      console.warn("Cloud save hometown trip error:", err);
+    }
+  }
+
+  async function syncDeleteHometownTripFromCloud(id) {
+    if (!supabaseClient || !currentUser) return;
+    try {
+      if (isValidUUID(id)) {
+        const { error } = await supabaseClient
+          .from('hometown_trips')
+          .delete()
+          .eq('id', id);
+        if (error) {
+          console.warn("Cloud delete hometown trip warning:", error.message);
+        }
+      }
+    } catch (err) {
+      console.warn("Cloud delete hometown trip error:", err);
+    }
+  }
+
+  async function fetchHometownTripsFromCloud() {
+    if (!supabaseClient || !currentUser) return;
+    try {
+      const { data, error } = await supabaseClient
+        .from('hometown_trips')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('start_date', { ascending: true });
+
+      if (error) {
+        console.warn("Cloud fetch hometown trips warning (using LocalStorage):", error.message);
+        return;
+      }
+
+      if (data && Array.isArray(data)) {
+        hometownTrips = data.map(item => ({
+          id: item.id,
+          title: item.title,
+          startDate: item.start_date,
+          endDate: item.end_date,
+          budget: parseInt(item.budget, 10) || 0,
+          note: item.note || '',
+          createdAt: item.created_at || new Date().toISOString()
+        }));
+        saveHometownTrips();
+        renderHometownBanner();
+        renderHometownModal();
+        renderDrawerInfo();
+      }
+    } catch (err) {
+      console.warn("Cloud fetch hometown trips exception:", err);
+    }
+  }
+
+  function getHometownTripDuration(trip) {
+    if (!trip.startDate || !trip.endDate) return 1;
+    const d1 = new Date(trip.startDate + 'T00:00:00');
+    const d2 = new Date(trip.endDate + 'T00:00:00');
+    const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(1, diff);
+  }
+
+  function getHometownTripStatus(trip, now = new Date()) {
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (todayStr >= trip.startDate && todayStr <= trip.endDate) {
+      return { type: 'ACTIVE', label: 'Đang ở quê', daysLeft: 0 };
+    }
+    if (todayStr < trip.startDate) {
+      const startD = new Date(trip.startDate + 'T00:00:00');
+      const diff = Math.round((startD - todayMidnight) / (1000 * 60 * 60 * 24));
+      return { type: 'UPCOMING', label: `Còn ${diff} ngày`, daysLeft: diff };
+    }
+    return { type: 'COMPLETED', label: 'Đã hoàn thành', daysLeft: -1 };
+  }
+
+  function formatTripDateRange(start, end) {
+    if (!start || !end) return '';
+    const [sy, sm, sd] = start.split('-');
+    const [ey, em, ed] = end.split('-');
+    if (sy === ey) {
+      return `${sd}/${sm} - ${ed}/${em}/${ey}`;
+    }
+    return `${sd}/${sm}/${sy} - ${ed}/${em}/${ey}`;
+  }
+
+  function renderHometownBanner() {
+    if (!hometownCountdownBanner) return;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // Check active trip first
+    const activeTrip = hometownTrips.find(t => getHometownTripStatus(t, now).type === 'ACTIVE');
+
+    // Nearest upcoming trip
+    const upcomingTrips = hometownTrips
+      .filter(t => getHometownTripStatus(t, now).type === 'UPCOMING')
+      .sort((a, b) => a.startDate.localeCompare(b.startDate));
+    const nearestUpcoming = upcomingTrips[0];
+
+    // Stats for current year
+    const yearCompletedTrips = hometownTrips.filter(t => {
+      const isThisYear = (t.startDate && t.startDate.startsWith(String(currentYear))) || 
+                         (t.endDate && t.endDate.startsWith(String(currentYear)));
+      const status = getHometownTripStatus(t, now).type;
+      return isThisYear && status === 'COMPLETED';
+    });
+    const completedCount = yearCompletedTrips.length;
+    let totalDaysHome = 0;
+    yearCompletedTrips.forEach(t => totalDaysHome += getHometownTripDuration(t));
+
+    if (activeTrip) {
+      hometownCountdownBanner.innerHTML = `
+        <div class="hometown-strip-row1">
+          <div class="hometown-strip-left">
+            <span class="hometown-tag" style="color: #f472b6; background: rgba(244, 114, 182, 0.12); border-color: rgba(244, 114, 182, 0.3);">🏡 ĐANG Ở QUÊ</span>
+            <strong class="hometown-trip-name">${activeTrip.title}</strong>
+            <span class="hometown-trip-dates">(${formatTripDateRange(activeTrip.startDate, activeTrip.endDate)})</span>
+          </div>
+          <div class="hometown-countdown-badge active-mode" id="badgeOpenModalFromRow" title="Bấm để mở Sổ Kế Hoạch Về Quê">
+            ❤️ <span class="hometown-countdown-num active-mode">Đang ở quê</span> sum vầy
+          </div>
+        </div>
+
+        <div class="hometown-strip-row2">
+          <div class="hometown-chips-wrap">
+            ${activeTrip.budget > 0 ? `<div class="hometown-chip">🎯 Quỹ: <strong style="color: #34d399;">${formatCurrency(activeTrip.budget)}</strong></div>` : ''}
+            ${activeTrip.note ? `<div class="hometown-chip">📝 <span>${activeTrip.note}</span></div>` : ''}
+            <div class="hometown-chip">🚗 Năm ${currentYear}: <strong style="color: #38bdf8;">${completedCount + 1} lần đã về</strong></div>
+          </div>
+          <button type="button" class="btn-hometown-link" id="openHometownFromBannerBtn">
+            📅 Sổ Kế Hoạch ➔
+          </button>
+        </div>
+      `;
+    } else if (nearestUpcoming) {
+      const status = getHometownTripStatus(nearestUpcoming, now);
+      const daysLeft = status.daysLeft;
+
+      let countdownBadgeHtml = '';
+      if (daysLeft === 0) {
+        countdownBadgeHtml = `🚗 <span class="hometown-countdown-num">Hôm nay</span> lên đường!`;
+      } else if (daysLeft === 1) {
+        countdownBadgeHtml = `🚗 <span class="hometown-countdown-num" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #451a03;">Ngày mai</span> lên đường!`;
+      } else {
+        countdownBadgeHtml = `⏳ Còn <span class="hometown-countdown-num">${daysLeft}</span> ngày nữa`;
+      }
+
+      hometownCountdownBanner.innerHTML = `
+        <div class="hometown-strip-row1">
+          <div class="hometown-strip-left">
+            <span class="hometown-tag">🏡 VỀ QUÊ SẮP TỚI</span>
+            <strong class="hometown-trip-name">${nearestUpcoming.title}</strong>
+            <span class="hometown-trip-dates">(${formatTripDateRange(nearestUpcoming.startDate, nearestUpcoming.endDate)})</span>
+          </div>
+          <div class="hometown-countdown-badge" id="badgeOpenModalFromRow" title="Bấm để mở Sổ Kế Hoạch Về Quê">
+            ${countdownBadgeHtml}
+          </div>
+        </div>
+
+        <div class="hometown-strip-row2">
+          <div class="hometown-chips-wrap">
+            ${nearestUpcoming.budget > 0 ? `<div class="hometown-chip">🎯 Quỹ: <strong style="color: #34d399;">${formatCurrency(nearestUpcoming.budget)}</strong></div>` : ''}
+            ${nearestUpcoming.note ? `<div class="hometown-chip">📝 <span>${nearestUpcoming.note}</span></div>` : ''}
+            <div class="hometown-chip">🚗 Năm ${currentYear}: <strong style="color: #38bdf8;">${completedCount} lần đã về</strong> (${totalDaysHome} ngày)</div>
+          </div>
+          <button type="button" class="btn-hometown-link" id="openHometownFromBannerBtn">
+            📅 Sổ Kế Hoạch ➔
+          </button>
+        </div>
+      `;
+    } else {
+      hometownCountdownBanner.innerHTML = `
+        <div class="hometown-strip-row1">
+          <div class="hometown-strip-left">
+            <span class="hometown-tag" style="color: #38bdf8; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3);">🏡 KẾ HOẠCH VỀ QUÊ</span>
+            <span class="hometown-trip-dates">Bạn chưa có lịch về quê sắp tới</span>
+            <div class="hometown-chip" style="margin-left: 4px;">🚗 Năm ${currentYear}: <strong style="color: #38bdf8;">${completedCount} lần đã về</strong> (${totalDaysHome} ngày sum vầy)</div>
+          </div>
+          <button type="button" class="btn-hometown-link" id="openHometownFromBannerBtn" style="color: #34d399;">
+            ➕ Lên Kế Hoạch Mới ➔
+          </button>
+        </div>
+      `;
+    }
+
+    hometownCountdownBanner.style.display = 'flex';
+
+    const bannerBtn = document.getElementById('openHometownFromBannerBtn');
+    if (bannerBtn) {
+      bannerBtn.addEventListener('click', openHometownModal);
+    }
+    const badgeBtn = document.getElementById('badgeOpenModalFromRow');
+    if (badgeBtn) {
+      badgeBtn.addEventListener('click', openHometownModal);
+    }
+  }
+
+  function openHometownModal() {
+    renderHometownModal();
+    if (hometownModal) hometownModal.style.display = 'flex';
+    fetchHometownTripsFromCloud();
+  }
+
+  function closeHometownModal() {
+    if (hometownModal) hometownModal.style.display = 'none';
+    hideHometownForm();
+  }
+
+  function hideHometownForm() {
+    if (hometownFormContainer) hometownFormContainer.style.display = 'none';
+    if (hometownForm) hometownForm.reset();
+    if (hometownTripId) hometownTripId.value = '';
+    if (toggleHometownFormBtn) toggleHometownFormBtn.innerHTML = '<span>➕</span><span>Lên Kế Hoạch Mới</span>';
+  }
+
+  function showHometownForm(trip = null) {
+    if (!hometownFormContainer) return;
+    hometownFormContainer.style.display = 'block';
+    if (trip) {
+      if (hometownFormTitle) hometownFormTitle.textContent = '✏️ Chỉnh Sửa Chuyến Về Quê';
+      if (hometownTripId) hometownTripId.value = trip.id;
+      if (hometownTitleInput) hometownTitleInput.value = trip.title;
+      if (hometownStartDateInput) hometownStartDateInput.value = trip.startDate;
+      if (hometownEndDateInput) hometownEndDateInput.value = trip.endDate;
+      if (hometownBudgetInput) hometownBudgetInput.value = trip.budget > 0 ? formatMoneyInput(trip.budget) : '';
+      if (hometownNoteInput) hometownNoteInput.value = trip.note || '';
+      if (toggleHometownFormBtn) toggleHometownFormBtn.innerHTML = '<span>▲</span><span>Thu Gọn</span>';
+    } else {
+      if (hometownFormTitle) hometownFormTitle.textContent = '✍️ Thêm Chuyến Về Quê Mới';
+      if (hometownForm) hometownForm.reset();
+      if (hometownTripId) hometownTripId.value = '';
+      const now = new Date();
+      const defaultStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+      const defaultEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 10);
+      const toYMD = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (hometownStartDateInput) hometownStartDateInput.value = toYMD(defaultStart);
+      if (hometownEndDateInput) hometownEndDateInput.value = toYMD(defaultEnd);
+      if (toggleHometownFormBtn) toggleHometownFormBtn.innerHTML = '<span>▲</span><span>Thu Gọn</span>';
+    }
+    hometownFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderHometownModal() {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // Collect all available years
+    const yearSet = new Set([currentYear, currentYear - 1, currentYear + 1]);
+    hometownTrips.forEach(t => {
+      if (t.startDate) yearSet.add(parseInt(t.startDate.substring(0, 4), 10));
+      if (t.endDate) yearSet.add(parseInt(t.endDate.substring(0, 4), 10));
+    });
+    const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
+
+    // Calculate stats for selectedHometownYear
+    const yearTrips = hometownTrips.filter(t => {
+      return (t.startDate && t.startDate.startsWith(String(selectedHometownYear))) ||
+             (t.endDate && t.endDate.startsWith(String(selectedHometownYear)));
+    });
+
+    let completedCount = 0;
+    let totalDaysHome = 0;
+    let upcomingCount = 0;
+
+    yearTrips.forEach(t => {
+      const status = getHometownTripStatus(t, now);
+      if (status.type === 'COMPLETED' || status.type === 'ACTIVE') {
+        completedCount++;
+        totalDaysHome += getHometownTripDuration(t);
+      } else if (status.type === 'UPCOMING') {
+        upcomingCount++;
+      }
+    });
+
+    if (hometownStatsBox) {
+      hometownStatsBox.innerHTML = `
+        <div class="hometown-stats-topbar">
+          <div class="hometown-stats-title">
+            <span>📊</span>
+            <span>TỔNG KẾT NĂM ${selectedHometownYear}</span>
+          </div>
+          <div class="hometown-year-picker-wrap">
+            <span class="hometown-year-label">Năm:</span>
+            <select id="hometownYearSelect" class="hometown-year-select">
+              ${sortedYears.map(y => `<option value="${y}" ${y === selectedHometownYear ? 'selected' : ''}>Năm ${y}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="hometown-stats-cards">
+          <div class="hometown-stat-card card-completed">
+            <div class="hometown-stat-icon-wrap">🏡</div>
+            <div class="hometown-stat-info">
+              <div class="hometown-stat-num">${completedCount} <span class="hometown-stat-unit">lần</span></div>
+              <div class="hometown-stat-label">Đã về quê</div>
+            </div>
+          </div>
+          <div class="hometown-stat-card card-days">
+            <div class="hometown-stat-icon-wrap">☀️</div>
+            <div class="hometown-stat-info">
+              <div class="hometown-stat-num">${totalDaysHome} <span class="hometown-stat-unit">ngày</span></div>
+              <div class="hometown-stat-label">Ở quê sum vầy</div>
+            </div>
+          </div>
+          <div class="hometown-stat-card card-upcoming">
+            <div class="hometown-stat-icon-wrap">⏳</div>
+            <div class="hometown-stat-info">
+              <div class="hometown-stat-num">${upcomingCount} <span class="hometown-stat-unit">chuyến</span></div>
+              <div class="hometown-stat-label">Kế hoạch tới</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const yearSelect = document.getElementById('hometownYearSelect');
+      if (yearSelect) {
+        yearSelect.addEventListener('change', (e) => {
+          selectedHometownYear = parseInt(e.target.value, 10);
+          renderHometownModal();
+        });
+      }
+    }
+
+    if (hometownListHeaderTitle) {
+      hometownListHeaderTitle.innerHTML = `
+        <span>DANH SÁCH CHUYẾN ĐI</span>
+        <span class="hometown-count-badge">${yearTrips.length}</span>
+      `;
+    }
+
+    // Render trip list
+    if (hometownTripListContainer) {
+      if (yearTrips.length === 0) {
+        hometownTripListContainer.innerHTML = `
+          <div class="hometown-empty-state">
+            <div class="empty-icon">🏡</div>
+            <div class="empty-title">Chưa có chuyến về quê nào trong năm ${selectedHometownYear}</div>
+            <p class="empty-desc">Lên kế hoạch trước để sắp xếp thời gian công việc và chuẩn bị tài chính chu đáo nhé!</p>
+            <button type="button" class="btn-hometown-create" id="addFirstTripBtn">
+              <span>➕</span> Lên Kế Hoạch Đầu Tiên
+            </button>
+          </div>
+        `;
+        const addFirstBtn = document.getElementById('addFirstTripBtn');
+        if (addFirstBtn) addFirstBtn.addEventListener('click', () => showHometownForm());
+        return;
+      }
+
+      // Sort: Active first, then Upcoming asc, then Completed desc
+      const sortedTrips = [...yearTrips].sort((a, b) => {
+        const sA = getHometownTripStatus(a, now);
+        const sB = getHometownTripStatus(b, now);
+        const rank = { ACTIVE: 0, UPCOMING: 1, COMPLETED: 2 };
+        if (rank[sA.type] !== rank[sB.type]) return rank[sA.type] - rank[sB.type];
+        if (sA.type === 'UPCOMING') return a.startDate.localeCompare(b.startDate);
+        return b.startDate.localeCompare(a.startDate);
+      });
+
+      hometownTripListContainer.innerHTML = sortedTrips.map(trip => {
+        const status = getHometownTripStatus(trip, now);
+        const duration = getHometownTripDuration(trip);
+        let cardClass = 'hometown-trip-card';
+        let badgeClass = 'hometown-badge-status';
+        let badgeText = '';
+        let dateMonthText = 'T--';
+        let dateDayText = '--';
+
+        if (trip.startDate) {
+          const parts = trip.startDate.split('-');
+          if (parts.length === 3) {
+            dateMonthText = `T${parseInt(parts[1], 10)}`;
+            dateDayText = `${parseInt(parts[2], 10)}`;
+          }
+        }
+
+        if (status.type === 'ACTIVE') {
+          cardClass += ' is-active';
+          badgeClass += ' badge-active';
+          badgeText = '❤️ Đang ở quê';
+        } else if (status.type === 'UPCOMING') {
+          cardClass += ' is-upcoming';
+          badgeClass += ' badge-upcoming';
+          badgeText = status.daysLeft === 0 ? '🚗 Hôm nay khởi hành' : (status.daysLeft === 1 ? '🚗 Ngày mai lên đường' : `⏳ Còn ${status.daysLeft} ngày`);
+        } else {
+          cardClass += ' is-completed';
+          badgeClass += ' badge-completed';
+          badgeText = '✓ Đã về';
+        }
+
+        const budgetHtml = trip.budget > 0
+          ? `<span class="hometown-meta-pill budget"><span class="meta-icon">💰</span> Quỹ: ${formatCurrency(trip.budget)}</span>`
+          : '';
+        const noteHtml = trip.note 
+          ? `<div class="hometown-trip-note"><span class="note-quote">“</span>${trip.note}<span class="note-quote">”</span></div>` 
+          : '';
+
+        return `
+          <div class="${cardClass}">
+            <div class="hometown-date-badge">
+              <span class="date-month">${dateMonthText}</span>
+              <span class="date-day">${dateDayText}</span>
+            </div>
+            <div class="hometown-trip-main">
+              <div class="hometown-trip-title-row">
+                <span class="hometown-trip-card-title">${trip.title}</span>
+                <span class="${badgeClass}">${badgeText}</span>
+              </div>
+              <div class="hometown-trip-meta-row">
+                <span class="hometown-meta-item"><span class="meta-icon">📅</span> ${formatTripDateRange(trip.startDate, trip.endDate)} (${duration} ngày)</span>
+                ${budgetHtml}
+              </div>
+              ${noteHtml}
+            </div>
+            <div class="hometown-trip-actions">
+              <button type="button" class="btn-trip-action edit-hometown-btn" data-id="${trip.id}" title="Sửa chuyến đi">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button type="button" class="btn-trip-action delete delete-hometown-btn" data-id="${trip.id}" title="Xóa chuyến đi">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Wire edit and delete buttons
+      document.querySelectorAll('.edit-hometown-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const trip = hometownTrips.find(t => t.id === id);
+          if (trip) showHometownForm(trip);
+        });
+      });
+
+      document.querySelectorAll('.delete-hometown-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const trip = hometownTrips.find(t => t.id === id);
+          if (!trip) return;
+          if (confirm(`Bạn có chắc muốn xóa chuyến về quê "${trip.title}" không?`)) {
+            hometownTrips = hometownTrips.filter(t => t.id !== id);
+            saveHometownTrips();
+            syncDeleteHometownTripFromCloud(id);
+            renderHometownBanner();
+            renderHometownModal();
+            renderDrawerInfo();
+          }
+        });
+      });
+    }
+  }
+
+  // Event Listeners for Hometown Modal & Form
+  if (drawerHometownBtn) {
+    drawerHometownBtn.addEventListener('click', () => {
+      closeDrawer();
+      openHometownModal();
+    });
+  }
+
+  if (closeHometownModalBtn) {
+    closeHometownModalBtn.addEventListener('click', closeHometownModal);
+  }
+
+  if (toggleHometownFormBtn) {
+    toggleHometownFormBtn.addEventListener('click', () => {
+      if (hometownFormContainer.style.display === 'none' || !hometownFormContainer.style.display) {
+        showHometownForm();
+      } else {
+        hideHometownForm();
+      }
+    });
+  }
+
+  if (cancelHometownFormBtn) {
+    cancelHometownFormBtn.addEventListener('click', hideHometownForm);
+  }
+
+  if (hometownBudgetInput) {
+    hometownBudgetInput.addEventListener('input', (e) => {
+      const raw = e.target.value.replace(/\D/g, '');
+      e.target.value = raw ? formatMoneyInput(parseInt(raw, 10)) : '';
+    });
+  }
+
+  if (hometownForm) {
+    hometownForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = hometownTitleInput.value.trim();
+      const startDate = hometownStartDateInput.value;
+      const endDate = hometownEndDateInput.value;
+      const budget = parseMoneyValue(hometownBudgetInput.value);
+      const note = hometownNoteInput.value.trim();
+
+      if (!title || !startDate || !endDate) {
+        alert('Vui lòng nhập đầy đủ tiêu đề, ngày đi và ngày về!');
+        return;
+      }
+      if (startDate > endDate) {
+        alert('Ngày khởi hành không được sau ngày trở lại!');
+        return;
+      }
+
+      const existingId = hometownTripId.value;
+      let savedItem = null;
+
+      if (existingId) {
+        // Edit existing
+        const idx = hometownTrips.findIndex(t => t.id === existingId);
+        if (idx !== -1) {
+          hometownTrips[idx] = {
+            ...hometownTrips[idx],
+            title,
+            startDate,
+            endDate,
+            budget,
+            note,
+            updatedAt: new Date().toISOString()
+          };
+          savedItem = hometownTrips[idx];
+        }
+      } else {
+        // Create new
+        const newTrip = {
+          id: generateUUID(),
+          title,
+          startDate,
+          endDate,
+          budget,
+          note,
+          createdAt: new Date().toISOString()
+        };
+        hometownTrips.push(newTrip);
+        savedItem = newTrip;
+      }
+
+      saveHometownTrips();
+      if (savedItem) {
+        syncSaveHometownTripToCloud(savedItem);
+      }
+      hideHometownForm();
+      renderHometownBanner();
+      renderHometownModal();
+      renderDrawerInfo();
+      alert('💾 Đã lưu kế hoạch về quê thành công!');
     });
   }
 
@@ -3937,6 +4614,26 @@ create policy "Public Access" on savings_entries for all using (true) with check
       if (lower.includes('lời khuyên') || lower.includes('mẹo') || lower.includes('tư vấn')) {
         return `💡 **Mẹo Quản Lý Tài Chính:** Hãy trích ra tối thiểu 10% thu nhập mỗi khi kết thúc ca chạy Grab, duy trì đều đặn mỗi ngày để hình thành phản xạ kỷ luật tích lũy! 🚀`;
       }
+      if (lower.includes('về quê') || lower.includes('ve que') || lower.includes('về nhà') || lower.includes('ve nha') || lower.includes('chuyến đi') || lower.includes('chuyen di')) {
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const activeTrip = hometownTrips.find(t => todayStr >= t.startDate && todayStr <= t.endDate);
+        const upcomingTrips = hometownTrips
+          .filter(t => todayStr < t.startDate)
+          .sort((a, b) => a.startDate.localeCompare(b.startDate));
+        const nearest = upcomingTrips[0];
+        const yearCompleted = hometownTrips.filter(t => (t.startDate.startsWith(String(now.getFullYear())) || t.endDate.startsWith(String(now.getFullYear()))) && todayStr > t.endDate);
+
+        if (activeTrip) {
+          return `🏡 Hiện bạn đang trong chuyến về quê **${activeTrip.title}** (${formatTripDateRange(activeTrip.startDate, activeTrip.endDate)})! Hãy tận hưởng trọn vẹn những phút giây ấm áp sum vầy bên gia đình nhé! ❤️`;
+        }
+        if (nearest) {
+          const status = getHometownTripStatus(nearest, now);
+          const days = status.daysLeft;
+          const budgetTxt = nearest.budget > 0 ? ` (Quỹ dự trù: **${formatCurrency(nearest.budget)}**)` : '';
+          return `🏡 Chuyến về quê sắp tới của bạn là **${nearest.title}** (${formatTripDateRange(nearest.startDate, nearest.endDate)})${budgetTxt}. Còn đúng **${days} ngày nữa** là lên đường! Năm ${now.getFullYear()} bạn đã về quê được **${yearCompleted.length} lần**. Chúc bạn có chuyến đi thật vui vẻ và bình an! 🚗✨`;
+        }
+        return `🏡 Năm ${now.getFullYear()} bạn đã về quê được **${yearCompleted.length} lần**. Hiện tại bạn chưa lên lịch chuyến về quê tiếp theo. Bạn có thể bấm vào banner "Kế Hoạch Về Quê" để lên lịch trình mới nhé! 🌟`;
+      }
       return `🤖 Trợ Lý AI Tiết Kiệm chào bạn! Hôm nay bạn đã nạp ${formatCurrency(todayAmount)} / target ${formatCurrency(dailyGoal)}. Còn ${daysLeftToTet} ngày nữa là tới Tết, cùng nhau cố gắng nhé! 🌟`;
     };
 
@@ -4596,12 +5293,14 @@ create policy "Public Access" on savings_entries for all using (true) with check
   setDefaultDate();
   entryAmount.value = formatMoneyInput(dailyGoal);
   updateEntryPreview();
+  renderHometownBanner();
   renderDrawerInfo();
   refreshAll();
 
   // Retry on window load for local file:/// protocol
   window.addEventListener('load', () => {
     initSupabase();
+    renderHometownBanner();
     renderDrawerInfo();
   });
 })();

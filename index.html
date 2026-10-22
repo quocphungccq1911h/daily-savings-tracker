@@ -11,7 +11,7 @@
   <!-- Supabase JS SDK với Fallback CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>')}</script>
-  <link rel="stylesheet" href="styles.css?v=1.3.7">
+  <link rel="stylesheet" href="styles.css?v=1.4.3">
 </head>
 <body>
   <div class="app-container">
@@ -35,6 +35,11 @@
         <button id="signOutBtn" class="btn-signout-compact" title="Đăng xuất khỏi ứng dụng">🚪 Đăng xuất</button>
       </div>
     </header>
+
+    <!-- 🏡 HOMETOWN COUNTDOWN & TRIP BANNER -->
+    <div id="hometownCountdownBanner" class="hometown-banner" style="display: none;">
+      <!-- Dynamically rendered by JS -->
+    </div>
 
     <!-- Main Grid Layout -->
     <main class="dashboard-grid">
@@ -396,27 +401,57 @@
           <span>Copy dán vào SQL Editor trên Supabase:</span>
           <button id="copySqlBtn" class="btn-copy">📋 Copy SQL</button>
         </div>
-        <pre class="sql-code"><code>-- 1. Tạo bảng và mở rộng cột user_id
+        <pre class="sql-code"><code>-- 1. BẢNG TIẾT KIỆM HẰNG NGÀY (savings_entries)
 create table if not exists savings_entries (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid default auth.uid(),
+  user_id uuid default auth.uid() references auth.users(id) on delete cascade,
   entry_date date not null,
   amount bigint not null,
   note text default 'Thu nhập chạy app',
   created_at timestamptz default now()
 );
 
--- 2. Thêm cột user_id nếu bảng đã có sẵn
-alter table savings_entries add column if not exists user_id uuid default auth.uid();
-alter table savings_entries drop constraint if exists savings_entries_entry_date_key;
-
--- 3. Bật phân quyền bảo mật RLS cá nhân (Chỉ chính chủ mới thấy/sửa)
 alter table savings_entries enable row level security;
-drop policy if exists "Public Access" on savings_entries;
 drop policy if exists "Users access own entries" on savings_entries;
-
 create policy "Users access own entries"
   on savings_entries for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- 2. BẢNG CHI TIÊU HẰNG NGÀY (expenses)
+create table if not exists expenses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid default auth.uid() references auth.users(id) on delete cascade,
+  entry_date date not null,
+  amount bigint not null,
+  category text not null,
+  note text default '',
+  created_at timestamptz default now()
+);
+
+alter table expenses enable row level security;
+drop policy if exists "Users access own expenses" on expenses;
+create policy "Users access own expenses"
+  on expenses for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- 3. BẢNG KẾ HOẠCH VỀ QUÊ & ĐẾM NGƯỢC (hometown_trips)
+create table if not exists hometown_trips (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid default auth.uid() references auth.users(id) on delete cascade,
+  title text not null,
+  start_date date not null,
+  end_date date not null,
+  budget bigint default 0,
+  note text default '',
+  created_at timestamptz default now()
+);
+
+alter table hometown_trips enable row level security;
+drop policy if exists "Users access own hometown trips" on hometown_trips;
+create policy "Users access own hometown trips"
+  on hometown_trips for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);</code></pre>
       </details>
@@ -624,6 +659,13 @@ create policy "Users access own entries"
         </button>
 
         <div class="menu-section-title">BỘ CÔNG CỤ TIỆN ÍCH 🧰</div>
+        <button class="drawer-item" id="drawerHometownBtn">
+          <span class="item-icon">🏡</span>
+          <div class="item-text">
+            <div class="item-title">Kế Hoạch Về Quê &amp; Đếm Ngược</div>
+            <div class="item-sub" id="drawerHometownSub">Đếm ngược chuyến đi &amp; thống kê số lần về quê</div>
+          </div>
+        </button>
         <button class="drawer-item" id="drawerExpenseBtn">
           <span class="item-icon">🧾</span>
           <div class="item-text">
@@ -697,6 +739,80 @@ create policy "Users access own entries"
           </div>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SỔ KẾ HOẠCH VỀ QUÊ & ĐẾM NGƯỢC -->
+  <div class="modal-overlay" id="hometownModal" style="display: none; z-index: 10001;">
+    <div class="modal-card modal-wide modal-hometown">
+      <!-- Modal Header -->
+      <div class="hometown-modal-header">
+        <div class="hometown-modal-brand">
+          <div class="hometown-modal-icon-badge">🏡</div>
+          <div>
+            <h3 class="hometown-modal-title">Sổ Kế Hoạch Về Quê</h3>
+            <p class="hometown-modal-sub">Lịch trình, đếm ngược &amp; tổng kết số lần về quê sum vầy</p>
+          </div>
+        </div>
+        <button type="button" class="hometown-modal-close-btn" id="closeHometownModalBtn" title="Đóng">✕</button>
+      </div>
+
+      <!-- Stats Banner for Year -->
+      <div class="hometown-stats-box" id="hometownStatsBox"></div>
+
+      <!-- Section Bar -->
+      <div class="hometown-section-bar">
+        <div class="hometown-section-title" id="hometownListHeaderTitle">
+          <span>DANH SÁCH CHUYẾN ĐI</span>
+        </div>
+        <button type="button" id="toggleHometownFormBtn" class="btn-hometown-create">
+          <span>➕</span>
+          <span>Lên Kế Hoạch Mới</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Form -->
+      <div id="hometownFormContainer" class="hometown-form-wrapper" style="display: none;">
+        <h4 id="hometownFormTitle" class="hometown-form-header">✍️ Thêm Chuyến Về Quê Mới</h4>
+        <form id="hometownForm">
+          <input type="hidden" id="hometownTripId">
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="hometownTitleInput">Dịp / Lý do về quê</label>
+            <input type="text" id="hometownTitleInput" class="input-field" placeholder="Ví dụ: Về Giỗ Bố, Nghỉ lễ 30/4, Thăm nhà cuối tuần..." required>
+          </div>
+
+          <div class="form-row" style="margin-bottom: 12px;">
+            <div class="form-group flex-1">
+              <label for="hometownStartDateInput">Ngày khởi hành (Bắt đầu)</label>
+              <input type="date" id="hometownStartDateInput" class="input-field" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="hometownEndDateInput">Ngày trở lại (Kết thúc)</label>
+              <input type="date" id="hometownEndDateInput" class="input-field" required>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-bottom: 12px;">
+            <div class="form-group flex-1">
+              <label for="hometownBudgetInput">Quỹ dự trù (VNĐ - Không bắt buộc)</label>
+              <input type="text" id="hometownBudgetInput" class="input-field money-input" placeholder="3.000.000" inputmode="numeric">
+            </div>
+            <div class="form-group flex-1">
+              <label for="hometownNoteInput">Ghi chú thêm (Tùy chọn)</label>
+              <input type="text" id="hometownNoteInput" class="input-field" placeholder="Mua quà cho bố mẹ, vé xe khách...">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button type="submit" id="saveHometownTripBtn" class="btn-hometown-submit">💾 Lưu Kế Hoạch</button>
+            <button type="button" id="cancelHometownFormBtn" class="btn-hometown-cancel">Hủy</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Trip List Container -->
+      <div id="hometownTripListContainer" class="hometown-trip-list"></div>
     </div>
   </div>
 
@@ -843,6 +959,7 @@ create policy "Users access own entries"
 
       <!-- Quick Suggestion Chips -->
       <div class="ai-chips-container" style="display: flex; gap: 8px; padding: 10px 14px; overflow-x: auto; background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
+        <button type="button" class="ai-quick-chip" data-prompt="Còn bao nhiêu ngày nữa về quê?">🏡 Đếm ngược về quê?</button>
         <button type="button" class="ai-quick-chip" data-prompt="Còn bao nhiêu nữa đủ target hôm nay?">💡 Còn bao nhiêu nữa đủ target?</button>
         <button type="button" class="ai-quick-chip" data-prompt="Còn bao nhiêu ngày nữa đến Tết?">🧧 Đếm ngược đến Tết?</button>
         <button type="button" class="ai-quick-chip" data-prompt="Hôm nay ngày bao nhiêu?">📅 Hôm nay ngày mấy?</button>
@@ -941,6 +1058,6 @@ create policy "Users access own entries"
     </div>
   </div>
 
-  <script src="app.js?v=1.3.7"></script>
+  <script src="app.js?v=1.4.3"></script>
 </body>
 </html>

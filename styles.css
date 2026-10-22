@@ -2987,5 +2987,829 @@ body {
   flex-wrap: wrap;
 }
 
+/* =========================================================================
+   🏡 HOMETOWN COUNTDOWN BANNER — COMPACT TRAVEL STRIP (HARMONIZED DESIGN)
+   ========================================================================= */
+.hometown-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-family: var(--font);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.hometown-banner:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.hometown-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3.5px;
+  height: 100%;
+  background: linear-gradient(180deg, #10b981, #38bdf8);
+}
+
+/* Row 1: Primary Header & Hero Countdown Badge */
+.hometown-strip-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hometown-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hometown-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 12px;
+  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hometown-trip-name {
+  font-size: 0.925rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.hometown-trip-dates {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Countdown Pill Badge on Row 1 Right (HERO COUNTDOWN) */
+.hometown-countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 95, 70, 0.38) 100%);
+  border: 1.5px solid rgba(52, 211, 153, 0.65);
+  color: #f1f5f9;
+  padding: 4px 14px 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  animation: countdownGlowPulse 3s infinite ease-in-out;
+  user-select: none;
+}
+
+.hometown-countdown-badge:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.5) 100%);
+  border-color: #34d399;
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transform: translateY(-1.5px) scale(1.03);
+}
+
+.hometown-countdown-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 9px;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: #022c22;
+  border-radius: 8px;
+  font-size: 1.18rem;
+  font-weight: 900;
+  line-height: 1.15;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.5);
+  font-family: var(--font);
+  margin: 0 2px;
+  letter-spacing: -0.02em;
+}
+
+.hometown-countdown-badge.active-mode {
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.22) 0%, rgba(157, 23, 77, 0.38) 100%);
+  border-color: rgba(244, 114, 182, 0.7);
+  color: #fdf2f8;
+  box-shadow: 0 0 20px rgba(244, 114, 182, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.hometown-countdown-badge.active-mode:hover {
+  box-shadow: 0 0 28px rgba(244, 114, 182, 0.6);
+}
+
+.hometown-countdown-num.active-mode {
+  background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+  color: #500724;
+  box-shadow: 0 2px 10px rgba(244, 114, 182, 0.5);
+}
+
+@keyframes countdownGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(16, 185, 129, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Row 2: Secondary Metadata Chips & Action Button */
+.hometown-strip-row2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hometown-chips-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hometown-chip {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 2.5px 8px;
+  font-size: 0.725rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.hometown-chip strong {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.btn-hometown-link {
+  background: transparent;
+  border: none;
+  color: #38bdf8;
+  font-family: var(--font);
+  font-size: 0.775rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.btn-hometown-link:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #ffffff;
+}
+
+/* ===================================================
+   HOMETOWN MODAL & TRIP PLANNER REDESIGN (PREMIUM UI)
+   =================================================== */
+
+.modal-hometown {
+  max-width: 580px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #162035 0%, #0d1424 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(56, 189, 248, 0.06);
+  padding: 22px 24px;
+  font-family: var(--font);
+}
+
+@media (max-width: 600px) {
+  .modal-hometown {
+    padding: 16px 14px;
+    width: 94%;
+  }
+}
+
+/* Modal Header */
+.hometown-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hometown-modal-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hometown-modal-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.25) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.15);
+  flex-shrink: 0;
+}
+
+.hometown-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.hometown-modal-sub {
+  margin: 2px 0 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.hometown-modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hometown-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+/* Stats Box */
+.hometown-stats-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-family: var(--font);
+}
+
+.hometown-stats-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hometown-stats-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f59e0b;
+}
+
+.hometown-year-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hometown-year-label {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.hometown-year-select {
+  background: rgba(15, 23, 42, 0.9);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.hometown-year-select:hover,
+.hometown-year-select:focus {
+  border-color: #38bdf8;
+}
+
+.hometown-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.hometown-stat-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.hometown-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.hometown-stat-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.hometown-stat-card.card-completed .hometown-stat-icon-wrap {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.hometown-stat-card.card-days .hometown-stat-icon-wrap {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.hometown-stat-card.card-upcoming .hometown-stat-icon-wrap {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.hometown-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.hometown-stat-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.15;
+  font-family: var(--font);
+}
+
+.hometown-stat-card.card-completed .hometown-stat-num { color: #34d399; }
+.hometown-stat-card.card-days .hometown-stat-num { color: #fbbf24; }
+.hometown-stat-card.card-upcoming .hometown-stat-num { color: #38bdf8; }
+
+.hometown-stat-unit {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-left: 2px;
+}
+
+.hometown-stat-label {
+  font-size: 0.675rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+@media (max-width: 600px) {
+  .hometown-stats-cards {
+    gap: 6px;
+  }
+  .hometown-stat-card {
+    padding: 8px 6px;
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+  }
+  .hometown-stat-icon-wrap {
+    width: 28px;
+    height: 28px;
+    font-size: 0.95rem;
+    margin: 0 auto;
+  }
+  .hometown-stat-num {
+    font-size: 1rem;
+  }
+  .hometown-stat-label {
+    font-size: 0.6rem;
+  }
+}
+
+/* Section Bar */
+.hometown-section-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 14px 0 10px 0;
+}
+
+.hometown-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hometown-count-badge {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.btn-hometown-create {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #34d399;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-hometown-create:hover {
+  background: #10b981;
+  color: #042f2e;
+  border-color: #10b981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Collapsible Form Wrapper */
+.hometown-form-wrapper {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.hometown-form-header {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-hometown-submit {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #042f2e;
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  font-family: var(--font);
+  transition: all 0.2s;
+}
+
+.btn-hometown-submit:hover {
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-hometown-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 9px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.2s;
+}
+
+.btn-hometown-cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* Trip List Cards */
+.hometown-trip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+  font-family: var(--font);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.hometown-trip-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.hometown-trip-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+.hometown-trip-card {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.hometown-trip-card:hover {
+  background: rgba(15, 23, 42, 0.8);
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
+}
+
+.hometown-trip-card.is-upcoming {
+  border-left: 3.5px solid #10b981;
+}
+
+.hometown-trip-card.is-active {
+  border-left: 3.5px solid #f472b6;
+  background: rgba(244, 114, 182, 0.04);
+}
+
+.hometown-trip-card.is-completed {
+  border-left: 3.5px solid rgba(148, 163, 184, 0.4);
+  opacity: 0.88;
+}
+
+/* Date Badge on the Left */
+.hometown-date-badge {
+  width: 48px;
+  height: 52px;
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.hometown-trip-card:hover .hometown-date-badge {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.hometown-date-badge .date-month {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.hometown-trip-card.is-active .hometown-date-badge .date-month {
+  color: #f472b6;
+}
+
+.hometown-trip-card.is-completed .hometown-date-badge .date-month {
+  color: #94a3b8;
+}
+
+.hometown-date-badge .date-day {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  margin-top: 2px;
+  font-family: var(--font);
+}
+
+/* Main Content */
+.hometown-trip-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.hometown-trip-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.hometown-trip-card-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.hometown-badge-status {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-upcoming {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.12);
+}
+
+.badge-active {
+  background: rgba(244, 114, 182, 0.18);
+  color: #f472b6;
+  border: 1px solid rgba(244, 114, 182, 0.35);
+  box-shadow: 0 0 10px rgba(244, 114, 182, 0.2);
+}
+
+.badge-completed {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.hometown-trip-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.76rem;
+  color: #94a3b8;
+}
+
+.hometown-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hometown-meta-pill.budget {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  color: #34d399;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+}
+
+.hometown-trip-note {
+  font-size: 0.73rem;
+  color: #cbd5e1;
+  font-style: italic;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  opacity: 0.9;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hometown-trip-note .note-quote {
+  color: #f59e0b;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Actions */
+.hometown-trip-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-trip-action {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-trip-action:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  transform: scale(1.05);
+}
+
+.btn-trip-action.delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  transform: scale(1.05);
+}
+
+/* Empty State */
+.hometown-empty-state {
+  text-align: center;
+  padding: 32px 18px;
+  color: var(--text-muted);
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.hometown-empty-state .empty-icon {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+}
+
+.hometown-empty-state .empty-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.hometown-empty-state .empty-desc {
+  font-size: 0.775rem;
+  margin: 0 0 14px 0;
+  line-height: 1.4;
+}
+
 
 
